@@ -67,5 +67,3 @@ QLOO_API_KEY=your-qloo-api-key
 - Run npm install  
 - Run npx serverless offline  
 - Access your endpoints at http://localhost:3000
-
-Let me know if you want to set up local DynamoDB/S3 or need help with anything else!
