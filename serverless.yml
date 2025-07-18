@@ -1,11 +1,13 @@
 service: restaurant-menu-optimizer
 
+useDotenv: ${self:custom.isDev, false}
+
 frameworkVersion: '3'
 
 provider:
   name: aws
-  runtime: nodejs18.x
-  stage: ${opt:stage, 'dev'}
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'local'}
   region: us-east-1 # Use a valid AWS region string directly
   environment:
     STAGE: ${self:provider.stage}
@@ -13,7 +15,7 @@ provider:
     LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
     LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
     # Local development environment variables
-    USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+    USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
     CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
     MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
   apiGateway:
@@ -23,6 +25,7 @@ provider:
       - 'multipart/form-data'
 
 plugins:
+  - serverless-dotenv-plugin
   - serverless-webpack
   - serverless-offline
   - serverless-iam-roles-per-function
@@ -30,6 +33,15 @@ plugins:
   - serverless-s3-local
 
 custom:
+  isDev: ${opt:stage, 'local'} == 'local'
+  dotenv:
+    basePath: ${self:custom.basePath, './'}
+    logging: true
+    include:
+      - LLM_PROVIDER
+      - LLM_MODEL
+      - CLIENT_ID
+      - USER_POOL_ID
   webpack:
     webpackConfig: ./config/webpack.config.js
     includeModules: true
@@ -88,7 +100,7 @@ functions:
           pool: UserPool
           trigger: PreSignUp
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
       CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
 
   PostConfirmation:
@@ -150,8 +162,8 @@ functions:
                     location:
                       type: string
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
-      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -197,8 +209,8 @@ functions:
                     password:
                       type: string
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
-      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -393,6 +405,16 @@ resources:
       Type: AWS::Cognito::UserPool
       Properties:
         UserPoolName: ${self:provider.stage}-user-pool
+        Schema:
+          - Name: restaurantName
+            AttributeDataType: String
+            Mutable: true
+          - Name: cuisineType
+            AttributeDataType: String
+            Mutable: true
+          - Name: location
+            AttributeDataType: String
+            Mutable: true
     userpoolclient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
