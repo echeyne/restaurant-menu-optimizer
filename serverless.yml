@@ -1,0 +1,451 @@
+service: restaurant-menu-optimizer
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1 # Use a valid AWS region string directly
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
+    LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
+    # Local development environment variables
+    USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+    CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+    MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+  apiGateway:
+    shouldStartNameWithService: true
+    apiKeys: []
+    binaryMediaTypes:
+      - 'multipart/form-data'
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-iam-roles-per-function
+  - serverless-dynamodb-local
+  - serverless-s3-local
+
+custom:
+  webpack:
+    webpackConfig: ./config/webpack.config.js
+    includeModules: true
+    packager: 'npm'
+  serverless-offline:
+    httpPort: 3000
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      seed: true
+    installPath: .dynamodb
+    tables:
+      - TableName: ${self:provider.stage}-restaurants
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: restaurantId
+            KeyType: HASH
+      - TableName: ${self:provider.stage}-menu-items
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: itemId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: itemId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+  s3:
+    port: 4569
+    # cors: true
+    # debug: true
+    directory: /tmp
+    buckets:
+      - name: ${self:provider.stage}-menu-files
+
+functions:
+  # Authentication functions
+  PreSignUp:
+    handler: src/auth/triggers/pre-signup.handler
+    events:
+      - cognitoUserPool:
+          pool: UserPool
+          trigger: PreSignUp
+    environment:
+      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+
+  PostConfirmation:
+    handler: src/auth/triggers/post-confirmation.handler
+    events:
+      - cognitoUserPool:
+          pool: UserPool
+          trigger: PostConfirmation
+    environment:
+      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: "*" # Use '*' for local, override with real ARN in AWS
+
+  RegisterRestaurant:
+    handler: src/auth/handlers/register-restaurant.handler
+    events:
+      - http:
+          path: auth/register
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - email
+                    - password
+                    - name
+                    - restaurantName
+                    - cuisineType
+                    - location
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    password:
+                      type: string
+                      minLength: 8
+                    name:
+                      type: string
+                    restaurantName:
+                      type: string
+                    cuisineType:
+                      type: string
+                    location:
+                      type: string
+    environment:
+      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - cognito-idp:SignUp
+          - cognito-idp:AdminConfirmSignUp
+          - cognito-idp:InitiateAuth
+          - cognito-idp:GetUser
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+        Resource: "*"
+
+  Login:
+    handler: src/auth/handlers/login.handler
+    events:
+      - http:
+          path: auth/login
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - email
+                    - password
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    password:
+                      type: string
+    environment:
+      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
+      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - cognito-idp:InitiateAuth
+          - cognito-idp:GetUser
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
+        Resource: "*"
+
+  # Menu management functions
+  UploadMenu:
+    handler: src/menu/handlers/upload-menu.handler
+    events:
+      - http:
+          path: menu/upload
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - fileName
+                    - fileType
+                    - fileSize
+                  properties:
+                    restaurantId:
+                      type: string
+                    fileName:
+                      type: string
+                    fileType:
+                      type: string
+                    fileSize:
+                      type: number
+          authorizer: aws_iam
+    environment:
+      MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: "*"
+
+  ParseMenu:
+    handler: src/menu/handlers/parse-menu.handler
+    events:
+      - http:
+          path: menu/parse
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - fileKey
+                    - fileType
+                  properties:
+                    restaurantId:
+                      type: string
+                    fileKey:
+                      type: string
+                    fileType:
+                      type: string
+                    fileId:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+      STAGE: ${self:provider.stage}
+      LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
+      LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          - dynamodb:BatchWriteItem
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - textract:DetectDocumentText
+          - textract:StartDocumentTextDetection
+          - textract:GetDocumentTextDetection
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+  # LLM integration functions
+  EnhanceMenuDescriptions:
+    handler: src/menu/handlers/enhance-menu-descriptions.handler
+    events:
+      - http:
+          path: menu/enhance-descriptions
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    itemId:
+                      type: string
+                    restaurantId:
+                      type: string
+                    category:
+                      type: string
+                    targetAudience:
+                      type: string
+                    enhancementStyle:
+                      type: string
+                    batchSize:
+                      type: number
+                    llmProvider:
+                      type: string
+                  oneOf:
+                    - required: ["itemId"]
+                    - required: ["restaurantId"]
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
+      LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+# Resources for AWS deployment (only used in AWS, not local)
+resources:
+  Resources:
+    userpool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:provider.stage}-user-pool
+    userpoolclient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:provider.stage}-user-pool-client
+        UserPoolId:
+          Ref: userpool
+    restaurantstable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-restaurants
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: restaurantId
+            KeyType: HASH
+    menufilesbucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        # WARNING: The stage name must be lowercase and only contain letters, numbers, and hyphens to be a valid S3 bucket name.
+        # If you use uppercase or invalid characters in your stage, deployment will fail.
+        BucketName: restaurant-menu-files-${self:provider.stage}
+    menufilestable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        # WARNING: The stage name must be lowercase and only contain letters, numbers, and hyphens to be a valid DynamoDB table name.
+        # If you use uppercase or invalid characters in your stage, deployment will fail.
+        TableName: restaurant-menu-files-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: fileId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fileId
+            KeyType: HASH
+    menuitemstable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-menu-items
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: itemId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: itemId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL

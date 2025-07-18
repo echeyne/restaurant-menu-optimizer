@@ -1,0 +1,11 @@
+Effect: Allow
+Action:
+  - cognito-idp:AdminCreateUser
+  - cognito-idp:AdminGetUser
+  - cognito-idp:AdminInitiateAuth
+  - cognito-idp:AdminRespondToAuthChallenge
+  - cognito-idp:AdminUpdateUserAttributes
+  - cognito-idp:AdminConfirmSignUp
+  - cognito-idp:AdminSetUserPassword
+Resource:
+  - arn:aws:cognito-idp:${self:provider.region}:*:userpool/*

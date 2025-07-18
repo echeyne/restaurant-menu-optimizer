@@ -1,0 +1,20 @@
+Effect: Allow
+Action:
+  - dynamodb:Query
+  - dynamodb:Scan
+  - dynamodb:GetItem
+  - dynamodb:PutItem
+  - dynamodb:UpdateItem
+  - dynamodb:DeleteItem
+  - dynamodb:BatchGetItem
+  - dynamodb:BatchWriteItem
+Resource:
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-restaurants
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-menu-items
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-menu-items/index/*
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-analytics
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-analytics/index/*
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-recommendations
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-recommendations/index/*
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-suggestions
+  - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.stage}-suggestions/index/*
