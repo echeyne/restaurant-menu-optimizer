@@ -444,6 +444,14 @@ resources:
       Type: AWS::Cognito::UserPool
       Properties:
         UserPoolName: ${self:provider.stage}-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        VerificationMessageTemplate:
+          DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailConfiguration:
+          EmailSendingAccount: COGNITO_DEFAULT
         Schema:
           - Name: restaurantName
             AttributeDataType: String
