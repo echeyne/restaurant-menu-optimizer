@@ -7,13 +7,12 @@ provider:
   name: aws
   runtime: nodejs20.x
   stage: ${opt:stage, 'local'}
-  region: us-east-1 # Use a valid AWS region string directly
+  region: us-east-1
   environment:
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
     LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
     LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
-    # Environment variables with conditional CloudFormation outputs based on stage
     USER_POOL_ID: ${self:custom.userPoolId}
     CLIENT_ID: ${self:custom.clientId}
     MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
@@ -32,11 +31,10 @@ plugins:
   - serverless-s3-local
 
 custom:
-  isDev: ${opt:stage, 'local'} == 'local'
-  # Conditional variables based on stage
-  userPoolId: ${env:USER_POOL_ID, 'dev-user-pool'}
-  clientId: ${env:CLIENT_ID, 'local-client-id'}
-  menuFilesBucket: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+  isLocal: ${opt:stage, 'local'} == 'local'
+  userPoolId: ${self:custom.isLocal, env.USER_POOL_ID, '${cf:${self:service}-${self:provider.stage}.UserPoolId}'}
+  clientId: ${self:custom.isLocal, env.CLIENT_ID, '${cf:${self:service}-${self:provider.stage}.UserPoolClientId}'}
+  menuFilesBucket: ${self:custom.isLocal, 'local-menu-files-bucket', '${cf:${self:service}-${self:provider.stage}.MenuFilesBucketName}'}
   dotenv:
     basePath: ${self:custom.basePath, './'}
     logging: true
@@ -63,7 +61,6 @@ custom:
       seed: true
     installPath: ./dynamodb_local
     noStart: false
-    # Skip installation via the plugin
     install: false
     tables:
       - TableName: ${self:provider.stage}-restaurants
@@ -101,14 +98,11 @@ custom:
             KeyType: HASH
   s3:
     port: 4569
-    # cors: true
-    # debug: true
     directory: /tmp
     buckets:
       - name: ${self:custom.menuFilesBucket}
 
 functions:
-  # Authentication functions
   PreSignUp:
     handler: src/auth/triggers/pre-signup.handler
     events:
@@ -132,7 +126,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-        Resource: "*" # Use '*' for local, override with real ARN in AWS
+        Resource: "*"  # Use '*' for local, override with real ARN in AWS
 
   RegisterRestaurant:
     handler: src/auth/handlers/register-restaurant.handler
@@ -279,7 +273,6 @@ functions:
           - cognito-idp:ConfirmSignUp
         Resource: "*"
 
-  # Menu management functions
   UploadMenu:
     handler: src/menu/handlers/upload-menu.handler
     events:
@@ -397,7 +390,6 @@ functions:
           - ssm:GetParameter
         Resource: "*"
 
-  # LLM integration functions
   EnhanceMenuDescriptions:
     handler: src/menu/handlers/enhance-menu-descriptions.handler
     events:
@@ -454,7 +446,6 @@ functions:
           - ssm:GetParameter
         Resource: "*"
 
-# Resources for AWS deployment (only used in AWS, not local)
 resources:
   Resources:
     userpool:
@@ -463,8 +454,6 @@ resources:
       UpdateReplacePolicy: Retain
       Properties:
         UserPoolName: ${self:provider.stage}-user-pool
-        # UsernameAttributes is immutable and cannot be updated after creation
-        # If you need to change this, you'll need to create a new User Pool
         UsernameAttributes:
           - email
         AutoVerifiedAttributes:
@@ -509,14 +498,10 @@ resources:
     menufilesbucket:
       Type: AWS::S3::Bucket
       Properties:
-        # WARNING: The stage name must be lowercase and only contain letters, numbers, and hyphens to be a valid S3 bucket name.
-        # If you use uppercase or invalid characters in your stage, deployment will fail.
         BucketName: restaurant-menu-files-${self:provider.stage}
     menufilestable:
       Type: AWS::DynamoDB::Table
       Properties:
-        # WARNING: The stage name must be lowercase and only contain letters, numbers, and hyphens to be a valid DynamoDB table name.
-        # If you use uppercase or invalid characters in your stage, deployment will fail.
         TableName: restaurant-menu-files-${self:provider.stage}
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
