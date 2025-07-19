@@ -32,6 +32,7 @@ coverage/
 .serverless/
 .aws-sam/
 .dynamodb/
+dynamodb_local/
 
 # Misc
 .kiro/

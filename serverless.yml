@@ -13,10 +13,10 @@ provider:
     REGION: ${self:provider.region}
     LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
     LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
-    # Local development environment variables
-    USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
-    CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
-    MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+    # Environment variables with conditional CloudFormation outputs based on stage
+    USER_POOL_ID: ${self:custom.userPoolId}
+    CLIENT_ID: ${self:custom.clientId}
+    MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
   apiGateway:
     shouldStartNameWithService: true
     apiKeys: []
@@ -33,14 +33,20 @@ plugins:
 
 custom:
   isDev: ${opt:stage, 'local'} == 'local'
+  # Conditional variables based on stage
+  userPoolId: ${env:USER_POOL_ID, 'dev-user-pool'}
+  clientId: ${env:CLIENT_ID, 'local-client-id'}
+  menuFilesBucket: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
   dotenv:
     basePath: ${self:custom.basePath, './'}
     logging: true
     include:
       - LLM_PROVIDER
       - LLM_MODEL
+      - LLM_API_KEY
       - CLIENT_ID
       - USER_POOL_ID
+      - MENU_FILES_BUCKET
   webpack:
     webpackConfig: ./config/webpack.config.js
     includeModules: true
@@ -49,13 +55,16 @@ custom:
     httpPort: 3000
   dynamodb:
     stages:
-      - dev
+      - local
     start:
       port: 8000
       inMemory: true
       migrate: true
       seed: true
-    installPath: .dynamodb
+    installPath: ./dynamodb_local
+    noStart: false
+    # Skip installation via the plugin
+    install: false
     tables:
       - TableName: ${self:provider.stage}-restaurants
         BillingMode: PAY_PER_REQUEST
@@ -82,13 +91,21 @@ custom:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
+      - TableName: restaurant-menu-files-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: fileId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fileId
+            KeyType: HASH
   s3:
     port: 4569
     # cors: true
     # debug: true
     directory: /tmp
     buckets:
-      - name: ${self:provider.stage}-menu-files
+      - name: ${self:custom.menuFilesBucket}
 
 functions:
   # Authentication functions
@@ -99,8 +116,8 @@ functions:
           pool: UserPool
           trigger: PreSignUp
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
-      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
 
   PostConfirmation:
     handler: src/auth/triggers/post-confirmation.handler
@@ -109,8 +126,8 @@ functions:
           pool: UserPool
           trigger: PostConfirmation
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'local-user-pool'}
-      CLIENT_ID: ${env:CLIENT_ID, 'local-client-id'}
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -161,7 +178,7 @@ functions:
                     location:
                       type: string
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
       CLIENT_ID: ${self:provider.environment.CLIENT_ID}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -208,7 +225,7 @@ functions:
                     password:
                       type: string
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
       CLIENT_ID: ${self:provider.environment.CLIENT_ID}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -253,7 +270,7 @@ functions:
                     confirmationCode:
                       type: string
     environment:
-      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
       CLIENT_ID: ${self:provider.environment.CLIENT_ID}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -300,7 +317,7 @@ functions:
                       type: number
           authorizer: aws_iam
     environment:
-      MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+      MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -352,10 +369,10 @@ functions:
                       type: string
           authorizer: aws_iam
     environment:
-      MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+      MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
       STAGE: ${self:provider.stage}
-      LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
-      LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
+      LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
+      LLM_MODEL: ${self:provider.environment.LLM_MODEL}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -423,8 +440,8 @@ functions:
           authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
-      LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
-      LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
+      LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
+      LLM_MODEL: ${self:provider.environment.LLM_MODEL}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -524,3 +541,16 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
+  Outputs:
+    UserPoolId:
+      Value:
+        Ref: userpool
+      Description: "ID of the Cognito User Pool"
+    UserPoolClientId:
+      Value:
+        Ref: userpoolclient
+      Description: "ID of the Cognito User Pool Client"
+    MenuFilesBucketName:
+      Value:
+        Ref: menufilesbucket
+      Description: "Name of the S3 bucket for menu files"

@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "deploy:dev": "serverless deploy --stage dev",
-    "deploy:prod": "serverless deploy --stage prod",
+    "deploy:dev": "serverless deploy --stage dev --config serverless.prod.yml",
+    "deploy:prod": "serverless deploy --stage prod --config serverless.prod.yml",
     "start:offline": "serverless offline start",
     "start:local": "npm run dynamodb:install && npm run s3:install && serverless offline",
-    "dynamodb:install": "serverless dynamodb install",
+    "start:local-with-scripts": "./local-dev-setup.sh",
+    "dynamodb:install": "./install-dynamodb-local.sh",
     "s3:install": "echo 'S3 local does not require install step'"
   },
   "dependencies": {

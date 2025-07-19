@@ -33,20 +33,21 @@ npx serverless offline
 ```
 
 ### 5. DynamoDB and S3 Emulation (Recommended)
-To run DynamoDB and S3 locally, install dependencies and start the emulators:
+To run DynamoDB and S3 locally, use our simplified setup script:
 
 ```sh
+# Install DynamoDB Local manually (only needed once)
 npm run dynamodb:install
-npm run s3:install # (no-op, but included for symmetry)
-```
 
-Then start the local environment:
-
-```sh
+# Start the local development environment
 npm run start:local
 ```
 
-This will launch Serverless Offline with local DynamoDB (port 8000) and S3 (port 4569).
+This will:
+1. Install DynamoDB Local directly from AWS (if not already installed)
+2. Start DynamoDB Local on port 8000
+3. Configure S3 Local on port 4569
+4. Launch Serverless Offline with all services connected
 
 ### 6. Using a .env File for Local Environment Variables
 

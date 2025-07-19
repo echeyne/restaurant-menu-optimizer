@@ -1,0 +1,4 @@
+custom:
+  userPoolId: ${cf:${self:service}-${self:provider.stage}.UserPoolId}
+  clientId: ${cf:${self:service}-${self:provider.stage}.UserPoolClientId}
+  menuFilesBucket: ${cf:${self:service}-${self:provider.stage}.MenuFilesBucketName}
