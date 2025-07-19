@@ -459,8 +459,12 @@ resources:
   Resources:
     userpool:
       Type: AWS::Cognito::UserPool
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         UserPoolName: ${self:provider.stage}-user-pool
+        # UsernameAttributes is immutable and cannot be updated after creation
+        # If you need to change this, you'll need to create a new User Pool
         UsernameAttributes:
           - email
         AutoVerifiedAttributes:
