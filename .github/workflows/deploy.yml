@@ -60,7 +60,12 @@ jobs:
 
       - name: Deploy to AWS
         if: github.ref == format('refs/heads/{0}', matrix.branch)
-        run: serverless deploy --stage ${{ matrix.stage }} --verbose
+        run: |
+          serverless deploy --stage ${{ matrix.stage }} \
+            --param="userPoolId=cf:restaurant-menu-optimizer-${{ matrix.stage }}.UserPoolId" \
+            --param="clientId=cf:restaurant-menu-optimizer-${{ matrix.stage }}.UserPoolClientId" \
+            --param="menuFilesBucket=cf:restaurant-menu-optimizer-${{ matrix.stage }}.MenuFilesBucketName" \
+            --verbose
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

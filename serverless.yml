@@ -31,10 +31,9 @@ plugins:
   - serverless-s3-local
 
 custom:
-  isLocal: ${opt:stage, 'local'} == 'local'
-  userPoolId: ${self:custom.isLocal, env.USER_POOL_ID, '${cf:${self:service}-${self:provider.stage}.UserPoolId}'}
-  clientId: ${self:custom.isLocal, env.CLIENT_ID, '${cf:${self:service}-${self:provider.stage}.UserPoolClientId}'}
-  menuFilesBucket: ${self:custom.isLocal, 'local-menu-files-bucket', '${cf:${self:service}-${self:provider.stage}.MenuFilesBucketName}'}
+  userPoolId: ${param:userPoolId, env:USER_POOL_ID, 'dev-user-pool'}
+  clientId: ${param:clientId, env:CLIENT_ID, 'local-client-id'}
+  menuFilesBucket: ${param:menuFilesBucket, env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
   dotenv:
     basePath: ${self:custom.basePath, './'}
     logging: true
