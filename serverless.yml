@@ -13,9 +13,9 @@ provider:
     REGION: ${self:provider.region}
     LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
     LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
-    USER_POOL_ID: ${self:custom.userPoolId}
-    CLIENT_ID: ${self:custom.clientId}
-    MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
+    USER_POOL_ID: ${cf:${self:service}-${self:provider.stage}.UserPoolId, env:USER_POOL_ID}
+    CLIENT_ID: ${cf:${self:service}-${self:provider.stage}.UserPoolClientId, env:CLIENT_ID}
+    MENU_FILES_BUCKET: ${cf:${self:service}-${self:provider.stage}.MenuFilesBucketName, env:MENU_FILES_BUCKET}
   apiGateway:
     shouldStartNameWithService: true
     apiKeys: []
