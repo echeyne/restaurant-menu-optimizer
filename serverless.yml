@@ -1,6 +1,5 @@
 service: restaurant-menu-optimizer
-
-useDotenv: ${self:custom.isDev, false}
+useDotenv: true
 
 frameworkVersion: '3'
 

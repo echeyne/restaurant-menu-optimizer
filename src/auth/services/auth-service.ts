@@ -46,8 +46,8 @@ export class AuthService {
           UserAttributes: [
             { Name: "email", Value: details.email },
             { Name: "name", Value: details.name },
-            { Name: "custom:restaurant_name", Value: details.restaurantName },
-            { Name: "custom:cuisine_type", Value: details.cuisineType },
+            { Name: "custom:restaurantName", Value: details.restaurantName },
+            { Name: "custom:cuisineType", Value: details.cuisineType },
             { Name: "custom:location", Value: details.location },
           ],
         })
