@@ -222,6 +222,46 @@ functions:
           - dynamodb:Scan
         Resource: "*"
 
+  ConfirmRegistration:
+    handler: src/auth/handlers/confirm-registration.handler
+    events:
+      - http:
+          path: auth/confirm-registration
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - email
+                    - confirmationCode
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    confirmationCode:
+                      type: string
+    environment:
+      USER_POOL_ID: ${env:USER_POOL_ID, 'dev-user-pool'}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - cognito-idp:ConfirmSignUp
+        Resource: "*"
+
   # Menu management functions
   UploadMenu:
     handler: src/menu/handlers/upload-menu.handler

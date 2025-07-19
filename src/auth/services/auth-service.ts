@@ -32,13 +32,14 @@ export class AuthService {
 
   /**
    * Register a new restaurant owner
+   * After registration, the user must confirm their email before logging in.
    */
   async registerRestaurant(
     details: RestaurantRegistration
-  ): Promise<AuthResponse> {
+  ): Promise<{ userConfirmed: boolean; message: string }> {
     try {
       // Sign up the user in Cognito
-      await this.cognito
+      const signUpResult = await this.cognito
         .signUp({
           ClientId: this.clientId,
           Username: details.email,
@@ -53,27 +54,51 @@ export class AuthService {
         })
         .promise();
 
-      // Automatically confirm the user for development purposes
-      // In production, users would need to verify their email
-      if (this.stage === "dev") {
-        await this.cognito
-          .adminConfirmSignUp({
-            UserPoolId: this.userPoolId,
-            Username: details.email,
-          })
-          .promise();
-      }
-
-      // Log the user in to get tokens
-      const authResult = await this.login({
-        email: details.email,
-        password: details.password,
-      });
-
-      return authResult;
+      // Do NOT log the user in. Require email confirmation first.
+      return {
+        userConfirmed: signUpResult.UserConfirmed || false,
+        message: signUpResult.UserConfirmed
+          ? "User already confirmed. You may log in."
+          : "Registration successful. Please check your email for a confirmation code to activate your account.",
+      };
     } catch (error) {
       console.error("Error registering restaurant:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Confirm a user's registration with the confirmation code sent to their email
+   */
+  async confirmRegistration(
+    email: string,
+    confirmationCode: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.cognito
+        .confirmSignUp({
+          ClientId: this.clientId,
+          Username: email,
+          ConfirmationCode: confirmationCode,
+        })
+        .promise();
+      return {
+        success: true,
+        message: "Email confirmed successfully. You may now log in.",
+      };
+    } catch (error: any) {
+      let message = "Error confirming registration.";
+      if (error.code === "CodeMismatchException") {
+        message = "Invalid confirmation code.";
+      } else if (error.code === "ExpiredCodeException") {
+        message = "Confirmation code has expired.";
+      } else if (error.code === "UserNotFoundException") {
+        message = "User not found.";
+      } else if (error.code === "NotAuthorizedException") {
+        message = "User is already confirmed.";
+      }
+      console.error("Error confirming registration:", error);
+      return { success: false, message };
     }
   }
 
@@ -112,7 +137,13 @@ export class AuthService {
         userId,
         restaurantId,
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle user not confirmed error
+      if (error.code === "UserNotConfirmedException") {
+        throw new Error(
+          "User has not confirmed their email. Please check your email for the confirmation code."
+        );
+      }
       console.error("Error logging in:", error);
       throw error;
     }

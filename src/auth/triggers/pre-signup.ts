@@ -26,7 +26,7 @@ export const handler: PreSignUpTriggerHandler = async (event) => {
     }
 
     // Auto-confirm the user (they will still need to verify their email)
-    event.response.autoConfirmUser = true;
+    // event.response.autoConfirmUser = true;
 
     return event;
   } catch (error) {
