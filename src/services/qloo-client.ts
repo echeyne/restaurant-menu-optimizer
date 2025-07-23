@@ -74,6 +74,100 @@ export interface TrendingItem {
 }
 
 /**
+ * Restaurant search request parameters
+ */
+export interface RestaurantSearchRequest {
+  query: string;
+  city: string;
+  state: string;
+  radius?: number;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Restaurant search result
+ */
+export interface QlooSearchResult {
+  name: string;
+  entity_id: string;
+  address: string;
+  price_level: number;
+  tags: QlooTag[];
+}
+
+export interface QlooTag {
+  name: string;
+  tag_id: string;
+  type: string;
+  value: string;
+}
+
+/**
+ * Similar restaurant search request parameters
+ */
+export interface SimilarRestaurantSearchRequest {
+  entityId: string;
+  minRating?: number;
+  radius?: number;
+  limit?: number;
+}
+
+/**
+ * Similar restaurant data
+ */
+export interface SimilarRestaurant {
+  name: string;
+  entityId: string;
+  address: string;
+  businessRating: number;
+  priceLevel: number;
+  specialtyDishes: string[];
+  keywords: KeywordData[];
+}
+
+export interface SpecialtyDish {
+  dishName: string;
+  tagId: string; // urn:tag:specialty_dish:place:*
+  restaurantCount: number;
+  popularity: number;
+}
+
+export interface KeywordData {
+  name: string;
+  count: number;
+}
+
+/**
+ * Demographics request parameters
+ */
+export interface DemographicsRequest {
+  entityId: string;
+}
+
+/**
+ * Demographics data response
+ */
+export interface DemographicsData {
+  ageGroups: AgeGroupData[];
+  interests: string[];
+  diningPatterns: DiningPattern[];
+  retrievedAt: string;
+}
+
+export interface AgeGroupData {
+  ageRange: string;
+  percentage: number;
+  preferences: string[];
+}
+
+export interface DiningPattern {
+  pattern: string;
+  frequency: number;
+  timeOfDay: string[];
+}
+
+/**
  * Qloo API Client for interacting with Qloo's Taste AI API
  */
 export class QlooClient {
@@ -336,14 +430,208 @@ export class QlooClient {
   }
 
   /**
+   * Search for restaurants using Qloo API
+   * @param request Restaurant search request
+   * @returns Array of restaurant search results
+   */
+  async searchRestaurants(
+    request: RestaurantSearchRequest
+  ): Promise<QlooSearchResult[]> {
+    return this.queueRequest(async () => {
+      try {
+        // Build query parameters according to requirements format:
+        // {{qloo-url}}/search?query={{restaurantName}}&filter.radius=10&operator.filter.tags=union&page=1&sort_by=match&filter.location={{restaurant city, restaurant state}}
+        const params = new URLSearchParams({
+          query: request.query,
+          "filter.radius": (request.radius || 10).toString(),
+          "operator.filter.tags": "union",
+          page: (request.page || 1).toString(),
+          sort_by: "match",
+          "filter.location": `${request.city}, ${request.state}`,
+        });
+
+        // Make GET request with query parameters
+        const response = await this.client.get<{ results: QlooSearchResult[] }>(
+          `/search?${params.toString()}`
+        );
+
+        // Return up to 10 results as per requirements
+        const results = response.data.results || [];
+        return results.slice(0, request.limit || 10);
+      } catch (error: any) {
+        console.error(
+          "Restaurant search error:",
+          error.response?.data || error.message
+        );
+        throw new Error(`Restaurant search failed: ${error.message}`);
+      }
+    });
+  }
+
+  /**
+   * Search for similar restaurants based on entity ID
+   * @param request Similar restaurant search request
+   * @returns Similar restaurant data with specialty dishes
+   */
+  async searchSimilarRestaurants(
+    request: SimilarRestaurantSearchRequest
+  ): Promise<{
+    restaurants: SimilarRestaurant[];
+    specialtyDishes: SpecialtyDish[];
+  }> {
+    return this.queueRequest(async () => {
+      try {
+        // Build query parameters for similar restaurant search
+        const params = new URLSearchParams({
+          "signal.interests.entities": request.entityId,
+          "filter.radius": (request.radius || 10).toString(),
+          limit: (request.limit || 20).toString(),
+        });
+
+        // Add minimum rating filter if provided
+        if (request.minRating) {
+          params.append(
+            "filter.business_rating.min",
+            request.minRating.toString()
+          );
+        }
+
+        // Make GET request to find similar restaurants
+        const response = await this.client.get<{
+          results: any[];
+          specialty_dishes?: any[];
+        }>(`/similar?${params.toString()}`);
+
+        const results = response.data.results || [];
+        const specialtyDishesData = response.data.specialty_dishes || [];
+
+        // Process similar restaurants
+        const restaurants: SimilarRestaurant[] = results.map((result: any) => ({
+          name: result.name || "",
+          entityId: result.entity_id || "",
+          address: result.address || "",
+          businessRating: result.business_rating || 0,
+          priceLevel: result.price_level || 0,
+          specialtyDishes: this.extractSpecialtyDishTags(result.tags || []),
+          keywords: result.keywords || [],
+        }));
+
+        // Process specialty dishes from API response
+        const specialtyDishes: SpecialtyDish[] = specialtyDishesData
+          .filter(
+            (dish: any) =>
+              dish.tag_id &&
+              dish.tag_id.includes("urn:tag:specialty_dish:place")
+          )
+          .map((dish: any) => ({
+            dishName: dish.name || "",
+            tagId: dish.tag_id || "",
+            restaurantCount: dish.restaurant_count || 0,
+            popularity: dish.popularity || 0,
+          }));
+
+        return {
+          restaurants,
+          specialtyDishes,
+        };
+      } catch (error: any) {
+        console.error(
+          "Similar restaurant search error:",
+          error.response?.data || error.message
+        );
+        throw new Error(`Similar restaurant search failed: ${error.message}`);
+      }
+    });
+  }
+
+  /**
+   * Get demographics data for a restaurant entity
+   * @param request Demographics request
+   * @returns Demographics data
+   */
+  async getDemographics(
+    request: DemographicsRequest
+  ): Promise<DemographicsData> {
+    return this.queueRequest(async () => {
+      try {
+        // Build query parameters according to requirements format:
+        // {{qloo-url}}/v2/insights?filter.type=urn:demographics&signal.interests.entities={{entityId}}
+        const params = new URLSearchParams({
+          "filter.type": "urn:demographics",
+          "signal.interests.entities": request.entityId,
+        });
+
+        // Make GET request to v2/insights endpoint
+        const response = await this.client.get<{
+          demographics?: {
+            age_groups?: any[];
+            interests?: string[];
+            dining_patterns?: any[];
+          };
+        }>(`/v2/insights?${params.toString()}`);
+
+        const demographicsData = response.data.demographics || {};
+
+        // Process age groups
+        const ageGroups: AgeGroupData[] = (
+          demographicsData.age_groups || []
+        ).map((group: any) => ({
+          ageRange: group.age_range || "",
+          percentage: group.percentage || 0,
+          preferences: group.preferences || [],
+        }));
+
+        // Process dining patterns
+        const diningPatterns: DiningPattern[] = (
+          demographicsData.dining_patterns || []
+        ).map((pattern: any) => ({
+          pattern: pattern.pattern || "",
+          frequency: pattern.frequency || 0,
+          timeOfDay: pattern.time_of_day || [],
+        }));
+
+        return {
+          ageGroups,
+          interests: demographicsData.interests || [],
+          diningPatterns,
+          retrievedAt: new Date().toISOString(),
+        };
+      } catch (error: any) {
+        console.error(
+          "Demographics data error:",
+          error.response?.data || error.message
+        );
+        throw new Error(`Demographics data retrieval failed: ${error.message}`);
+      }
+    });
+  }
+
+  /**
+   * Extract specialty dish tags from restaurant tags
+   * @param tags Array of tags from restaurant data
+   * @returns Array of specialty dish tag IDs
+   */
+  private extractSpecialtyDishTags(tags: QlooTag[]): string[] {
+    return tags
+      .filter(
+        (tag) =>
+          tag.tag_id && tag.tag_id.includes("urn:tag:specialty_dish:place")
+      )
+      .map((tag) => tag.tag_id);
+  }
+
+  /**
    * Make a request to the Qloo API with retry logic
    * @param endpoint API endpoint
-   * @param data Request data
+   * @param data Request data (optional for GET requests)
    * @returns Response data
    */
-  private async makeRequest<T>(endpoint: string, data: any): Promise<T> {
+  private async makeRequest<T>(endpoint: string, data?: any): Promise<T> {
     try {
-      const response = await this.client.post<T>(endpoint, data);
+      const response = data
+        ? await this.client.post<T>(endpoint, data)
+        : await this.client.get<T>(endpoint);
+
       // Reset retry count on success
       this.retryCount = 0;
       return response.data;

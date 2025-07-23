@@ -25,14 +25,7 @@ export const handler = async (
     const registrationData: RestaurantRegistration = JSON.parse(event.body);
 
     // Validate required fields
-    const requiredFields = [
-      "email",
-      "password",
-      "name",
-      "restaurantName",
-      "cuisineType",
-      "location",
-    ];
+    const requiredFields = ["email", "password"];
     for (const field of requiredFields) {
       if (!registrationData[field as keyof RestaurantRegistration]) {
         return createErrorResponse(400, `Missing required field: ${field}`);

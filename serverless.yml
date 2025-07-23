@@ -95,6 +95,141 @@ custom:
         KeySchema:
           - AttributeName: fileId
             KeyType: HASH
+      - TableName: ${self:provider.stage}-similar-restaurant-data
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: restaurantId
+            AttributeType: S
+          - AttributeName: qlooEntityId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: restaurantId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: qlooEntityId-index
+            KeySchema:
+              - AttributeName: qlooEntityId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+      - TableName: ${self:provider.stage}-demographics-data
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: restaurantId
+            AttributeType: S
+          - AttributeName: qlooEntityId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: restaurantId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: qlooEntityId-index
+            KeySchema:
+              - AttributeName: qlooEntityId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+      - TableName: ${self:provider.stage}-optimized-menu-items
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: itemId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: itemId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+      - TableName: ${self:provider.stage}-suggestions
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: suggestionId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: suggestionId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+      - TableName: ${self:provider.stage}-taste-profile-visualizations
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: visualizationId
+            AttributeType: S
+          - AttributeName: itemId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: visualizationId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: itemId-index
+            KeySchema:
+              - AttributeName: itemId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+      - TableName: ${self:provider.stage}-taste-profile-comparisons
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: comparisonId
+            AttributeType: S
+          - AttributeName: item1Id
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: comparisonId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: item-pair-index
+            KeySchema:
+              - AttributeName: item1Id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+      - TableName: ${self:provider.stage}-analytics
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: analyticsId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: analyticsId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
   s3:
     port: 4569
     directory: /tmp
@@ -127,6 +262,47 @@ functions:
           - dynamodb:PutItem
         Resource: "*"  # Use '*' for local, override with real ARN in AWS
 
+  RegisterUser:
+    handler: src/auth/handlers/register-user.handler
+    events:
+      - http:
+          path: auth/register-user
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - email
+                    - password
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                    password:
+                      type: string
+                      minLength: 8
+    environment:
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - cognito-idp:SignUp
+        Resource: "*"
+
   RegisterRestaurant:
     handler: src/auth/handlers/register-restaurant.handler
     events:
@@ -151,10 +327,6 @@ functions:
                   required:
                     - email
                     - password
-                    - name
-                    - restaurantName
-                    - cuisineType
-                    - location
                   properties:
                     email:
                       type: string
@@ -162,14 +334,6 @@ functions:
                     password:
                       type: string
                       minLength: 8
-                    name:
-                      type: string
-                    restaurantName:
-                      type: string
-                    cuisineType:
-                      type: string
-                    location:
-                      type: string
     environment:
       USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
       CLIENT_ID: ${self:provider.environment.CLIENT_ID}
@@ -270,6 +434,47 @@ functions:
       - Effect: Allow
         Action:
           - cognito-idp:ConfirmSignUp
+        Resource: "*"
+
+  RefreshToken:
+    handler: src/auth/handlers/refresh-token.handler
+    events:
+      - http:
+          path: auth/refresh-token
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - refreshToken
+                  properties:
+                    refreshToken:
+                      type: string
+    environment:
+      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
+      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - cognito-idp:InitiateAuth
+          - cognito-idp:GetUser
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - dynamodb:Scan
         Resource: "*"
 
   UploadMenu:
@@ -445,6 +650,599 @@ functions:
           - ssm:GetParameter
         Resource: "*"
 
+  SetupRestaurantProfile:
+    handler: src/restaurant/handlers/setup-restaurant-profile.handler
+    events:
+      - http:
+          path: restaurant/setup-profile
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - name
+                    - city
+                    - state
+                    - ownerId
+                  properties:
+                    name:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    ownerId:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Scan
+        Resource: "*"
+
+  SearchQlooRestaurants:
+    handler: src/restaurant/handlers/search-qloo-restaurants.handler
+    events:
+      - http:
+          path: restaurant/search-qloo
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantName
+                    - city
+                    - state
+                  properties:
+                    restaurantName:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+  SelectRestaurant:
+    handler: src/restaurant/handlers/select-restaurant.handler
+    events:
+      - http:
+          path: restaurant/select
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - qlooEntityId
+                  properties:
+                    restaurantId:
+                      type: string
+                    qlooEntityId:
+                      type: string
+                    address:
+                      type: string
+                    priceLevel:
+                      type: number
+                    genreTags:
+                      type: array
+                      items:
+                        type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+        Resource: "*"
+
+  SearchSimilarRestaurants:
+    handler: src/restaurant/handlers/search-similar-restaurants.handler
+    events:
+      - http:
+          path: restaurant/search-similar
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - qlooEntityId
+                  properties:
+                    restaurantId:
+                      type: string
+                    qlooEntityId:
+                      type: string
+                    minRating:
+                      type: number
+                      minimum: 1
+                      maximum: 5
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+  GetDemographics:
+    handler: src/restaurant/handlers/get-demographics.handler
+    events:
+      - http:
+          path: restaurant/demographics
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - qlooEntityId
+                  properties:
+                    restaurantId:
+                      type: string
+                    qlooEntityId:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+  OptimizationOptions:
+    handler: src/menu/handlers/optimization-options.handler
+    events:
+      - http:
+          path: menu/optimization-options
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              querystrings:
+                restaurantId: true
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: "*"
+
+  OptimizeExistingItems:
+    handler: src/menu/handlers/optimize-existing-items.handler
+    events:
+      - http:
+          path: menu/optimize-existing-items
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                  properties:
+                    restaurantId:
+                      type: string
+                    itemIds:
+                      type: array
+                      items:
+                        type: string
+                    optimizationStyle:
+                      type: string
+                      enum: ["casual", "upscale", "trendy", "traditional"]
+                    targetAudience:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
+      LLM_MODEL: ${self:provider.environment.LLM_MODEL}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+  SuggestNewItems:
+    handler: src/menu/handlers/suggest-new-items.handler
+    events:
+      - http:
+          path: menu/suggest-new-items
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                  properties:
+                    restaurantId:
+                      type: string
+                    maxSuggestions:
+                      type: number
+                      minimum: 1
+                      maximum: 10
+                    cuisineStyle:
+                      type: string
+                    priceRange:
+                      type: string
+                      enum: ["budget", "moderate", "upscale", "luxury"]
+                    excludeCategories:
+                      type: array
+                      items:
+                        type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
+      LLM_MODEL: ${self:provider.environment.LLM_MODEL}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          - dynamodb:BatchWriteItem
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+        
+  ReviewOptimizations:
+    handler: src/menu/handlers/review-optimizations.handler
+    events:
+      - http:
+          path: menu/review-optimizations
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              querystrings:
+                restaurantId: true
+                type: true
+          authorizer: aws_iam
+      - http:
+          path: menu/review-optimizations
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - type
+                    - itemId
+                    - status
+                  properties:
+                    restaurantId:
+                      type: string
+                    type:
+                      type: string
+                      enum: ["existing_items", "new_items"]
+                    itemId:
+                      type: string
+                    status:
+                      type: string
+                      enum: ["approved", "rejected"]
+                    feedback:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: "*"
+
+  AnalyzeTasteProfile:
+    handler: src/menu/handlers/analyze-taste-profile.handler
+    events:
+      - http:
+          path: menu/analyze-taste-profile
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    itemId:
+                      type: string
+                    restaurantId:
+                      type: string
+                    includeIngredients:
+                      type: boolean
+                    includeDietaryTags:
+                      type: boolean
+                    batchSize:
+                      type: number
+                      minimum: 1
+                      maximum: 25
+                  oneOf:
+                    - required: ["itemId"]
+                    - required: ["restaurantId"]
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          - dynamodb:PutItem
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+        Resource: "*"
+
+  CompareTasteProfiles:
+    handler: src/menu/handlers/compare-taste-profiles.handler
+    events:
+      - http:
+          path: menu/compare-taste-profiles
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - item1Id
+                    - item2Id
+                  properties:
+                    item1Id:
+                      type: string
+                    item2Id:
+                      type: string
+                    restaurantId:
+                      type: string
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          - dynamodb:PutItem
+        Resource: "*"
+
+  ScheduledAnalyticsUpdate:
+    handler: src/analytics/handlers/scheduled-analytics-update.handler
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+          description: "Update analytics data for all restaurants every hour"
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          - dynamodb:Scan
+        Resource: "*"
+
+  GetDashboardData:
+    handler: src/analytics/handlers/get-dashboard-data.handler
+    events:
+      - http:
+          path: analytics/dashboard
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              querystrings:
+                restaurantId: true
+                timeframe: false
+                page: false
+                limit: false
+          authorizer: aws_iam
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+          - dynamodb:Scan
+        Resource: "*"
+
 resources:
   Resources:
     userpool:
@@ -461,16 +1259,13 @@ resources:
           DefaultEmailOption: CONFIRM_WITH_CODE
         EmailConfiguration:
           EmailSendingAccount: COGNITO_DEFAULT
-        Schema:
-          - Name: restaurantName
-            AttributeDataType: String
-            Mutable: true
-          - Name: cuisineType
-            AttributeDataType: String
-            Mutable: true
-          - Name: location
-            AttributeDataType: String
-            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: false
     userpoolclient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
@@ -521,6 +1316,86 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: itemId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    similarrestaurantdatatable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-similar-restaurant-data
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: restaurantId
+            AttributeType: S
+          - AttributeName: qlooEntityId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: restaurantId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: qlooEntityId-index
+            KeySchema:
+              - AttributeName: qlooEntityId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    demographicsdatatable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-demographics-data
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: restaurantId
+            AttributeType: S
+          - AttributeName: qlooEntityId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: restaurantId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: qlooEntityId-index
+            KeySchema:
+              - AttributeName: qlooEntityId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    optimizedmenuitemstable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-optimized-menu-items
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: itemId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: itemId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    analyticstable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-analytics
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: analyticsId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: analyticsId
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: restaurantId-index

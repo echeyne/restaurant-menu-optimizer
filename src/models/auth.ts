@@ -5,10 +5,6 @@
 export interface RestaurantRegistration {
   email: string;
   password: string;
-  name: string;
-  restaurantName: string;
-  cuisineType: string;
-  location: string;
 }
 
 export interface LoginCredentials {

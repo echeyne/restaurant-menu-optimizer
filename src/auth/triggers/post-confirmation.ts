@@ -6,7 +6,8 @@ const dynamoDB = new DynamoDB.DocumentClient();
 
 /**
  * Post-confirmation Lambda trigger for Cognito
- * This function creates a restaurant record in DynamoDB after a user confirms their account
+ * This function logs the successful email confirmation
+ * Restaurant profile setup will happen later in the workflow
  */
 export const handler: PostConfirmationTriggerHandler = async (event) => {
   console.log("Post-confirmation event:", JSON.stringify(event, null, 2));
@@ -19,41 +20,19 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
 
     const { userAttributes } = event.request;
     const userId = event.userName;
-    const restaurantId = uuidv4();
-    const stage = process.env.STAGE || "dev";
 
-    // Create restaurant record in DynamoDB
-    const restaurantItem = {
-      restaurantId,
-      name: userAttributes.restaurant_name,
-      cuisine: userAttributes.cuisine_type,
-      location: userAttributes.location,
-      ownerId: userId,
-      createdAt: new Date().toISOString(),
-      settings: {
-        priceRange: "MEDIUM",
-        optimizationPreferences: {
-          prioritizePopularity: true,
-          prioritizeProfitability: true,
-          enhanceDescriptions: true,
-        },
-      },
-    };
+    console.log(
+      `User ${userId} with email ${userAttributes.email} has confirmed their account`
+    );
 
-    await dynamoDB
-      .put({
-        TableName: `${stage}-restaurants`,
-        Item: restaurantItem,
-      })
-      .promise();
-
-    console.log(`Created restaurant record with ID: ${restaurantId}`);
+    // Restaurant profile setup will happen later in the workflow
+    // No database operations needed at this stage
 
     return event;
   } catch (error) {
     console.error("Error in post-confirmation trigger:", error);
     // We don't want to block the user confirmation process if there's an error
-    // creating the restaurant record, so we log the error but don't throw it
+    // so we log the error but don't throw it
     return event;
   }
 };

@@ -105,7 +105,13 @@ export const handler = async (
     // Update menu item
     const updatedItem = await menuItemRepository.update(itemId, updates);
 
-    // Return updated menu item
+    // Check if this update affects optimization readiness
+    const optimizationReadiness =
+      await menuItemRepository.checkOptimizationReadiness(
+        existingItem.restaurantId
+      );
+
+    // Return updated menu item with optimization readiness info
     return {
       statusCode: 200,
       headers: {
@@ -115,6 +121,7 @@ export const handler = async (
       body: JSON.stringify({
         message: "Menu item updated successfully",
         menuItem: updatedItem,
+        optimizationReadiness,
       }),
     };
   } catch (error: any) {

@@ -27,6 +27,7 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
       ...restaurant,
       restaurantId: uuidv4(),
       createdAt: now,
+      profileSetupComplete: false,
     };
 
     return super.create(newRestaurant);
@@ -101,6 +102,63 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
       UpdateExpression: "SET settings = :settings",
       ExpressionAttributeValues: {
         ":settings": settings,
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await this.docClient.update(params).promise();
+    return result.Attributes as Restaurant;
+  }
+
+  /**
+   * Update restaurant with Qloo data
+   * @param restaurantId The ID of the restaurant
+   * @param qlooData The Qloo data to update
+   * @returns The updated restaurant
+   */
+  async updateWithQlooData(
+    restaurantId: string,
+    qlooData: {
+      qlooEntityId: string;
+      address: string;
+      priceLevel: number;
+      genreTags: string[];
+    }
+  ): Promise<Restaurant> {
+    const params = {
+      TableName: this.tableName,
+      Key: {
+        restaurantId,
+      },
+      UpdateExpression:
+        "SET qlooEntityId = :qlooEntityId, address = :address, priceLevel = :priceLevel, genreTags = :genreTags",
+      ExpressionAttributeValues: {
+        ":qlooEntityId": qlooData.qlooEntityId,
+        ":address": qlooData.address,
+        ":priceLevel": qlooData.priceLevel,
+        ":genreTags": qlooData.genreTags,
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await this.docClient.update(params).promise();
+    return result.Attributes as Restaurant;
+  }
+
+  /**
+   * Mark restaurant profile setup as complete
+   * @param restaurantId The ID of the restaurant
+   * @returns The updated restaurant
+   */
+  async markProfileSetupComplete(restaurantId: string): Promise<Restaurant> {
+    const params = {
+      TableName: this.tableName,
+      Key: {
+        restaurantId,
+      },
+      UpdateExpression: "SET profileSetupComplete = :complete",
+      ExpressionAttributeValues: {
+        ":complete": true,
       },
       ReturnValues: "ALL_NEW",
     };

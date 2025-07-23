@@ -8,11 +8,16 @@
  */
 export interface Restaurant {
   restaurantId: string; // PK
-  name: string;
-  cuisine: string;
-  location: string;
   ownerId: string;
+  name: string;
+  city: string;
+  state: string;
+  qlooEntityId?: string;
+  address?: string;
+  priceLevel?: number;
+  genreTags?: string[]; // e.g., ["urn:tag:genre:restaurant:mexican"]
   createdAt: string;
+  profileSetupComplete: boolean;
   settings?: RestaurantSettings;
 }
 
@@ -140,6 +145,7 @@ export interface MenuItemSuggestion {
   suggestedIngredients: string[];
   dietaryTags: string[];
   inspirationSource: string; // e.g., "trending items", "seasonal", "fusion"
+  basedOnSpecialtyDish?: string; // Reference to specialty dish that inspired this suggestion
   qlooTasteProfile?: any; // Will be replaced with proper type once Qloo API is integrated
   status: "pending" | "approved" | "rejected";
   createdAt: string;
@@ -162,12 +168,135 @@ export interface MenuFile {
 }
 
 /**
+ * Qloo search result interface
+ */
+export interface QlooSearchResult {
+  name: string;
+  entity_id: string;
+  address: string;
+  price_level: number;
+  tags: QlooTag[];
+}
+
+/**
+ * Qloo tag interface
+ */
+export interface QlooTag {
+  name: string;
+  tag_id: string;
+  type: string;
+  value: string;
+}
+
+/**
+ * Qloo restaurant data interface
+ */
+export interface QlooRestaurantData {
+  entityId: string;
+  address: string;
+  priceLevel: number;
+  genreTags: string[];
+}
+
+/**
+ * Similar restaurant data model
+ */
+export interface SimilarRestaurantData {
+  restaurantId: string; // PK
+  qlooEntityId: string; // GSI
+  similarRestaurants: SimilarRestaurant[];
+  specialtyDishes: SpecialtyDish[];
+  minRatingFilter: number;
+  retrievedAt: string;
+}
+
+/**
+ * Similar restaurant interface
+ */
+export interface SimilarRestaurant {
+  name: string;
+  entityId: string;
+  address: string;
+  businessRating: number;
+  priceLevel: number;
+  specialtyDishes: string[];
+  keywords: KeywordData[];
+}
+
+/**
+ * Specialty dish interface
+ */
+export interface SpecialtyDish {
+  dishName: string;
+  tagId: string; // urn:tag:specialty_dish:place:*
+  restaurantCount: number;
+  popularity: number;
+}
+
+/**
+ * Keyword data interface
+ */
+export interface KeywordData {
+  name: string;
+  count: number;
+}
+
+/**
+ * Demographics data model
+ */
+export interface DemographicsData {
+  restaurantId: string; // PK
+  qlooEntityId: string; // GSI
+  ageGroups: AgeGroupData[];
+  interests: string[];
+  diningPatterns: DiningPattern[];
+  retrievedAt: string;
+}
+
+/**
+ * Age group data interface
+ */
+export interface AgeGroupData {
+  ageRange: string;
+  percentage: number;
+  preferences: string[];
+}
+
+/**
+ * Dining pattern interface
+ */
+export interface DiningPattern {
+  pattern: string;
+  frequency: number;
+  timeOfDay: string[];
+}
+
+/**
+ * Optimized menu item model
+ */
+export interface OptimizedMenuItem {
+  itemId: string; // PK
+  restaurantId: string; // GSI
+  originalName: string;
+  optimizedName: string;
+  originalDescription: string;
+  optimizedDescription: string;
+  optimizationReason: string; // Explanation of why changes were made
+  demographicInsights: string[]; // Insights used for optimization
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+}
+
+/**
  * Table names for DynamoDB tables
  * These are used to reference the tables in the code
  */
 export const TableNames = {
   RESTAURANTS: process.env.STAGE + "-restaurants",
   MENU_ITEMS: process.env.STAGE + "-menu-items",
+  SIMILAR_RESTAURANT_DATA: process.env.STAGE + "-similar-restaurant-data",
+  DEMOGRAPHICS_DATA: process.env.STAGE + "-demographics-data",
+  OPTIMIZED_MENU_ITEMS: process.env.STAGE + "-optimized-menu-items",
   ANALYTICS: process.env.STAGE + "-analytics",
   RECOMMENDATIONS: process.env.STAGE + "-recommendations",
   SUGGESTIONS: process.env.STAGE + "-suggestions",
@@ -179,4 +308,5 @@ export const TableNames = {
  */
 export const IndexNames = {
   RESTAURANT_ID: "restaurantId-index",
+  QLOO_ENTITY_ID: "qlooEntityId-index",
 };

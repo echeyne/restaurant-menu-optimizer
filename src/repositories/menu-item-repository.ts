@@ -328,4 +328,68 @@ export class MenuItemRepository extends AbstractRepository<MenuItem> {
     const result = await this.docClient.query(params).promise();
     return (result.Items || []) as MenuItem[];
   }
+
+  /**
+   * Check if menu items are ready for optimization
+   * @param restaurantId The ID of the restaurant
+   * @returns Object containing readiness status and menu items count
+   */
+  async checkOptimizationReadiness(restaurantId: string): Promise<{
+    isReady: boolean;
+    menuItemsCount: number;
+    activeItemsCount: number;
+    message: string;
+  }> {
+    const menuItems = await this.getByRestaurantId(restaurantId);
+    const activeItems = menuItems.filter((item) => item.isActive);
+
+    if (menuItems.length === 0) {
+      return {
+        isReady: false,
+        menuItemsCount: 0,
+        activeItemsCount: 0,
+        message: "No menu items found. Please upload and parse a menu first.",
+      };
+    }
+
+    if (activeItems.length === 0) {
+      return {
+        isReady: false,
+        menuItemsCount: menuItems.length,
+        activeItemsCount: 0,
+        message:
+          "No active menu items found. Please ensure menu items are properly saved and active.",
+      };
+    }
+
+    return {
+      isReady: true,
+      menuItemsCount: menuItems.length,
+      activeItemsCount: activeItems.length,
+      message: `${activeItems.length} active menu items ready for optimization.`,
+    };
+  }
+
+  /**
+   * Get menu items ready for optimization (active items with basic information)
+   * @param restaurantId The ID of the restaurant
+   * @returns Array of menu items ready for optimization
+   */
+  async getItemsReadyForOptimization(
+    restaurantId: string
+  ): Promise<MenuItem[]> {
+    const params = {
+      TableName: this.tableName,
+      IndexName: IndexNames.RESTAURANT_ID,
+      KeyConditionExpression: "restaurantId = :restaurantId",
+      FilterExpression: "isActive = :isActive",
+      ExpressionAttributeValues: {
+        ":restaurantId": restaurantId,
+        ":isActive": true,
+      },
+    };
+
+    const result = await this.docClient.query(params).promise();
+    return (result.Items || []) as MenuItem[];
+  }
 }

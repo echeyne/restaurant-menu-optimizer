@@ -98,7 +98,7 @@ export const handler = async (
         await menuFileRepository.updateStatus(fileId, "processed");
       }
 
-      // Return the parsed menu items
+      // Return the parsed menu items with optimization options available
       return {
         statusCode: 200,
         headers: {
@@ -108,6 +108,22 @@ export const handler = async (
         body: JSON.stringify({
           message: "Menu parsed successfully",
           menuItems: savedItems,
+          nextStep: "optimization",
+          optimizationOptionsAvailable: true,
+          optimizationOptions: [
+            {
+              id: "optimize-existing",
+              title: "Optimize Existing Items",
+              description:
+                "Enhance dish names and descriptions based on demographic data",
+            },
+            {
+              id: "suggest-new-items",
+              title: "Suggest New Menu Items",
+              description:
+                "Generate new menu item suggestions based on similar restaurants",
+            },
+          ],
         }),
       };
     } catch (error: any) {

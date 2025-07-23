@@ -7,6 +7,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { S3, Lambda } from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { MenuFileRepository } from "../../repositories/menu-file-repository";
+import { RestaurantRepository } from "../../repositories/restaurant-repository";
 
 // Allowed file types for menu uploads
 const ALLOWED_FILE_TYPES = [
@@ -41,8 +42,9 @@ const FILE_EXTENSIONS_MAP: Record<string, string[]> = {
 // Maximum file size (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-// Create repository instance
+// Create repository instances
 const menuFileRepository = new MenuFileRepository();
+const restaurantRepository = new RestaurantRepository();
 
 /**
  * Handler for menu upload requests
@@ -68,6 +70,36 @@ export const handler = async (
         body: JSON.stringify({
           message:
             "Missing required parameters: restaurantId, fileName, fileType, fileSize",
+        }),
+      };
+    }
+
+    // Check if restaurant profile setup is complete
+    const restaurant = await restaurantRepository.getById(restaurantId);
+    if (!restaurant) {
+      return {
+        statusCode: 404,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          message: "Restaurant not found",
+        }),
+      };
+    }
+
+    if (!restaurant.profileSetupComplete) {
+      return {
+        statusCode: 403,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          message:
+            "Restaurant profile setup must be completed before uploading menu",
+          profileSetupComplete: false,
         }),
       };
     }

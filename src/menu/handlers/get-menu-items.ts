@@ -36,6 +36,8 @@ export const handler = async (
     const category = event.queryStringParameters?.category;
     const searchTerm = event.queryStringParameters?.search;
     const isActive = event.queryStringParameters?.isActive === "true";
+    const checkOptimizationReadiness =
+      event.queryStringParameters?.checkOptimizationReadiness === "true";
 
     // Create filters object
     const filters: Record<string, any> = { restaurantId };
@@ -57,16 +59,29 @@ export const handler = async (
     const menuItemRepository = new MenuItemRepository();
     const menuItems = await menuItemRepository.list(filters);
 
-    // Return menu items
+    // Check optimization readiness if requested
+    let optimizationReadiness;
+    if (checkOptimizationReadiness) {
+      optimizationReadiness =
+        await menuItemRepository.checkOptimizationReadiness(restaurantId);
+    }
+
+    // Return menu items with optional optimization readiness
+    const response: any = {
+      menuItems,
+    };
+
+    if (optimizationReadiness) {
+      response.optimizationReadiness = optimizationReadiness;
+    }
+
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({
-        menuItems,
-      }),
+      body: JSON.stringify(response),
     };
   } catch (error: any) {
     console.error("Error getting menu items:", error);

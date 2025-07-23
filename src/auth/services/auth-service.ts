@@ -31,6 +31,37 @@ export class AuthService {
   }
 
   /**
+   * Register a new user with email/password only
+   * After registration, the user must confirm their email before logging in.
+   */
+  async registerUser(
+    details: RestaurantRegistration
+  ): Promise<{ userConfirmed: boolean; message: string }> {
+    try {
+      // Sign up the user in Cognito with email/password only
+      const signUpResult = await this.cognito
+        .signUp({
+          ClientId: this.clientId,
+          Username: details.email,
+          Password: details.password,
+          UserAttributes: [{ Name: "email", Value: details.email }],
+        })
+        .promise();
+
+      // Do NOT log the user in. Require email confirmation first.
+      return {
+        userConfirmed: signUpResult.UserConfirmed || false,
+        message: signUpResult.UserConfirmed
+          ? "User already confirmed. You may log in."
+          : "Registration successful. Please check your email for a confirmation code to activate your account.",
+      };
+    } catch (error) {
+      console.error("Error registering user:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Register a new restaurant owner
    * After registration, the user must confirm their email before logging in.
    */
@@ -38,19 +69,13 @@ export class AuthService {
     details: RestaurantRegistration
   ): Promise<{ userConfirmed: boolean; message: string }> {
     try {
-      // Sign up the user in Cognito
+      // Sign up the user in Cognito with email/password only
       const signUpResult = await this.cognito
         .signUp({
           ClientId: this.clientId,
           Username: details.email,
           Password: details.password,
-          UserAttributes: [
-            { Name: "email", Value: details.email },
-            { Name: "name", Value: details.name },
-            { Name: "custom:restaurantName", Value: details.restaurantName },
-            { Name: "custom:cuisineType", Value: details.cuisineType },
-            { Name: "custom:location", Value: details.location },
-          ],
+          UserAttributes: [{ Name: "email", Value: details.email }],
         })
         .promise();
 
