@@ -215,14 +215,12 @@ export const handler = async (
 
           if (menuItem) {
             // Update with optimized content
-            const updatedMenuItem: MenuItem = {
-              ...menuItem,
+            const updates = {
               name: optimizedItem.optimizedName,
               description: optimizedItem.optimizedDescription,
-              updatedAt: new Date().toISOString(),
             };
 
-            await menuItemRepository.update(updatedMenuItem);
+            await menuItemRepository.update(menuItem.itemId, updates);
             message = "Optimized menu item approved and applied to menu";
           } else {
             message =

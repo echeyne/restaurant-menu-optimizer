@@ -15,7 +15,7 @@ export const handler: ScheduledHandler = async (
   console.log("Starting scheduled analytics update", {
     eventId: event.id,
     time: event.time,
-    requestId: context.requestId,
+    requestId: context.awsRequestId,
   });
 
   try {
