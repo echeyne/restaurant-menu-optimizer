@@ -1,7 +1,7 @@
 service: restaurant-menu-optimizer
 useDotenv: true
 
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: aws
@@ -13,14 +13,14 @@ provider:
     REGION: ${self:provider.region}
     LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
     LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
-    USER_POOL_ID: ${env:USER_POOL_ID, cf:${self:service}-${self:provider.stage}.UserPoolId}
-    CLIENT_ID: ${env:CLIENT_ID, cf:${self:service}-${self:provider.stage}.UserPoolClientId}
-    MENU_FILES_BUCKET: ${env:MENU_FILES_BUCKET, cf:${self:service}-${self:provider.stage}.MenuFilesBucketName}
+    USER_POOL_ID: ${self:custom.userPoolId}
+    CLIENT_ID: ${self:custom.clientId}
+    MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
   apiGateway:
     shouldStartNameWithService: true
     apiKeys: []
     binaryMediaTypes:
-      - 'multipart/form-data'
+      - "multipart/form-data"
 
 plugins:
   - serverless-dotenv-plugin
@@ -47,7 +47,7 @@ custom:
   webpack:
     webpackConfig: ./config/webpack.config.js
     includeModules: true
-    packager: 'npm'
+    packager: "npm"
   serverless-offline:
     httpPort: 3000
   dynamodb:
@@ -260,7 +260,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-        Resource: "*"  # Use '*' for local, override with real ARN in AWS
+        Resource: "*" # Use '*' for local, override with real ARN in AWS
 
   RegisterUser:
     handler: src/auth/handlers/register-user.handler
@@ -269,7 +269,7 @@ functions:
           path: auth/register-user
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -310,7 +310,7 @@ functions:
           path: auth/register
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -358,7 +358,7 @@ functions:
           path: auth/login
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -403,7 +403,7 @@ functions:
           path: auth/confirm-registration
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -443,7 +443,7 @@ functions:
           path: auth/refresh-token
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -484,7 +484,7 @@ functions:
           path: menu/upload
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -537,7 +537,7 @@ functions:
           path: menu/parse
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -601,7 +601,7 @@ functions:
           path: menu/enhance-descriptions
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -657,7 +657,7 @@ functions:
           path: restaurant/setup-profile
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -704,7 +704,7 @@ functions:
           path: restaurant/search-qloo
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -746,7 +746,7 @@ functions:
           path: restaurant/select
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -793,7 +793,7 @@ functions:
           path: restaurant/search-similar
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -843,7 +843,7 @@ functions:
           path: restaurant/demographics
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -889,7 +889,7 @@ functions:
           path: menu/optimization-options
           method: get
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -919,7 +919,7 @@ functions:
           path: menu/optimize-existing-items
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -972,7 +972,7 @@ functions:
           path: menu/suggest-new-items
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -1022,7 +1022,7 @@ functions:
         Action:
           - ssm:GetParameter
         Resource: "*"
-        
+
   ReviewOptimizations:
     handler: src/menu/handlers/review-optimizations.handler
     events:
@@ -1030,7 +1030,7 @@ functions:
           path: menu/review-optimizations
           method: get
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -1049,7 +1049,7 @@ functions:
           path: menu/review-optimizations
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -1100,7 +1100,7 @@ functions:
           path: menu/analyze-taste-profile
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -1154,7 +1154,7 @@ functions:
           path: menu/compare-taste-profiles
           method: post
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
@@ -1216,7 +1216,7 @@ functions:
           path: analytics/dashboard
           method: get
           cors:
-            origin: '*'
+            origin: "*"
             headers:
               - Content-Type
               - X-Amz-Date
