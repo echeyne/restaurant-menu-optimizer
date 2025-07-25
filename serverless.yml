@@ -1317,7 +1317,11 @@ resources:
               Principal: "*"
               Action: "s3:GetObject"
               Resource:
-                Fn::Sub: "${frontendwebsitebucket}/*"
+                Fn::Join:
+                  - ""
+                  - - "arn:aws:s3:::"
+                    - Ref: frontendwebsitebucket
+                    - "/*"
     menufilestable:
       Type: AWS::DynamoDB::Table
       Properties:
