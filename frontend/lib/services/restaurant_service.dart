@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/restaurant_models.dart';
 
 class RestaurantService {
-  static const String baseUrl = 'https://s44og49u9j.execute-api.us-east-1.amazonaws.com/dev';
+  static const String baseUrl = 'https://ofjfkha65m.execute-api.us-east-1.amazonaws.com/dev';
   
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();

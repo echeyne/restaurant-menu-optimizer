@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_models.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://s44og49u9j.execute-api.us-east-1.amazonaws.com/dev';
+  static const String baseUrl = 'https://ofjfkha65m.execute-api.us-east-1.amazonaws.com/dev';
   
   Future<AuthResponse> login(String email, String password) async {
     final response = await http.post(
