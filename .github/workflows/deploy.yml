@@ -67,15 +67,39 @@ jobs:
 
       - name: Deploy to AWS
         if: github.ref == format('refs/heads/{0}', matrix.branch)
-        # if: false
         run: |
           # Check if stack exists to determine if this is first deploy
           if aws cloudformation describe-stacks --stack-name restaurant-menu-optimizer-${{ matrix.stage }} --region us-east-1 2>/dev/null; then
-            echo "Stack exists, deploying with CloudFormation references..."
+            echo "Stack exists, resolving CloudFormation outputs..."
+            
+            # Get the actual values from CloudFormation outputs
+            USER_POOL_ID=$(aws cloudformation describe-stacks \
+              --stack-name restaurant-menu-optimizer-${{ matrix.stage }} \
+              --region us-east-1 \
+              --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' \
+              --output text)
+            
+            CLIENT_ID=$(aws cloudformation describe-stacks \
+              --stack-name restaurant-menu-optimizer-${{ matrix.stage }} \
+              --region us-east-1 \
+              --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' \
+              --output text)
+            
+            BUCKET_NAME=$(aws cloudformation describe-stacks \
+              --stack-name restaurant-menu-optimizer-${{ matrix.stage }} \
+              --region us-east-1 \
+              --query 'Stacks[0].Outputs[?OutputKey==`MenuFilesBucketName`].OutputValue' \
+              --output text)
+            
+            echo "Deploying with resolved values..."
+            echo "UserPoolId: $USER_POOL_ID"
+            echo "ClientId: $CLIENT_ID"
+            echo "MenuFilesBucket: $BUCKET_NAME"
+            
             serverless deploy --stage ${{ matrix.stage }} \
-              --param="userPoolId=cf:restaurant-menu-optimizer-${{ matrix.stage }}.UserPoolId" \
-              --param="clientId=cf:restaurant-menu-optimizer-${{ matrix.stage }}.UserPoolClientId" \
-              --param="menuFilesBucket=cf:restaurant-menu-optimizer-${{ matrix.stage }}.MenuFilesBucketName" \
+              --param="userPoolId=$USER_POOL_ID" \
+              --param="clientId=$CLIENT_ID" \
+              --param="menuFilesBucket=$BUCKET_NAME" \
               --verbose
           else
             echo "First deploy, using default values..."
@@ -117,5 +141,18 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync build/web s3://restaurant-menu-optimizer-frontend-dev/ --delete
+          # Get the frontend bucket name from CloudFormation outputs
+          FRONTEND_BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name restaurant-menu-optimizer-dev \
+            --region us-east-1 \
+            --query 'Stacks[0].Outputs[?OutputKey==`FrontendBucketName`].OutputValue' \
+            --output text)
+
+          if [ -z "$FRONTEND_BUCKET" ]; then
+            echo "Error: Could not retrieve frontend bucket name from CloudFormation stack"
+            exit 1
+          fi
+
+          echo "Deploying to S3 bucket: $FRONTEND_BUCKET"
+          aws s3 sync build/web s3://$FRONTEND_BUCKET/ --delete
         working-directory: ./frontend
