@@ -150,9 +150,20 @@ jobs:
 
           if [ -z "$FRONTEND_BUCKET" ]; then
             echo "Error: Could not retrieve frontend bucket name from CloudFormation stack"
+            echo "Please check your serverless.yml outputs section"
             exit 1
           fi
 
           echo "Deploying to S3 bucket: $FRONTEND_BUCKET"
           aws s3 sync build/web s3://$FRONTEND_BUCKET/ --delete
+
+          # Get and display the website URL
+          WEBSITE_URL=$(aws cloudformation describe-stacks \
+            --stack-name restaurant-menu-optimizer-dev \
+            --region us-east-1 \
+            --query 'Stacks[0].Outputs[?OutputKey==`FrontendWebsiteURL`].OutputValue' \
+            --output text)
+
+          echo "🚀 Frontend deployed successfully!"
+          echo "📱 Your website is available at: $WEBSITE_URL"
         working-directory: ./frontend

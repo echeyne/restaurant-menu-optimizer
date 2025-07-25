@@ -1293,6 +1293,31 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: restaurant-menu-files-${self:provider.stage}
+    frontendwebsitebucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: restaurant-menu-optimizer-frontend-${self:provider.stage}
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+    frontendwebsitebucketpolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: frontendwebsitebucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action: "s3:GetObject"
+              Resource:
+                Fn::Sub: "${frontendwebsitebucket}/*"
     menufilestable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -1417,3 +1442,13 @@ resources:
       Value:
         Ref: menufilesbucket
       Description: "Name of the S3 bucket for menu files"
+    FrontendBucketName:
+      Value:
+        Ref: frontendwebsitebucket
+      Description: "Name of the S3 bucket for frontend website"
+    FrontendWebsiteURL:
+      Value:
+        Fn::GetAtt:
+          - frontendwebsitebucket
+          - WebsiteURL
+      Description: "URL of the frontend website"
