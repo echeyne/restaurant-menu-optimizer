@@ -67,7 +67,7 @@ jobs:
 
       - name: Deploy to AWS
         if: github.ref == format('refs/heads/{0}', matrix.branch)
-        if: false
+        # if: false
         run: |
           # Check if stack exists to determine if this is first deploy
           if aws cloudformation describe-stacks --stack-name restaurant-menu-optimizer-${{ matrix.stage }} --region us-east-1 2>/dev/null; then
