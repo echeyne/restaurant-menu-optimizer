@@ -249,7 +249,8 @@ async function searchSimilarRestaurantsFromQloo(
   apiKey: string,
   minRating: number
 ): Promise<QlooSimilarRestaurant[]> {
-  const qlooBaseUrl = process.env.QLOO_API_URL || "https://api.qloo.com/v1";
+  const qlooBaseUrl =
+    process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
 
   // Construct similar restaurants search URL
   const searchUrl = `${qlooBaseUrl}/similar`;

@@ -12,7 +12,7 @@ provider:
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
     LLM_PROVIDER: ${env:LLM_PROVIDER, 'anthropic'}
-    LLM_MODEL: ${env:LLM_MODEL, 'claude-3-opus-20240229'}
+    LLM_MODEL: ${env:LLM_MODEL, 'claude-3-5-sonnet-20241022'}
     USER_POOL_ID: ${self:custom.userPoolId}
     CLIENT_ID: ${self:custom.clientId}
     MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
@@ -730,7 +730,7 @@ functions:
                       type: string
     environment:
       STAGE: ${self:provider.stage}
-      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -818,7 +818,7 @@ functions:
                       maximum: 5
     environment:
       STAGE: ${self:provider.stage}
-      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -863,7 +863,7 @@ functions:
                       type: string
     environment:
       STAGE: ${self:provider.stage}
-      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -1180,7 +1180,7 @@ functions:
           authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
-      QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
+      QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
     iamRoleStatements:
       - Effect: Allow
         Action:

@@ -187,7 +187,7 @@ export class QlooClient {
   constructor(config: QlooClientConfig = {}) {
     // Set default configuration values
     this.config = {
-      baseUrl: "https://api.qloo.com/v1",
+      baseUrl: "https://hackathon.api.qloo.com",
       maxRetries: 3,
       timeout: 30000, // 30 seconds
       rateLimitPerSecond: 5, // Maximum 5 requests per second

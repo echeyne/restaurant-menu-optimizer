@@ -77,7 +77,7 @@ export class LLMClient {
           this.config.model = "gpt-4-turbo";
           break;
         case LLMProvider.ANTHROPIC:
-          this.config.model = "claude-3-opus-20240229";
+          this.config.model = "claude-3-5-sonnet-20241022";
           break;
         case LLMProvider.GOOGLE:
           this.config.model = "gemini-pro";

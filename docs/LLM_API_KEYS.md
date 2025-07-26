@@ -71,14 +71,14 @@ The application reads the LLM provider and model from environment variables. You
 ```yaml
 environment:
   LLM_PROVIDER: "anthropic" # Options: 'anthropic', 'openai', 'google'
-  LLM_MODEL: "claude-3-opus-20240229" # Model name for the selected provider
+  LLM_MODEL: "claude-3-5-sonnet-20241022" # Model name for the selected provider
 ```
 
 Default values are:
 
 - Provider: `anthropic`
 - Models:
-  - Anthropic: `claude-3-opus-20240229`
+  - Anthropic: `claude-3-5-sonnet-20241022`
   - OpenAI: `gpt-4-turbo`
   - Google: `gemini-pro`
 

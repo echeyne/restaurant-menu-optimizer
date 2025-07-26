@@ -97,7 +97,8 @@ export const handler = async (
     const apiKey = await getQlooApiKey();
 
     // Construct Qloo API URL with proper format
-    const qlooBaseUrl = process.env.QLOO_API_URL || "https://api.qloo.com/v1";
+    const qlooBaseUrl =
+      process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
     const location = `${requestBody.city}, ${requestBody.state}`;
 
     const searchUrl = `${qlooBaseUrl}/search`;

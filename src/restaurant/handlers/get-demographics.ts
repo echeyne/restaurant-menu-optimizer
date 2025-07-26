@@ -229,7 +229,8 @@ async function getDemographicsFromQloo(
   entityId: string,
   apiKey: string
 ): Promise<QlooDemographicsResponse> {
-  const qlooBaseUrl = process.env.QLOO_API_URL || "https://api.qloo.com/v1";
+  const qlooBaseUrl =
+    process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
 
   // Construct demographics API URL as specified in requirements
   const demographicsUrl = `${qlooBaseUrl}/v2/insights`;
