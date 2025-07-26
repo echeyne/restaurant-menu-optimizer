@@ -8,19 +8,88 @@ class RestaurantProfileSetupScreen extends StatefulWidget {
   const RestaurantProfileSetupScreen({super.key});
 
   @override
-  State<RestaurantProfileSetupScreen> createState() => _RestaurantProfileSetupScreenState();
+  State<RestaurantProfileSetupScreen> createState() =>
+      _RestaurantProfileSetupScreenState();
 }
 
-class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScreen> {
+class _RestaurantProfileSetupScreenState
+    extends State<RestaurantProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
-  
+
   int _currentStep = 0;
   QlooSearchResult? _selectedRestaurant;
   double _minRating = 4.0;
-  
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Defer initialization to didChangeDependencies to access Provider
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final restaurantProvider =
+          Provider.of<RestaurantProvider>(context, listen: false);
+      Future.microtask(() async {
+        if (restaurantProvider.restaurant == null) {
+          final found = await restaurantProvider.getCurrentRestaurant();
+          if (found && mounted) {
+            final restaurant = restaurantProvider.restaurant;
+            if (restaurant != null) {
+              setState(() {
+                _nameController.text = restaurant.name;
+                _cityController.text = restaurant.city;
+                _stateController.text = restaurant.state;
+                if (restaurant.qlooEntityId != null &&
+                    restaurant.qlooEntityId!.isNotEmpty) {
+                  _currentStep = 3;
+                  if (restaurantProvider.similarRestaurants.isEmpty) {
+                    restaurantProvider.searchSimilarRestaurants(
+                        restaurant.qlooEntityId!, _minRating);
+                  }
+                } else {
+                  _currentStep = 1;
+                  if (restaurantProvider.searchResults.isEmpty) {
+                    restaurantProvider.searchQlooRestaurants(
+                        restaurant.name, restaurant.city, restaurant.state);
+                  }
+                }
+              });
+            }
+          }
+        } else {
+          final restaurant = restaurantProvider.restaurant;
+          if (restaurant != null) {
+            _nameController.text = restaurant.name;
+            _cityController.text = restaurant.city;
+            _stateController.text = restaurant.state;
+            if (restaurant.qlooEntityId != null &&
+                restaurant.qlooEntityId!.isNotEmpty) {
+              _currentStep = 3;
+              if (restaurantProvider.similarRestaurants.isEmpty) {
+                restaurantProvider.searchSimilarRestaurants(
+                    restaurant.qlooEntityId!, _minRating);
+              }
+            } else {
+              _currentStep = 1;
+              if (restaurantProvider.searchResults.isEmpty) {
+                restaurantProvider.searchQlooRestaurants(
+                    restaurant.name, restaurant.city, restaurant.state);
+              }
+            }
+          }
+        }
+        _initialized = true;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -71,7 +140,8 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: details.onStepContinue,
-                    child: Text(details.stepIndex == 3 ? 'Complete Setup' : 'Continue'),
+                    child: Text(
+                        details.stepIndex == 3 ? 'Complete Setup' : 'Continue'),
                   ),
                 ],
               );
@@ -89,27 +159,35 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
                 title: const Text('Restaurant Information'),
                 content: _buildRestaurantInfoStep(),
                 isActive: _currentStep >= 0,
-                state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                state:
+                    _currentStep > 0 ? StepState.complete : StepState.indexed,
               ),
               Step(
                 title: const Text('Find Your Restaurant'),
                 content: _buildQlooSearchStep(restaurantProvider),
                 isActive: _currentStep >= 1,
-                state: _currentStep > 1 ? StepState.complete : 
-                       _currentStep == 1 ? StepState.indexed : StepState.disabled,
+                state: _currentStep > 1
+                    ? StepState.complete
+                    : _currentStep == 1
+                        ? StepState.indexed
+                        : StepState.disabled,
               ),
               Step(
                 title: const Text('Select Restaurant'),
                 content: _buildRestaurantSelectionStep(restaurantProvider),
                 isActive: _currentStep >= 2,
-                state: _currentStep > 2 ? StepState.complete : 
-                       _currentStep == 2 ? StepState.indexed : StepState.disabled,
+                state: _currentStep > 2
+                    ? StepState.complete
+                    : _currentStep == 2
+                        ? StepState.indexed
+                        : StepState.disabled,
               ),
               Step(
                 title: const Text('Find Similar Restaurants'),
                 content: _buildSimilarRestaurantsStep(restaurantProvider),
                 isActive: _currentStep >= 3,
-                state: _currentStep == 3 ? StepState.indexed : StepState.disabled,
+                state:
+                    _currentStep == 3 ? StepState.indexed : StepState.disabled,
               ),
             ],
           );
@@ -170,6 +248,7 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
               return null;
             },
           ),
+          const SizedBox(height: 24), // Add padding below state input
         ],
       ),
     );
@@ -205,7 +284,7 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
           Icon(Icons.search, size: 48),
           SizedBox(height: 16),
           Text(
-            'Searching for your restaurant in our database...',
+            'No matching restaurants found. You can continue with manual setup.',
             textAlign: TextAlign.center,
           ),
         ],
@@ -221,37 +300,37 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
         ),
         const SizedBox(height: 16),
         ...provider.searchResults.map((result) => Card(
-          child: ListTile(
-            title: Text(result.name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(result.address),
-                const SizedBox(height: 4),
-                Row(
+              child: ListTile(
+                title: Text(result.name),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.attach_money, size: 16),
-                    Text('Price Level: ${result.priceLevel}'),
+                    Text(result.address),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.attach_money, size: 16),
+                        Text('Price Level: ${result.priceLevel}'),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-            trailing: Radio<QlooSearchResult>(
-              value: result,
-              groupValue: _selectedRestaurant,
-              onChanged: (value) {
-                setState(() {
-                  _selectedRestaurant = value;
-                });
-              },
-            ),
-            onTap: () {
-              setState(() {
-                _selectedRestaurant = result;
-              });
-            },
-          ),
-        )),
+                trailing: Radio<QlooSearchResult>(
+                  value: result,
+                  groupValue: _selectedRestaurant,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRestaurant = value;
+                    });
+                  },
+                ),
+                onTap: () {
+                  setState(() {
+                    _selectedRestaurant = result;
+                  });
+                },
+              ),
+            )),
         if (provider.searchResults.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Divider(),
@@ -295,7 +374,8 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
               children: [
                 Text(
                   _selectedRestaurant!.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -315,7 +395,8 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
                 ),
                 if (_selectedRestaurant!.tags.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  const Text('Cuisine Types:', style: TextStyle(fontWeight: FontWeight.w500)),
+                  const Text('Cuisine Types:',
+                      style: TextStyle(fontWeight: FontWeight.w500)),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 8,
@@ -323,7 +404,9 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
                         .where((tag) => tag.type.contains('genre'))
                         .map((tag) => Chip(
                               label: Text(tag.name),
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
                             ))
                         .toList(),
                   ),
@@ -396,15 +479,18 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
                         Text(restaurant.address),
                         Row(
                           children: [
-                            const Icon(Icons.star, size: 16, color: Colors.amber),
-                            Text(' ${restaurant.businessRating.toStringAsFixed(1)}'),
+                            const Icon(Icons.star,
+                                size: 16, color: Colors.amber),
+                            Text(
+                                ' ${restaurant.businessRating.toStringAsFixed(1)}'),
                             const SizedBox(width: 16),
                             const Icon(Icons.attach_money, size: 16),
                             Text(' Level ${restaurant.priceLevel}'),
                           ],
                         ),
                         if (restaurant.specialtyDishes.isNotEmpty)
-                          Text('Specialty: ${restaurant.specialtyDishes.first}'),
+                          Text(
+                              'Specialty: ${restaurant.specialtyDishes.first}'),
                       ],
                     ),
                   ),
@@ -431,7 +517,8 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
                 Expanded(
                   child: Text(
                     'Error: ${provider.error}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ),
               ],
@@ -446,24 +533,34 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
     switch (_currentStep) {
       case 0:
         if (_formKey.currentState!.validate()) {
-          await _setupRestaurantProfile(provider);
+          final success = await _setupRestaurantProfile(provider);
+          setState(() {
+            _currentStep = 1;
+          });
+          await _searchQlooRestaurants(provider);
         }
         break;
       case 1:
         if (provider.searchResults.isEmpty) {
           await _searchQlooRestaurants(provider);
-        } else {
-          setState(() {
-            _currentStep = 2;
-          });
         }
+        setState(() {
+          _currentStep = 2;
+        });
         break;
       case 2:
         if (_selectedRestaurant != null) {
-          await _selectRestaurant(provider);
+          final success = await _selectRestaurant(provider);
+          if (success) {
+            setState(() {
+              _currentStep = 3;
+            });
+            await _searchSimilarRestaurants(provider);
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select a restaurant to continue')),
+            const SnackBar(
+                content: Text('Please select a restaurant to continue')),
           );
         }
         break;
@@ -473,39 +570,34 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
     }
   }
 
-  Future<void> _setupRestaurantProfile(RestaurantProvider provider) async {
+  Future<bool> _setupRestaurantProfile(RestaurantProvider provider) async {
     final success = await provider.setupRestaurantProfile(
       _nameController.text.trim(),
       _cityController.text.trim(),
       _stateController.text.trim(),
     );
-
-    if (success) {
-      setState(() {
-        _currentStep = 1;
-      });
-      await _searchQlooRestaurants(provider);
-    } else {
-      _showErrorSnackBar(provider.error ?? 'Failed to setup restaurant profile');
+    if (!success) {
+      _showErrorSnackBar(
+          provider.error ?? 'Failed to setup restaurant profile');
     }
+    return success;
   }
 
-  Future<void> _searchQlooRestaurants(RestaurantProvider provider) async {
+  Future<bool> _searchQlooRestaurants(RestaurantProvider provider) async {
     provider.clearError();
     final success = await provider.searchQlooRestaurants(
       _nameController.text.trim(),
       _cityController.text.trim(),
       _stateController.text.trim(),
     );
-
     if (!success && provider.error != null) {
       _showErrorSnackBar(provider.error!);
     }
+    return success;
   }
 
-  Future<void> _selectRestaurant(RestaurantProvider provider) async {
-    if (_selectedRestaurant == null) return;
-
+  Future<bool> _selectRestaurant(RestaurantProvider provider) async {
+    if (_selectedRestaurant == null) return false;
     final restaurantData = QlooRestaurantData(
       entityId: _selectedRestaurant!.entityId,
       address: _selectedRestaurant!.address,
@@ -515,20 +607,14 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
           .map((tag) => tag.tagId)
           .toList(),
     );
-
     final success = await provider.selectRestaurant(
       _selectedRestaurant!.entityId,
       restaurantData,
     );
-
-    if (success) {
-      setState(() {
-        _currentStep = 3;
-      });
-      await _searchSimilarRestaurants(provider);
-    } else {
+    if (!success) {
       _showErrorSnackBar(provider.error ?? 'Failed to select restaurant');
     }
+    return success;
   }
 
   Future<void> _searchSimilarRestaurants(RestaurantProvider provider) async {
@@ -545,8 +631,9 @@ class _RestaurantProfileSetupScreenState extends State<RestaurantProfileSetupScr
     if (_selectedRestaurant == null) return;
 
     // Get demographics data
-    final demographicsSuccess = await provider.getDemographics(_selectedRestaurant!.entityId);
-    
+    final demographicsSuccess =
+        await provider.getDemographics(_selectedRestaurant!.entityId);
+
     if (demographicsSuccess || provider.similarRestaurants.isNotEmpty) {
       // Setup is complete, navigate to menu management
       if (mounted) {

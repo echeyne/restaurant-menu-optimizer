@@ -233,6 +233,25 @@ export class AuthService {
   }
 
   /**
+   * Get the current user ID from the authorization header
+   * @param authorizationHeader The Authorization header from the request
+   * @returns The user ID if valid, null otherwise
+   */
+  async getCurrentUserId(authorizationHeader: string): Promise<string | null> {
+    try {
+      if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
+        return null;
+      }
+
+      const accessToken = authorizationHeader.replace("Bearer ", "");
+      return await this.getUserIdFromToken(accessToken);
+    } catch (error) {
+      console.error("Error getting current user ID:", error);
+      return null;
+    }
+  }
+
+  /**
    * Get the restaurant ID associated with a user
    */
   private async getRestaurantIdForUser(
