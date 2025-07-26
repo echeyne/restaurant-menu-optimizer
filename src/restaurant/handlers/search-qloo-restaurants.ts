@@ -40,6 +40,14 @@ interface QlooApiResponse {
 }
 
 /**
+ * Geocoding API response interface
+ */
+interface GeocodeResult {
+  lat: number;
+  lng: number;
+}
+
+/**
  * Lambda handler for searching Qloo restaurants
  * @param event API Gateway event
  * @returns API Gateway response
@@ -96,10 +104,15 @@ export const handler = async (
     // Get Qloo API key from Parameter Store
     const apiKey = await getQlooApiKey();
 
+    // Geocode the city and state to get latitude,longitude
+    const geocodeResult = await geocodeLocation(
+      requestBody.city,
+      requestBody.state
+    );
+
     // Construct Qloo API URL with proper format
     const qlooBaseUrl =
       process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
-    const location = `${requestBody.city}, ${requestBody.state}`;
 
     const searchUrl = `${qlooBaseUrl}/search`;
     const searchParams = new URLSearchParams({
@@ -108,8 +121,15 @@ export const handler = async (
       "operator.filter.tags": "union",
       page: "1",
       sort_by: "match",
-      "filter.location": location,
     });
+
+    // Add location filter only if geocoding was successful
+    if (geocodeResult) {
+      searchParams.set(
+        "filter.location",
+        `${geocodeResult.lat},${geocodeResult.lng}`
+      );
+    }
 
     const fullUrl = `${searchUrl}?${searchParams.toString()}`;
 
@@ -139,11 +159,15 @@ export const handler = async (
       })
     );
 
+    const locationText = geocodeResult
+      ? `${requestBody.city}, ${requestBody.state} (${geocodeResult.lat},${geocodeResult.lng})`
+      : `${requestBody.city}, ${requestBody.state}`;
+
     const searchResponse: SearchQlooRestaurantsResponse = {
       success: true,
       restaurants: formattedRestaurants,
       totalResults: response.data.meta?.total || formattedRestaurants.length,
-      message: `Found ${formattedRestaurants.length} restaurants matching "${requestBody.restaurantName}" in ${location}`,
+      message: `Found ${formattedRestaurants.length} restaurants matching "${requestBody.restaurantName}" in ${locationText}`,
     };
 
     return {
@@ -196,6 +220,51 @@ export const handler = async (
     };
   }
 };
+
+/**
+ * Geocode a city and state to latitude,longitude coordinates
+ * Uses OpenStreetMap Nominatim API (free, no API key required)
+ * @param city City name
+ * @param state State name
+ * @returns GeocodeResult with lat/lng or null if geocoding fails
+ */
+async function geocodeLocation(
+  city: string,
+  state: string
+): Promise<GeocodeResult | null> {
+  try {
+    const query = encodeURIComponent(`${city}, ${state}, USA`);
+    const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&countrycodes=us`;
+
+    console.log(`Geocoding location: ${city}, ${state}`);
+
+    const response = await axios.get(geocodeUrl, {
+      headers: {
+        "User-Agent": "RestaurantMenuOptimizer/1.0",
+      },
+      timeout: 10000, // 10 seconds timeout
+    });
+
+    if (response.data && response.data.length > 0) {
+      const result = response.data[0];
+      const geocodeResult: GeocodeResult = {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
+      };
+
+      console.log(
+        `Geocoded ${city}, ${state} to ${geocodeResult.lat},${geocodeResult.lng}`
+      );
+      return geocodeResult;
+    } else {
+      console.log(`No geocoding results found for ${city}, ${state}`);
+      return null;
+    }
+  } catch (error: any) {
+    console.error(`Geocoding failed for ${city}, ${state}:`, error.message);
+    return null;
+  }
+}
 
 /**
  * Get Qloo API key from AWS Parameter Store
