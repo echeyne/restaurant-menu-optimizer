@@ -155,20 +155,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  Future<bool> refreshToken() async {
-    try {
-      final response = await _authService.refreshToken();
-      _token = response.accessToken;
-      _refreshToken = response.refreshToken;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _setError(e.toString());
-      // If refresh fails, logout the user
-      await logout();
-      return false;
-    }
-  }
   
   // Initialize the auth state from stored tokens
   Future<void> initialize() async {

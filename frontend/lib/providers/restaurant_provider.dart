@@ -125,7 +125,7 @@ class RestaurantProvider extends ChangeNotifier {
 
       final data = await _restaurantService.searchSimilarRestaurants(
           restaurantId, entityId, minRating);
-      _similarRestaurants = data.similarRestaurants;
+      _similarRestaurants = data;
       notifyListeners();
       return true;
     } catch (e) {
