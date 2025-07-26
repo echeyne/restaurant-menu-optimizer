@@ -897,7 +897,6 @@ functions:
             parameters:
               paths:
                 restaurantId: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -922,7 +921,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:

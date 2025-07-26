@@ -5,6 +5,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { AuthService } from "../../auth/services/auth-service";
+import { createResponse, createErrorResponse } from "../../models/api";
 
 /**
  * Handler for get current restaurant requests
@@ -14,6 +15,13 @@ import { AuthService } from "../../auth/services/auth-service";
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  console.log("Get current restaurant event:", JSON.stringify(event, null, 2));
+
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   try {
     // Get user ID from the JWT token
     const authService = new AuthService();
@@ -22,16 +30,7 @@ export const handler = async (
     );
 
     if (!userId) {
-      return {
-        statusCode: 401,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Unauthorized: Invalid or missing token",
-        }),
-      };
+      return createErrorResponse(401, "Unauthorized: Invalid or missing token");
     }
 
     // Get restaurant from repository by owner ID
@@ -40,42 +39,22 @@ export const handler = async (
 
     // Check if restaurant exists
     if (!restaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "No restaurant found for the current user",
-        }),
-      };
+      return createErrorResponse(
+        404,
+        "No restaurant found for the current user"
+      );
     }
 
     // Return restaurant
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        restaurant,
-      }),
-    };
+    return createResponse(200, { restaurant });
   } catch (error: any) {
     console.error("Error getting current restaurant:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error getting current restaurant",
-        error: error.message || String(error),
-      }),
-    };
+    return createErrorResponse(
+      500,
+      "Error getting current restaurant",
+      undefined,
+      process.env.STAGE === "dev" ? error.message : undefined
+    );
   }
 };

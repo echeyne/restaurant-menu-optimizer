@@ -5,6 +5,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { AuthService } from "../../auth/services/auth-service";
+import { createResponse, createErrorResponse } from "../../models/api";
 
 /**
  * Handler for get restaurant requests
@@ -14,22 +15,23 @@ import { AuthService } from "../../auth/services/auth-service";
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  console.log("Get restaurant event:", JSON.stringify(event, null, 2));
+
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   try {
     // Get restaurant ID from path parameters
     const restaurantId = event.pathParameters?.restaurantId;
 
     // Validate restaurant ID
     if (!restaurantId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required parameter: restaurantId",
-        }),
-      };
+      return createErrorResponse(
+        400,
+        "Missing required parameter: restaurantId"
+      );
     }
 
     // Get user ID from the JWT token for authorization
@@ -39,16 +41,7 @@ export const handler = async (
     );
 
     if (!userId) {
-      return {
-        statusCode: 401,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Unauthorized: Invalid or missing token",
-        }),
-      };
+      return createErrorResponse(401, "Unauthorized: Invalid or missing token");
     }
 
     // Get restaurant from repository
@@ -57,56 +50,30 @@ export const handler = async (
 
     // Check if restaurant exists
     if (!restaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Restaurant with ID ${restaurantId} not found`,
-        }),
-      };
+      return createErrorResponse(
+        404,
+        `Restaurant with ID ${restaurantId} not found`
+      );
     }
 
     // Check if the user is authorized to access this restaurant
     if (restaurant.ownerId !== userId) {
-      return {
-        statusCode: 403,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Forbidden: You can only access your own restaurants",
-        }),
-      };
+      return createErrorResponse(
+        403,
+        "Forbidden: You can only access your own restaurants"
+      );
     }
 
     // Return restaurant
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        restaurant,
-      }),
-    };
+    return createResponse(200, { restaurant });
   } catch (error: any) {
     console.error("Error getting restaurant:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error getting restaurant",
-        error: error.message || String(error),
-      }),
-    };
+    return createErrorResponse(
+      500,
+      "Error getting restaurant",
+      undefined,
+      process.env.STAGE === "dev" ? error.message : undefined
+    );
   }
 };
