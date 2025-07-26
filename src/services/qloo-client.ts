@@ -229,7 +229,7 @@ export class QlooClient {
   private async loadApiKey(): Promise<string> {
     try {
       const stage = process.env.STAGE || "dev";
-      const paramName = `${stage}/qloo/api-key`;
+      const paramName = `/${stage}/qloo/api-key`;
 
       const response = await this.ssm
         .getParameter({

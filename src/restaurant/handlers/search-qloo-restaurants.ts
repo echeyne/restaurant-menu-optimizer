@@ -208,7 +208,7 @@ async function getQlooApiKey(): Promise<string> {
     });
 
     const stage = process.env.STAGE || "dev";
-    const paramName = `${stage}/qloo/api-key`;
+    const paramName = `/${stage}/qloo/api-key`;
 
     const response = await ssm
       .getParameter({
