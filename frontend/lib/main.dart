@@ -25,7 +25,11 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => RestaurantProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, RestaurantProvider>(
+          create: (context) => RestaurantProvider(context.read<AuthProvider>()),
+          update: (context, authProvider, previous) => 
+              previous ?? RestaurantProvider(authProvider),
+        ),
         ChangeNotifierProvider(create: (_) => MenuProvider()),
       ],
       child: MaterialApp(

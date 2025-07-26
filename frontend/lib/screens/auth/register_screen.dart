@@ -74,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Condition.largerThan(name: TABLET, value: 500),
                 ],
                 defaultValue: 450,
-              ).value!,
+              ).value,
             ),
             child: Card(
               child: Padding(
@@ -174,9 +174,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
+                              color: Colors.green.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.green.withOpacity(0.3)),
+                              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [
@@ -241,12 +241,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           return ElevatedButton(
                             onPressed: (authProvider.isLoading || _showSuccessMessage) ? null : _handleRegister,
                             child: _showSuccessMessage
-                                ? Row(
+                                ? const Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.check, size: 20),
-                                      const SizedBox(width: 8),
-                                      const Text('Success!'),
+                                      SizedBox(width: 8),
+                                      Text('Success!'),
                                     ],
                                   )
                                 : authProvider.isLoading

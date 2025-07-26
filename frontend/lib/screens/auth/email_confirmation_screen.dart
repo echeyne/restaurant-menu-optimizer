@@ -28,7 +28,7 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
   }
 
   Future<void> _handleConfirmCode() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? false) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.confirmEmail(
         widget.email,
@@ -87,7 +87,7 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
                   const Condition.largerThan(name: TABLET, value: 500),
                 ],
                 defaultValue: 450,
-              ).value!,
+              ).value,
             ),
             child: Card(
               child: Padding(

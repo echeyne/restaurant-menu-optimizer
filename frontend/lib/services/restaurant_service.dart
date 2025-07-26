@@ -21,7 +21,7 @@ class RestaurantService {
   
   Future<RestaurantSetupResponse> setupRestaurantProfile(RestaurantProfile profile) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/setup-restaurant-profile'),
+      Uri.parse('$baseUrl/restaurant/setup-profile'),
       headers: await _getHeaders(),
       body: jsonEncode(profile.toJson()),
     );
@@ -35,10 +35,10 @@ class RestaurantService {
   
   Future<List<QlooSearchResult>> searchQlooRestaurants(String name, String city, String state) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/search-qloo-restaurants'),
+      Uri.parse('$baseUrl/restaurant/search-qloo'),
       headers: await _getHeaders(),
       body: jsonEncode({
-        'name': name,
+        'restaurantName': name,
         'city': city,
         'state': state,
       }),
@@ -52,13 +52,16 @@ class RestaurantService {
     }
   }
   
-  Future<void> selectRestaurant(String qlooEntityId, QlooRestaurantData restaurantData) async {
+  Future<void> selectRestaurant(String restaurantId, String qlooEntityId, QlooRestaurantData restaurantData) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/select-restaurant'),
+      Uri.parse('$baseUrl/restaurant/select'),
       headers: await _getHeaders(),
       body: jsonEncode({
+        'restaurantId': restaurantId,
         'qlooEntityId': qlooEntityId,
-        'restaurantData': restaurantData.toJson(),
+        'address': restaurantData.address,
+        'priceLevel': restaurantData.priceLevel,
+        'genreTags': restaurantData.genreTags,
       }),
     );
     
@@ -67,12 +70,13 @@ class RestaurantService {
     }
   }
   
-  Future<SimilarRestaurantData> searchSimilarRestaurants(String entityId, double minRating) async {
+  Future<SimilarRestaurantData> searchSimilarRestaurants(String restaurantId, String qlooEntityId, double minRating) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/search-similar-restaurants'),
+      Uri.parse('$baseUrl/restaurant/search-similar'),
       headers: await _getHeaders(),
       body: jsonEncode({
-        'entityId': entityId,
+        'restaurantId': restaurantId,
+        'qlooEntityId': qlooEntityId,
         'minRating': minRating,
       }),
     );
@@ -84,12 +88,13 @@ class RestaurantService {
     }
   }
   
-  Future<DemographicsData> getDemographics(String entityId) async {
+  Future<DemographicsData> getDemographics(String restaurantId, String qlooEntityId) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/get-demographics'),
+      Uri.parse('$baseUrl/restaurant/demographics'),
       headers: await _getHeaders(),
       body: jsonEncode({
-        'entityId': entityId,
+        'restaurantId': restaurantId,
+        'qlooEntityId': qlooEntityId,
       }),
     );
     

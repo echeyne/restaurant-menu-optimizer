@@ -14,6 +14,7 @@
     "s3:install": "echo 'S3 local does not require install step'"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.848.0",
     "@aws-sdk/lib-dynamodb": "^3.846.0",
     "aws-sdk": "^2.1409.0",
     "uuid": "^9.0.0"

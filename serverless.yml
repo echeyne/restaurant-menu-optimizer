@@ -685,7 +685,6 @@ functions:
                       type: string
                     ownerId:
                       type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -729,7 +728,6 @@ functions:
                       type: string
                     state:
                       type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
@@ -776,7 +774,6 @@ functions:
                       type: array
                       items:
                         type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -819,7 +816,6 @@ functions:
                       type: number
                       minimum: 1
                       maximum: 5
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}
@@ -865,7 +861,6 @@ functions:
                       type: string
                     qlooEntityId:
                       type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://api.qloo.com/v1'}

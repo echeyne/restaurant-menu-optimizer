@@ -32,7 +32,7 @@ class MenuProvider extends ChangeNotifier {
     _setError(null);
     
     try {
-      final response = await _menuService.uploadMenu(restaurantId, menuFile);
+      await _menuService.uploadMenu(restaurantId, menuFile);
       // Handle upload response
       notifyListeners();
       return true;

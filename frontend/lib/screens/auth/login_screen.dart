@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Condition.largerThan(name: TABLET, value: 500),
                 ],
                 defaultValue: 450,
-              ).value!,
+              ).value,
             ),
             child: Card(
               child: Padding(

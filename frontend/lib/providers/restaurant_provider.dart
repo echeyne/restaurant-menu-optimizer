@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../models/restaurant_models.dart';
 import '../services/restaurant_service.dart';
+import 'auth_provider.dart';
 
 class RestaurantProvider extends ChangeNotifier {
   final RestaurantService _restaurantService = RestaurantService();
+  final AuthProvider _authProvider;
+  
+  RestaurantProvider(this._authProvider);
   
   Restaurant? _restaurant;
   List<QlooSearchResult> _searchResults = [];
@@ -35,7 +39,17 @@ class RestaurantProvider extends ChangeNotifier {
     _setError(null);
     
     try {
-      final profile = RestaurantProfile(name: name, city: city, state: state);
+      final ownerId = _authProvider.user?.userId;
+      if (ownerId == null) {
+        throw Exception('User not authenticated');
+      }
+      
+      final profile = RestaurantProfile(
+        name: name, 
+        city: city, 
+        state: state, 
+        ownerId: ownerId,
+      );
       final response = await _restaurantService.setupRestaurantProfile(profile);
       _restaurant = response.restaurant;
       notifyListeners();
@@ -69,7 +83,12 @@ class RestaurantProvider extends ChangeNotifier {
     _setError(null);
     
     try {
-      await _restaurantService.selectRestaurant(qlooEntityId, restaurantData);
+      final restaurantId = _restaurant?.restaurantId;
+      if (restaurantId == null) {
+        throw Exception('Restaurant not set up');
+      }
+      
+      await _restaurantService.selectRestaurant(restaurantId, qlooEntityId, restaurantData);
       if (_restaurant != null) {
         _restaurant = _restaurant!.copyWith(
           qlooEntityId: qlooEntityId,
@@ -93,7 +112,12 @@ class RestaurantProvider extends ChangeNotifier {
     _setError(null);
     
     try {
-      final data = await _restaurantService.searchSimilarRestaurants(entityId, minRating);
+      final restaurantId = _restaurant?.restaurantId;
+      if (restaurantId == null) {
+        throw Exception('Restaurant not set up');
+      }
+      
+      final data = await _restaurantService.searchSimilarRestaurants(restaurantId, entityId, minRating);
       _similarRestaurants = data.similarRestaurants;
       notifyListeners();
       return true;
@@ -110,7 +134,12 @@ class RestaurantProvider extends ChangeNotifier {
     _setError(null);
     
     try {
-      _demographicsData = await _restaurantService.getDemographics(entityId);
+      final restaurantId = _restaurant?.restaurantId;
+      if (restaurantId == null) {
+        throw Exception('Restaurant not set up');
+      }
+      
+      _demographicsData = await _restaurantService.getDemographics(restaurantId, entityId);
       notifyListeners();
       return true;
     } catch (e) {
