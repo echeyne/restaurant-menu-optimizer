@@ -27,13 +27,21 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login(
+      final result = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
+      if (mounted) {
+        if (result.success) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
+        } else if (result.needsConfirmation && result.email != null) {
+          Navigator.of(context).pushReplacementNamed(
+            AppRoutes.emailConfirmation,
+            arguments: result.email,
+          );
+        }
+        // If it's a regular failure, the error will be shown via the Consumer<AuthProvider>
       }
     }
   }
@@ -122,10 +130,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (authProvider.error != null) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 16),
-                              child: Text(
-                                authProvider.error!,
-                                style: TextStyle(color: Theme.of(context).colorScheme.error),
-                                textAlign: TextAlign.center,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.errorContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      color: Theme.of(context).colorScheme.error,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        authProvider.error!,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }

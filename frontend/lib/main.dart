@@ -6,6 +6,7 @@ import 'providers/restaurant_provider.dart';
 import 'providers/menu_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/auth/email_confirmation_screen.dart';
 import 'screens/restaurant/restaurant_profile_setup_screen.dart';
 import 'screens/menu/menu_management_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -42,12 +43,44 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
           ],
         ),
         initialRoute: AppRoutes.login,
-        routes: {
-          AppRoutes.login: (context) => const LoginScreen(),
-          AppRoutes.register: (context) => const RegisterScreen(),
-          AppRoutes.restaurantSetup: (context) => const RestaurantProfileSetupScreen(),
-          AppRoutes.menuManagement: (context) => const MenuManagementScreen(),
-          AppRoutes.dashboard: (context) => const DashboardScreen(),
+        onGenerateRoute: (settings) {
+          Widget page;
+          switch (settings.name) {
+            case AppRoutes.login:
+              page = const LoginScreen();
+              break;
+            case AppRoutes.register:
+              page = const RegisterScreen();
+              break;
+            case AppRoutes.emailConfirmation:
+              final email = settings.arguments as String;
+              page = EmailConfirmationScreen(email: email);
+              break;
+            case AppRoutes.restaurantSetup:
+              page = const RestaurantProfileSetupScreen();
+              break;
+            case AppRoutes.menuManagement:
+              page = const MenuManagementScreen();
+              break;
+            case AppRoutes.dashboard:
+              page = const DashboardScreen();
+              break;
+            default:
+              page = const LoginScreen();
+          }
+          
+          // Use simple fade transition to avoid choppy animations
+          return PageRouteBuilder(
+            settings: settings,
+            pageBuilder: (context, animation, secondaryAnimation) => page,
+            transitionDuration: const Duration(milliseconds: 200),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          );
         },
       ),
     );

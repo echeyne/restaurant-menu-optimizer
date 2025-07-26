@@ -3,6 +3,16 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_models.dart';
 
+class EmailNotConfirmedException implements Exception {
+  final String email;
+  final String message;
+  
+  EmailNotConfirmedException(this.email, this.message);
+  
+  @override
+  String toString() => message;
+}
+
 class AuthService {
   static const String baseUrl = 'https://ofjfkha65m.execute-api.us-east-1.amazonaws.com/dev';
   
@@ -21,11 +31,21 @@ class AuthService {
       await _saveToken(authResponse.accessToken);
       return authResponse;
     } else {
-      throw Exception('Login failed: ${response.body}');
+      final errorBody = response.body;
+      // Check if the error is due to unconfirmed email
+      if (errorBody.contains('User is not confirmed') || 
+          errorBody.contains('not confirmed') ||
+          errorBody.contains('UserNotConfirmedException')) {
+        throw EmailNotConfirmedException(
+          email, 
+          'Please check your email and enter the confirmation code to complete your registration.'
+        );
+      }
+      throw Exception('Login failed: $errorBody');
     }
   }
   
-  Future<AuthResponse> register(String email, String password) async {
+  Future<void> register(String email, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/register-user'),
       headers: {'Content-Type': 'application/json'},
@@ -35,12 +55,42 @@ class AuthService {
       }),
     );
     
+    if (response.statusCode != 200) {
+      throw Exception('Registration failed: ${response.body}');
+    }
+    // Registration successful, confirmation email sent
+  }
+  
+  Future<AuthResponse> confirmEmail(String email, String code) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/confirm-registration'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'confirmationCode': code,
+      }),
+    );
+    
     if (response.statusCode == 200) {
       final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
       await _saveToken(authResponse.accessToken);
       return authResponse;
     } else {
-      throw Exception('Registration failed: ${response.body}');
+      throw Exception('Email confirmation failed: ${response.body}');
+    }
+  }
+  
+  Future<void> resendConfirmationCode(String email) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/resend-confirmation'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+      }),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to resend confirmation code: ${response.body}');
     }
   }
   

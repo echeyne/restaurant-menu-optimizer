@@ -50,7 +50,7 @@ export const handler = async (
     const authService = new AuthService();
     const result = await authService.registerUser(registrationData);
 
-    return createResponse(201, result);
+    return createResponse(200, result);
   } catch (error: any) {
     console.error("Error registering user:", error);
 
