@@ -268,7 +268,7 @@ async function searchSimilarRestaurantsFromQloo(
 
   const response = await axios.get<QlooSimilarRestaurantsResponse>(fullUrl, {
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
       "Content-Type": "application/json",
     },
     timeout: 30000, // 30 seconds timeout

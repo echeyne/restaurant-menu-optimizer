@@ -118,7 +118,7 @@ export const handler = async (
     // Make request to Qloo API
     const response = await axios.get<QlooApiResponse>(fullUrl, {
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "x-api-key": apiKey,
         "Content-Type": "application/json",
       },
       timeout: 30000, // 30 seconds timeout

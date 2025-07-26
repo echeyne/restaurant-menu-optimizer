@@ -245,7 +245,7 @@ async function getDemographicsFromQloo(
 
   const response = await axios.get<QlooDemographicsResponse>(fullUrl, {
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
       "Content-Type": "application/json",
     },
     timeout: 30000, // 30 seconds timeout
