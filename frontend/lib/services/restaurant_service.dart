@@ -1,130 +1,125 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'http_client.dart';
 import '../models/restaurant_models.dart';
 
 class RestaurantService {
-  static const String baseUrl =
-      'https://ofjfkha65m.execute-api.us-east-1.amazonaws.com/dev';
+  final HttpClient _httpClient = HttpClient();
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
+  Future<Restaurant?> getCurrentRestaurant() async {
+    try {
+      final response = await _httpClient.get('/restaurant/profile');
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Restaurant.fromJson(data);
+      } else if (response.statusCode == 404) {
+        // No restaurant profile found
+        return null;
+      } else {
+        throw Exception('Failed to get restaurant: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error getting restaurant: $e');
+    }
   }
 
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await _getToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  Future<RestaurantSetupResponse> setupRestaurantProfile(
-      RestaurantProfile profile) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/setup-profile'),
-      headers: await _getHeaders(),
-      body: jsonEncode(profile.toJson()),
-    );
-
-    if (response.statusCode == 200) {
-      return RestaurantSetupResponse.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Restaurant profile setup failed: ${response.body}');
+  Future<RestaurantSetupResponse> setupRestaurantProfile(RestaurantProfile profile) async {
+    try {
+      final response = await _httpClient.postJson('/restaurant/profile', {
+        'name': profile.name,
+        'city': profile.city,
+        'state': profile.state,
+        'ownerId': profile.ownerId,
+      });
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return RestaurantSetupResponse.fromJson(data);
+      } else {
+        throw Exception('Failed to setup restaurant profile: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error setting up restaurant profile: $e');
     }
   }
 
   Future<List<QlooSearchResult>> searchQlooRestaurants(
-      String name, String city, String state) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/search-qloo'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'restaurantName': name,
+    String name, 
+    String city, 
+    String state
+  ) async {
+    try {
+      final response = await _httpClient.postJson('/qloo/search-restaurants', {
+        'name': name,
         'city': city,
         'state': state,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => QlooSearchResult.fromJson(json)).toList();
-    } else {
-      throw Exception('Qloo restaurant search failed: ${response.body}');
+      });
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['results'] ?? [];
+        return results.map((json) => QlooSearchResult.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to search restaurants: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error searching restaurants: $e');
     }
   }
 
-  Future<void> selectRestaurant(String restaurantId, String qlooEntityId,
-      QlooRestaurantData restaurantData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/select'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'restaurantId': restaurantId,
+  Future<void> selectRestaurant(String restaurantId, String qlooEntityId, QlooRestaurantData restaurantData) async {
+    try {
+      final response = await _httpClient.postJson('/restaurant/$restaurantId/select-qloo', {
         'qlooEntityId': qlooEntityId,
-        'address': restaurantData.address,
-        'priceLevel': restaurantData.priceLevel,
-        'genreTags': restaurantData.genreTags,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Restaurant selection failed: ${response.body}');
+        'restaurantData': restaurantData.toJson(),
+      });
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to select restaurant: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error selecting restaurant: $e');
     }
   }
 
-  Future<SimilarRestaurantData> searchSimilarRestaurants(
-      String restaurantId, String qlooEntityId, double minRating) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/search-similar'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'restaurantId': restaurantId,
-        'qlooEntityId': qlooEntityId,
+  Future<SimilarRestaurantsResponse> searchSimilarRestaurants(
+    String restaurantId,
+    String entityId, 
+    double minRating
+  ) async {
+    try {
+      final response = await _httpClient.postJson('/restaurant/$restaurantId/similar-restaurants', {
+        'entityId': entityId,
         'minRating': minRating,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return SimilarRestaurantData.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Similar restaurant search failed: ${response.body}');
+      });
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return SimilarRestaurantsResponse.fromJson(data);
+      } else {
+        throw Exception('Failed to search similar restaurants: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error searching similar restaurants: $e');
     }
   }
 
-  Future<DemographicsData> getDemographics(
-      String restaurantId, String qlooEntityId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/restaurant/demographics'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'restaurantId': restaurantId,
-        'qlooEntityId': qlooEntityId,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return DemographicsData.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Demographics data retrieval failed: ${response.body}');
-    }
-  }
-
-  /// Fetch the current user's restaurant profile from the backend
-  Future<Restaurant?> getCurrentRestaurant() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/restaurant/get'),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data == null) return null;
-      return Restaurant.fromJson(data['restaurant']);
-    } else if (response.statusCode == 404) {
-      return null;
-    } else {
-      throw Exception('Failed to fetch current restaurant: ${response.body}');
+  Future<DemographicsData?> getDemographics(String restaurantId, String entityId) async {
+    try {
+      final response = await _httpClient.postJson('/restaurant/$restaurantId/demographics', {
+        'entityId': entityId,
+      });
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return DemographicsData.fromJson(data);
+      } else if (response.statusCode == 404) {
+        return null;
+      } else {
+        throw Exception('Failed to get demographics: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error getting demographics: $e');
     }
   }
 }

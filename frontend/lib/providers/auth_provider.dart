@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_models.dart';
 import '../services/auth_service.dart';
 
@@ -35,14 +36,18 @@ class AuthProvider extends ChangeNotifier {
   
   User? _user;
   String? _token;
+  String? _refreshToken;
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false;
   
   User? get user => _user;
   String? get token => _token;
+  String? get refreshToken => _refreshToken;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _user != null && _token != null;
+  bool get isInitialized => _isInitialized;
   
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -67,6 +72,8 @@ class AuthProvider extends ChangeNotifier {
         createdAt: DateTime.now(), // We don't have this from API, use current time
       );
       _token = response.accessToken;
+      _refreshToken = response.refreshToken;
+      await _saveUserInfo(_user!);
       notifyListeners();
       return LoginResult.success();
     } catch (e) {
@@ -111,6 +118,8 @@ class AuthProvider extends ChangeNotifier {
         createdAt: DateTime.now(),
       );
       _token = response.accessToken;
+      _refreshToken = response.refreshToken;
+      await _saveUserInfo(_user!);
       notifyListeners();
       return true;
     } catch (e) {
@@ -139,23 +148,96 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     _user = null;
     _token = null;
+    _refreshToken = null;
     _error = null;
     await _authService.logout();
+    await _clearUserInfo();
     notifyListeners();
   }
   
   Future<bool> refreshToken() async {
-    if (_token == null) return false;
-    
     try {
-      final response = await _authService.refreshToken(_token!);
+      final response = await _authService.refreshToken();
       _token = response.accessToken;
+      _refreshToken = response.refreshToken;
       notifyListeners();
       return true;
     } catch (e) {
       _setError(e.toString());
+      // If refresh fails, logout the user
+      await logout();
       return false;
     }
+  }
+  
+  // Initialize the auth state from stored tokens
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+    
+    _setLoading(true);
+    
+    try {
+      final token = await _authService.getValidToken();
+      if (token != null) {
+        _token = token;
+        _refreshToken = await _authService.getStoredRefreshToken();
+        
+        // Get stored user info
+        final userInfo = await _getStoredUserInfo();
+        if (userInfo != null) {
+          _user = userInfo;
+        }
+      }
+    } catch (e) {
+      // If there's an error getting the token, clear everything
+      await logout();
+    } finally {
+      _isInitialized = true;
+      _setLoading(false);
+    }
+  }
+  
+  // Store user info in SharedPreferences
+  Future<void> _saveUserInfo(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_id', user.userId);
+    await prefs.setString('user_email', user.email);
+    await prefs.setString('user_created_at', user.createdAt.toIso8601String());
+  }
+  
+  // Get stored user info from SharedPreferences
+  Future<User?> _getStoredUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    final email = prefs.getString('user_email');
+    final createdAtString = prefs.getString('user_created_at');
+    
+    if (userId != null && email != null && createdAtString != null) {
+      return User(
+        userId: userId,
+        email: email,
+        createdAt: DateTime.parse(createdAtString),
+      );
+    }
+    return null;
+  }
+  
+  // Clear stored user info
+  Future<void> _clearUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_id');
+    await prefs.remove('user_email');
+    await prefs.remove('user_created_at');
+  }
+  
+  // Get a valid token, refreshing if necessary
+  Future<String?> getValidToken() async {
+    return await _authService.getValidToken();
+  }
+  
+  // Check if token is expired
+  Future<bool> isTokenExpired() async {
+    return await _authService.isTokenExpired();
   }
   
   void clearError() {
