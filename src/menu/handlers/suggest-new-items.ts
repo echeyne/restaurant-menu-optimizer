@@ -16,6 +16,7 @@ import {
   MenuItemSuggestion,
   SpecialtyDish,
 } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Interface for new item suggestion request
@@ -49,6 +50,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Parse request body
     if (!event.body) {
       return {

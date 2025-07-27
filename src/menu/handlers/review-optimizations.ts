@@ -12,6 +12,7 @@ import {
   MenuItemSuggestion,
   MenuItem,
 } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Type of optimization to review
@@ -54,6 +55,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Initialize repositories
     const optimizedItemsRepository = new OptimizedMenuItemsRepository();
     const suggestionRepository = new SuggestionRepository();

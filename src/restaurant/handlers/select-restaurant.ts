@@ -6,6 +6,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { QlooSearchResult } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Request body interface for restaurant selection
@@ -34,19 +35,9 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log("Select restaurant request:", JSON.stringify(event, null, 2));
 
-  // Handle OPTIONS preflight request
+  // Handle OPTIONS request for CORS
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-        "Access-Control-Allow-Credentials": "true",
-      },
-      body: "",
-    };
+    return createResponse(200, {});
   }
 
   try {

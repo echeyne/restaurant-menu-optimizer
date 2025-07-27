@@ -13,6 +13,7 @@ import {
   AgeGroupData,
   DiningPattern,
 } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Request body interface for demographics data collection
@@ -75,6 +76,11 @@ interface QlooInsight {
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   console.log("Get demographics request:", JSON.stringify(event, null, 2));
 
   try {

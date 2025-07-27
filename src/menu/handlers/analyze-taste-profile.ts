@@ -11,6 +11,7 @@ import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { QlooClient, TasteProfileRequest } from "../../services/qloo-client";
 import { TasteProfileVisualizationService } from "../../services/taste-profile-visualization-service";
 import { TasteProfileVisualizationRepository } from "../../repositories/taste-profile-visualization-repository";
+import { createResponse } from "../../models/api";
 
 /**
  * Result interface for individual taste profile analysis
@@ -186,6 +187,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Parse request body
     const requestBody: AnalyzeTasteProfileRequest = JSON.parse(
       event.body || "{}"

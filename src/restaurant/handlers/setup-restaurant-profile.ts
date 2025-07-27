@@ -6,6 +6,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { Restaurant } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Request body interface for restaurant profile setup
@@ -34,6 +35,11 @@ interface SetupRestaurantProfileResponse {
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   console.log(
     "Setup restaurant profile request:",
     JSON.stringify(event, null, 2)

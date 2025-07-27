@@ -9,6 +9,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { DemographicsDataRepository } from "../../repositories/demographics-data-repository";
 import { SimilarRestaurantDataRepository } from "../../repositories/similar-restaurant-data-repository";
+import { createResponse } from "../../models/api";
 
 /**
  * Interface for optimization option
@@ -42,6 +43,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     const restaurantId = event.queryStringParameters?.restaurantId;
 
     // Validate restaurant ID

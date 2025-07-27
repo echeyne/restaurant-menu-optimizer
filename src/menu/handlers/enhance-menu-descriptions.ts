@@ -10,6 +10,7 @@ import { MenuItem } from "../../models/database";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { LLMService } from "../../services/llm-service";
 import { LLMProvider } from "../../services/llm-client";
+import { createResponse } from "../../models/api";
 
 /**
  * Result interface for individual menu description enhancement
@@ -259,6 +260,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Parse request body
     const requestBody: EnhanceMenuDescriptionsRequest = JSON.parse(
       event.body || "{}"

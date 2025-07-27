@@ -4,6 +4,7 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { createResponse } from "../../models/api";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 
 /**
@@ -15,6 +16,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Get restaurant ID from query parameters
     const restaurantId = event.queryStringParameters?.restaurantId;
 

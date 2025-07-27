@@ -6,6 +6,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { S3, Lambda } from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
+import { createResponse } from "../../models/api";
 import { MenuFileRepository } from "../../repositories/menu-file-repository";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 
@@ -55,6 +56,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Parse request body
     const body = JSON.parse(event.body || "{}");
     const { restaurantId, fileName, fileType, fileSize } = body;

@@ -9,6 +9,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { TasteProfileVisualizationService } from "../../services/taste-profile-visualization-service";
 import { TasteProfileVisualizationRepository } from "../../repositories/taste-profile-visualization-repository";
+import { createResponse } from "../../models/api";
 
 /**
  * Request body interface for taste profile comparison
@@ -23,6 +24,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Parse request body
     const requestBody: CompareTasteProfilesRequest = JSON.parse(
       event.body || "{}"

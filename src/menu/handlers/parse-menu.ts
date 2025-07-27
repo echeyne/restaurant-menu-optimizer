@@ -11,6 +11,7 @@ import { MenuItem } from "../../models/database";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { MenuFileRepository } from "../../repositories/menu-file-repository";
 import { SSM } from "aws-sdk";
+import { createResponse } from "../../models/api";
 
 /**
  * Handler for menu parsing requests
@@ -21,6 +22,11 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS request for CORS
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Parse request body
     const body = JSON.parse(event.body || "{}");
     const { restaurantId, fileKey, fileType, fileId } = body;
