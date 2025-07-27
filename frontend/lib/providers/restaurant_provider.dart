@@ -49,7 +49,6 @@ class RestaurantProvider extends ChangeNotifier {
         name: name,
         city: city,
         state: state,
-        ownerId: ownerId,
       );
       final response = await _restaurantService.setupRestaurantProfile(profile);
       _restaurant = response.restaurant;

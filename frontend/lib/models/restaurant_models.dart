@@ -68,13 +68,11 @@ class RestaurantProfile {
   final String name;
   final String city;
   final String state;
-  final String ownerId;
 
   RestaurantProfile({
     required this.name,
     required this.city,
     required this.state,
-    required this.ownerId,
   });
 
   factory RestaurantProfile.fromJson(Map<String, dynamic> json) =>

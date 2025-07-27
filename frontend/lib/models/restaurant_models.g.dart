@@ -42,7 +42,6 @@ RestaurantProfile _$RestaurantProfileFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       city: json['city'] as String,
       state: json['state'] as String,
-      ownerId: json['ownerId'] as String,
     );
 
 Map<String, dynamic> _$RestaurantProfileToJson(RestaurantProfile instance) =>
@@ -50,7 +49,6 @@ Map<String, dynamic> _$RestaurantProfileToJson(RestaurantProfile instance) =>
       'name': instance.name,
       'city': instance.city,
       'state': instance.state,
-      'ownerId': instance.ownerId,
     };
 
 RestaurantSetupResponse _$RestaurantSetupResponseFromJson(

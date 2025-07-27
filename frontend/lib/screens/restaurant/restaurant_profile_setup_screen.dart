@@ -455,6 +455,7 @@ class _RestaurantProfileSetupScreenState
           'We\'ll use this information to find similar restaurants and gather demographic insights for your area.',
           style: TextStyle(fontStyle: FontStyle.italic),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -532,19 +533,21 @@ class _RestaurantProfileSetupScreenState
     // Find the main demographic groups
     String mainGender = 'Mixed';
     String mainAgeGroup = 'Various ages';
-    
+
     // Process age groups to find the largest
     if (demographics.ageGroups.isNotEmpty) {
-      demographics.ageGroups.sort((a, b) => b.percentage.compareTo(a.percentage));
+      demographics.ageGroups
+          .sort((a, b) => b.percentage.compareTo(a.percentage));
       mainAgeGroup = demographics.ageGroups.first.ageRange;
     }
 
     // Process interests to find gender information
     for (String interest in demographics.interests) {
-      if (interest.toLowerCase().contains('male preference') || 
+      if (interest.toLowerCase().contains('male preference') ||
           interest.toLowerCase().contains('female preference')) {
         if (interest.toLowerCase().contains('male preference')) {
-          mainGender = interest.toLowerCase().contains('female') ? 'Female' : 'Male';
+          mainGender =
+              interest.toLowerCase().contains('female') ? 'Female' : 'Male';
         }
         break;
       }
@@ -558,7 +561,7 @@ class _RestaurantProfileSetupScreenState
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 16),
-        
+
         // Main demographics summary
         Card(
           child: Padding(
@@ -590,9 +593,9 @@ class _RestaurantProfileSetupScreenState
             ),
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Age groups breakdown
         if (demographics.ageGroups.isNotEmpty) ...[
           const Text(
@@ -621,7 +624,7 @@ class _RestaurantProfileSetupScreenState
           ),
           const SizedBox(height: 16),
         ],
-        
+
         // Additional insights
         if (demographics.interests.isNotEmpty) ...[
           const Text(
@@ -641,7 +644,9 @@ class _RestaurantProfileSetupScreenState
                       children: [
                         const Icon(Icons.fiber_manual_record, size: 8),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(interest, style: const TextStyle(fontSize: 13))),
+                        Expanded(
+                            child: Text(interest,
+                                style: const TextStyle(fontSize: 13))),
                       ],
                     ),
                   );
@@ -651,7 +656,7 @@ class _RestaurantProfileSetupScreenState
           ),
           const SizedBox(height: 16),
         ],
-        
+
         const Text(
           'This demographic information will help us find similar restaurants and optimize your menu recommendations.',
           style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
