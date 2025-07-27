@@ -308,12 +308,7 @@ class _RestaurantProfileSetupScreenState
                   children: [
                     Text(result.address),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.attach_money, size: 16),
-                        Text('Price Level: ${result.priceLevel}'),
-                      ],
-                    ),
+                    Text('Cuisine: ${result.length > 0 result.cuisine : ''}'),
                   ],
                 ),
                 trailing: Radio<QlooSearchResult>(
@@ -337,9 +332,10 @@ class _RestaurantProfileSetupScreenState
           const Divider(),
           const SizedBox(height: 16),
           const Text(
-            'Don\'t see your restaurant? You can continue with manual setup.',
+            'Don\'t see your restaurant? Go back and update your restaurant information.',
             style: TextStyle(fontStyle: FontStyle.italic),
           ),
+          const SizedBox(height: 16),
         ],
       ],
     );
@@ -387,31 +383,7 @@ class _RestaurantProfileSetupScreenState
                   ],
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.attach_money, size: 16),
-                    const SizedBox(width: 4),
-                    Text('Price Level: ${_selectedRestaurant!.priceLevel}'),
-                  ],
-                ),
-                // if (_selectedRestaurant!.tags.isNotEmpty) ...[
-                //   const SizedBox(height: 8),
-                //   const Text('Cuisine Types:',
-                //       style: TextStyle(fontWeight: FontWeight.w500)),
-                //   const SizedBox(height: 4),
-                //   Wrap(
-                //     spacing: 8,
-                //     children: _selectedRestaurant!.tags
-                //         .where((tag) => tag.type.contains('genre'))
-                //         .map((tag) => Chip(
-                //               label: Text(tag.name),
-                //               backgroundColor: Theme.of(context)
-                //                   .colorScheme
-                //                   .primaryContainer,
-                //             ))
-                //         .toList(),
-                //   ),
-                // ],
+                Text('Cuisine: ${_selectedRestaurant!.cuisine.length > 0 result.cuisine : ''}'),
               ],
             ),
           ),

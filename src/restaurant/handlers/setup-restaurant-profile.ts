@@ -112,6 +112,12 @@ export const handler = async (
       city: requestBody.city,
       state: requestBody.state,
       profileSetupComplete: false,
+      entityId: "", // Will be set when Qloo data is selected
+      cuisine: "", // Will be set when Qloo data is selected
+      popularity: 0, // Will be set when Qloo data is selected
+      description: "", // Will be set when Qloo data is selected
+      specialtyDishes: [], // Will be set when Qloo data is selected
+      businessRating: 0, // Will be set when Qloo data is selected
     });
 
     console.log("Restaurant profile created:", restaurant);

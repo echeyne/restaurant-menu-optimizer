@@ -763,10 +763,12 @@ functions:
                   type: object
                   required:
                     - restaurantId
-                    - qlooEntityId
+                    - qlooSearchResult
                   properties:
                     restaurantId:
                       type: string
+                    qlooSearchResult:
+                      type: object
                     qlooEntityId:
                       type: string
                     address:
@@ -777,6 +779,19 @@ functions:
                       type: array
                       items:
                         type: string
+      - http:
+          path: restaurant/select
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:

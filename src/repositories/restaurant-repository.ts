@@ -135,7 +135,7 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
         ":cuisine": qlooData.cuisine,
         ":popularity": qlooData.popularity,
         ":description": qlooData.description,
-        ":specialtyDishes": qlooData.specialtyDishes,
+        ":specialtyDishes": qlooData.specialtyDishes || [],
         ":businessRating": qlooData.businessRating,
       },
       ReturnValues: "ALL_NEW",

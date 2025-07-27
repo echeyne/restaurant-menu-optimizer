@@ -34,6 +34,21 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log("Select restaurant request:", JSON.stringify(event, null, 2));
 
+  // Handle OPTIONS preflight request
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+        "Access-Control-Allow-Credentials": "true",
+      },
+      body: "",
+    };
+  }
+
   try {
     // Parse request body
     if (!event.body) {

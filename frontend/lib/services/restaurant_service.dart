@@ -70,8 +70,9 @@ class RestaurantService {
       QlooSearchResult restaurantData) async {
     try {
       final response = await _httpClient.postJson('/restaurant/select', {
+        'restaurantId': restaurantId,
         'qlooEntityId': qlooEntityId,
-        'restaurantData': restaurantData.toJson(),
+        'qlooSearchResult': restaurantData.toJson(),
       });
 
       if (response.statusCode != 200) {

@@ -187,9 +187,9 @@ export interface QlooSearchResult {
   // compared to all other entities within the same domain
   popularity: number;
   description: string;
-  // specialtyDishes: QlooTag[];
+  specialtyDishes?: QlooTag[];
   businessRating: number;
-  // tags: QlooTag[];
+  tags?: QlooTag[];
 }
 
 /**

@@ -296,12 +296,7 @@ function createSuggestionPrompt(
     excludeCategories: string[];
   }
 ): string {
-  const cuisineContext = restaurant.genreTags
-    ? restaurant.genreTags
-        .filter((tag) => tag.includes("genre:restaurant"))
-        .map((tag) => tag.split(":").pop())
-        .join(", ")
-    : "general";
+  const cuisineContext = restaurant.cuisine || "general";
 
   const priceContext = restaurant.priceLevel
     ? `Price level: ${restaurant.priceLevel} (1=budget, 4=luxury)`
