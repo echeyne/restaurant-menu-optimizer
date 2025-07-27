@@ -508,7 +508,7 @@ class _RestaurantProfileSetupScreenState
     switch (_currentStep) {
       case 0:
         if (_formKey.currentState!.validate()) {
-          final success = await _setupRestaurantProfile(provider);
+          await _setupRestaurantProfile(provider);
           setState(() {
             _currentStep = 1;
           });

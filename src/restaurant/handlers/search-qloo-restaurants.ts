@@ -6,7 +6,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import axios from "axios";
 import { SSM } from "aws-sdk";
-import { QlooSearchResult, QlooTag } from "../../models/database";
+import { QlooSearchResult } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Request body interface for Qloo restaurant search
@@ -54,6 +55,11 @@ export const handler = async (
     "Search Qloo restaurants request:",
     JSON.stringify(event, null, 2)
   );
+
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
 
   try {
     // Parse request body

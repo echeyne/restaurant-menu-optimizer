@@ -13,6 +13,7 @@ import {
   SimilarRestaurant,
   SpecialtyDish,
   KeywordData,
+  QlooSearchResult,
 } from "../../models/database";
 import { createResponse } from "../../models/api";
 
@@ -25,55 +26,20 @@ interface SearchSimilarRestaurantsRequest {
 }
 
 /**
+ * Qloo API response interface
+ */
+interface QlooApiResponse {
+  results: {}[];
+}
+
+/**
  * Response interface for similar restaurant search
  */
 interface SearchSimilarRestaurantsResponse {
   success: boolean;
-  results?: SimilarRestaurant[];
+  restaurants?: QlooSearchResult[];
   message?: string;
-}
-
-/**
- * Qloo similar restaurants API response interface
- */
-interface QlooSimilarRestaurantsResponse {
-  data: QlooSimilarRestaurant[];
-  meta?: {
-    total: number;
-    page: number;
-    per_page: number;
-  };
-}
-
-/**
- * Qloo similar restaurant interface
- */
-interface QlooSimilarRestaurant {
-  name: string;
-  entity_id: string;
-  address?: string;
-  business_rating?: number;
-  price_level?: number;
-  tags?: QlooTag[];
-  keywords?: QlooKeyword[];
-}
-
-/**
- * Qloo tag interface
- */
-interface QlooTag {
-  name: string;
-  tag_id: string;
-  type: string;
-  value?: string;
-}
-
-/**
- * Qloo keyword interface
- */
-interface QlooKeyword {
-  name: string;
-  count: number;
+  totalResults?: number;
 }
 
 /**
@@ -171,7 +137,8 @@ export const handler = async (
 
     const response: SearchSimilarRestaurantsResponse = {
       success: true,
-      results: savedData.similarRestaurants,
+      restaurants: similarRestaurants,
+      totalResults: similarRestaurants.length,
       message: `Found ${similarRestaurants.length} similar restaurants with ${specialtyDishes.length} specialty dishes`,
     };
     return createResponse(200, response);
@@ -220,7 +187,7 @@ async function searchSimilarRestaurantsFromQloo(
   minRating: number,
   cuisine: string,
   location: string
-): Promise<QlooSimilarRestaurant[]> {
+): Promise<QlooSearchResult[]> {
   const qlooBaseUrl =
     process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
 
@@ -239,7 +206,7 @@ async function searchSimilarRestaurantsFromQloo(
 
   console.log("Making Qloo similar restaurants API request to:", fullUrl);
 
-  const response = await axios.get<QlooSimilarRestaurantsResponse>(fullUrl, {
+  const response = await axios.get<QlooApiResponse>(fullUrl, {
     headers: {
       "x-api-key": apiKey,
       "Content-Type": "application/json",
@@ -252,7 +219,44 @@ async function searchSimilarRestaurantsFromQloo(
     JSON.stringify(response.data, null, 2)
   );
 
-  return response.data.data || [];
+  const restaurants = response.data.results || [];
+
+  const formattedRestaurants: QlooSearchResult[] = restaurants.map(
+    (restaurant: any) => ({
+      name: restaurant.name || "",
+      entityId: restaurant.entity_id || restaurant.id || "",
+      description: restaurant.properties.description,
+      address: restaurant.properties?.address || "",
+      priceLevel: restaurant.properties?.price_level || 0,
+      cuisine: extractCuisineFromTags(restaurant.tags || []),
+      popularity: restaurant.popularity,
+      specialtyDishes: restaurant.properties?.specialty_dishes || [],
+      businessRating: restaurant.properties?.business_rating || 0,
+    })
+  );
+
+  return formattedRestaurants;
+}
+
+/**
+ * Extract cuisine name from Qloo tags array
+ * Looks for tags with type "urn:tag:genre" and tag_id starting with "urn:tag:genre:restaurant:"
+ * @param tags Array of Qloo tags
+ * @returns Cuisine name or empty string if not found
+ */
+function extractCuisineFromTags(tags: any[]): string {
+  if (!tags || !Array.isArray(tags)) {
+    return "";
+  }
+
+  const cuisineTag = tags.find(
+    (tag) =>
+      tag.type === "urn:tag:genre" &&
+      tag.tag_id &&
+      tag.tag_id.startsWith("urn:tag:genre:restaurant:")
+  );
+
+  return cuisineTag?.name || "";
 }
 
 /**
@@ -261,33 +265,36 @@ async function searchSimilarRestaurantsFromQloo(
  * @returns Array of specialty dishes
  */
 function extractSpecialtyDishes(
-  similarRestaurants: QlooSimilarRestaurant[]
+  similarRestaurants: QlooSearchResult[]
 ): SpecialtyDish[] {
   const specialtyDishMap = new Map<string, SpecialtyDish>();
 
   similarRestaurants.forEach((restaurant) => {
-    if (restaurant.tags) {
-      restaurant.tags
-        .filter((tag) => tag.tag_id.startsWith("urn:tag:specialty_dish:place:"))
-        .forEach((tag) => {
-          const dishName = tag.name;
-          const tagId = tag.tag_id;
+    if (
+      restaurant.specialtyDishes &&
+      Array.isArray(restaurant.specialtyDishes)
+    ) {
+      restaurant.specialtyDishes.forEach((dishTag) => {
+        // Create a simple tag ID for the dish
+        const tagId = `urn:tag:specialty_dish:place:${dishTag.name
+          .toLowerCase()
+          .replace(/\s+/g, "_")}`;
 
-          if (specialtyDishMap.has(tagId)) {
-            // Increment count for existing dish
-            const existingDish = specialtyDishMap.get(tagId)!;
-            existingDish.restaurantCount += 1;
-            existingDish.popularity += 1;
-          } else {
-            // Add new specialty dish
-            specialtyDishMap.set(tagId, {
-              dishName,
-              tagId,
-              restaurantCount: 1,
-              popularity: 1,
-            });
-          }
-        });
+        if (specialtyDishMap.has(tagId)) {
+          // Increment count for existing dish
+          const existingDish = specialtyDishMap.get(tagId)!;
+          existingDish.restaurantCount += 1;
+          existingDish.popularity += 1;
+        } else {
+          // Add new specialty dish
+          specialtyDishMap.set(tagId, {
+            dishName: dishTag.name,
+            tagId,
+            restaurantCount: 1,
+            popularity: 1,
+          });
+        }
+      });
     }
   });
 
@@ -299,32 +306,25 @@ function extractSpecialtyDishes(
 
 /**
  * Format similar restaurant data for storage
- * @param restaurant Qloo similar restaurant
+ * @param restaurant Qloo search result
  * @returns Formatted similar restaurant
  */
 function formatSimilarRestaurant(
-  restaurant: QlooSimilarRestaurant
+  restaurant: QlooSearchResult
 ): SimilarRestaurant {
-  // Extract specialty dish names from tags
-  const specialtyDishes =
-    restaurant.tags
-      ?.filter((tag) => tag.tag_id.startsWith("urn:tag:specialty_dish:place:"))
-      .map((tag) => tag.name) || [];
+  // Use specialty dishes from the QlooSearchResult
+  const specialtyDishes = restaurant.specialtyDishes || [];
 
-  // Format keywords
-  const keywords: KeywordData[] =
-    restaurant.keywords?.map((keyword) => ({
-      name: keyword.name,
-      count: keyword.count,
-    })) || [];
+  // Create empty keywords array since QlooSearchResult doesn't have keywords
+  const keywords: KeywordData[] = [];
 
   return {
     name: restaurant.name,
-    entityId: restaurant.entity_id,
+    entityId: restaurant.entityId,
     address: restaurant.address || "",
-    businessRating: restaurant.business_rating || 0,
-    priceLevel: restaurant.price_level || 0,
-    specialtyDishes,
+    businessRating: restaurant.businessRating || 0,
+    priceLevel: restaurant.priceLevel || 0,
+    specialtyDishes: extractSpecialtyDishes([restaurant]),
     keywords,
   };
 }

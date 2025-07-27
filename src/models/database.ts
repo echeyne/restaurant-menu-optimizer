@@ -223,7 +223,7 @@ export interface SimilarRestaurant {
   address: string;
   businessRating: number;
   priceLevel: number;
-  specialtyDishes: string[];
+  specialtyDishes: SpecialtyDish[];
   keywords: KeywordData[];
 }
 
