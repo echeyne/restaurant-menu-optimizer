@@ -225,10 +225,10 @@ async function searchSimilarRestaurantsFromQloo(
     process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
 
   // Construct similar restaurants search URL
-  const searchUrl = `${qlooBaseUrl}/insights`;
+  const searchUrl = `${qlooBaseUrl}/v2/insights`;
   const searchParams = new URLSearchParams({
     "filter.type": "urn:entity:place",
-    "filter.location": location,
+    "filter.location.query": location,
     "filter.tags": `urn:tag:genre:place:restaurant:${cuisine}`,
     "signal.interests.entities": entityId,
     count: "10",
