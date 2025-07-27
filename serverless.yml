@@ -733,6 +733,7 @@ functions:
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
+      QLOO_API_KEY: ${self:provider.environment.QLOO_API_KEY}
     iamRoleStatements:
       - Effect: Allow
         Action:
