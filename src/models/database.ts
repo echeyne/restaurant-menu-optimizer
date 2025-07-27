@@ -172,10 +172,17 @@ export interface MenuFile {
  */
 export interface QlooSearchResult {
   name: string;
-  entity_id: string;
+  entityId: string;
   address: string;
-  price_level: number;
-  tags: QlooTag[];
+  priceLevel: number;
+  cuisine: string;
+  // A percentile value that represents an entity's rank in terms of its signal
+  // compared to all other entities within the same domain
+  popularity: number;
+  description: string;
+  specialtyDishes: QlooTag[];
+  businessRating: number;
+  // tags: QlooTag[];
 }
 
 /**

@@ -362,6 +362,10 @@ function formatSimilarRestaurant(
  */
 async function getQlooApiKey(): Promise<string> {
   try {
+    if (process.env.QLOO_API_KEY) {
+      return process.env.QLOO_API_KEY;
+    }
+
     const ssm = new SSM({
       region: process.env.REGION || "us-east-1",
     });

@@ -287,6 +287,7 @@ class _RestaurantProfileSetupScreenState
             'No matching restaurants found. You can continue with manual setup.',
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 16),
         ],
       );
     }

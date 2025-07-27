@@ -6,7 +6,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import axios from "axios";
 import { SSM } from "aws-sdk";
-import { QlooSearchResult } from "../../models/database";
+import { QlooSearchResult, QlooTag } from "../../models/database";
 
 /**
  * Request body interface for Qloo restaurant search
@@ -31,12 +31,7 @@ interface SearchQlooRestaurantsResponse {
  * Qloo API response interface
  */
 interface QlooApiResponse {
-  data: QlooSearchResult[];
-  meta?: {
-    total: number;
-    page: number;
-    per_page: number;
-  };
+  results: {}[];
 }
 
 /**
@@ -147,15 +142,19 @@ export const handler = async (
     console.log("Qloo API response:", JSON.stringify(response.data, null, 2));
 
     // Extract and format results (limit to 10 as per requirements)
-    const restaurants = response.data.data?.slice(0, 10) || [];
+    const restaurants = response.data.results?.slice(0, 10) || [];
 
     const formattedRestaurants: QlooSearchResult[] = restaurants.map(
       (restaurant: any) => ({
         name: restaurant.name || "",
-        entity_id: restaurant.entity_id || restaurant.id || "",
-        address: restaurant.address || restaurant.location?.address || "",
-        price_level: restaurant.price_level || 0,
-        tags: restaurant.tags || [],
+        entityId: restaurant.entity_id || restaurant.id || "",
+        description: restaurant.properties.description,
+        address: restaurant.properties?.address || "",
+        priceLevel: restaurant.properties?.price_level || 0,
+        cuisine: extractCuisineFromTags(restaurant.tags || []),
+        popularity: restaurant.popularity,
+        specialtyDishes: restaurant.properties?.specialty_dishes || [],
+        businessRating: restaurant.properties?.business_rating || 0,
       })
     );
 
@@ -166,8 +165,8 @@ export const handler = async (
     const searchResponse: SearchQlooRestaurantsResponse = {
       success: true,
       restaurants: formattedRestaurants,
-      totalResults: response.data.meta?.total || formattedRestaurants.length,
-      message: `Found ${formattedRestaurants.length} restaurants matching "${requestBody.restaurantName}" in ${locationText}`,
+      totalResults: formattedRestaurants.length,
+      message: `Found ${formattedRestaurants.length} restaurants matching "${requestBody.restaurantName}" in ${locationText} (there may have been more than 10 results...we only pull the top 10)`,
     };
 
     return {
@@ -267,10 +266,34 @@ async function geocodeLocation(
 }
 
 /**
+ * Extract cuisine name from Qloo tags array
+ * Looks for tags with type "urn:tag:genre" and tag_id starting with "urn:tag:genre:restaurant:"
+ * @param tags Array of Qloo tags
+ * @returns Cuisine name or empty string if not found
+ */
+function extractCuisineFromTags(tags: any[]): string {
+  if (!tags || !Array.isArray(tags)) {
+    return "";
+  }
+
+  const cuisineTag = tags.find(
+    (tag) =>
+      tag.type === "urn:tag:genre" &&
+      tag.tag_id &&
+      tag.tag_id.startsWith("urn:tag:genre:restaurant:")
+  );
+
+  return cuisineTag?.name || "";
+}
+
+/**
  * Get Qloo API key from AWS Parameter Store
  * @returns Qloo API key
  */
 async function getQlooApiKey(): Promise<string> {
+  if (process.env.QLOO_API_KEY) {
+    return process.env.QLOO_API_KEY;
+  }
   try {
     const ssm = new SSM({
       region: process.env.REGION || "us-east-1",

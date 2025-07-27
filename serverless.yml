@@ -16,6 +16,7 @@ provider:
     USER_POOL_ID: ${self:custom.userPoolId}
     CLIENT_ID: ${self:custom.clientId}
     MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
+    QLOO_API_KEY: ${env.QLOO_API_KEY, ''}
   apiGateway:
     shouldStartNameWithService: true
     apiKeys: []
@@ -44,6 +45,7 @@ custom:
       - CLIENT_ID
       - USER_POOL_ID
       - MENU_FILES_BUCKET
+      - QLOO_API_KEY
   webpack:
     webpackConfig: ./config/webpack.config.js
     includeModules: true
