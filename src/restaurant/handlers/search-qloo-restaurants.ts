@@ -291,7 +291,7 @@ function extractCuisineFromTags(tags: any[]): string {
  * @returns Qloo API key
  */
 async function getQlooApiKey(): Promise<string> {
-  if (process.env.QLOO_API_KEY) {
+  if (process.env.STAGE == "local" && process.env.QLOO_API_KEY) {
     return process.env.QLOO_API_KEY;
   }
   try {
