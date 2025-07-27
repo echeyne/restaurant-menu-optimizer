@@ -3,7 +3,7 @@
  */
 
 import { AbstractRepository } from "./abstract-repository";
-import { Restaurant, TableNames } from "../models/database";
+import { Restaurant, TableNames, QlooSearchResult } from "../models/database";
 import { v4 as uuidv4 } from "uuid";
 
 export class RestaurantRepository extends AbstractRepository<Restaurant> {
@@ -113,17 +113,12 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
   /**
    * Update restaurant with Qloo data
    * @param restaurantId The ID of the restaurant
-   * @param qlooData The Qloo data to update
+   * @param qlooData The Qloo search result data to update
    * @returns The updated restaurant
    */
   async updateWithQlooData(
     restaurantId: string,
-    qlooData: {
-      qlooEntityId: string;
-      address: string;
-      priceLevel: number;
-      genreTags: string[];
-    }
+    qlooData: QlooSearchResult
   ): Promise<Restaurant> {
     const params = {
       TableName: this.tableName,
@@ -131,12 +126,17 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
         restaurantId,
       },
       UpdateExpression:
-        "SET qlooEntityId = :qlooEntityId, address = :address, priceLevel = :priceLevel, genreTags = :genreTags",
+        "SET qlooEntityId = :qlooEntityId, entityId = :entityId, address = :address, priceLevel = :priceLevel, cuisine = :cuisine, popularity = :popularity, description = :description, specialtyDishes = :specialtyDishes, businessRating = :businessRating",
       ExpressionAttributeValues: {
-        ":qlooEntityId": qlooData.qlooEntityId,
+        ":qlooEntityId": qlooData.entityId,
+        ":entityId": qlooData.entityId,
         ":address": qlooData.address,
         ":priceLevel": qlooData.priceLevel,
-        ":genreTags": qlooData.genreTags,
+        ":cuisine": qlooData.cuisine,
+        ":popularity": qlooData.popularity,
+        ":description": qlooData.description,
+        ":specialtyDishes": qlooData.specialtyDishes,
+        ":businessRating": qlooData.businessRating,
       },
       ReturnValues: "ALL_NEW",
     };

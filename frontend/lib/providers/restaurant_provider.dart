@@ -82,7 +82,7 @@ class RestaurantProvider extends ChangeNotifier {
   }
 
   Future<bool> selectRestaurant(
-      String qlooEntityId, QlooRestaurantData restaurantData) async {
+      String qlooEntityId, QlooSearchResult restaurantData) async {
     _setLoading(true);
     _setError(null);
 
@@ -94,15 +94,6 @@ class RestaurantProvider extends ChangeNotifier {
 
       await _restaurantService.selectRestaurant(
           restaurantId, qlooEntityId, restaurantData);
-      if (_restaurant != null) {
-        _restaurant = _restaurant!.copyWith(
-          qlooEntityId: qlooEntityId,
-          address: restaurantData.address,
-          priceLevel: restaurantData.priceLevel,
-          genreTags: restaurantData.genreTags,
-        );
-        notifyListeners();
-      }
       return true;
     } catch (e) {
       _setError(e.toString());

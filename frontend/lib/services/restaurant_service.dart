@@ -67,10 +67,9 @@ class RestaurantService {
   }
 
   Future<void> selectRestaurant(String restaurantId, String qlooEntityId,
-      QlooRestaurantData restaurantData) async {
+      QlooSearchResult restaurantData) async {
     try {
-      final response =
-          await _httpClient.postJson('/restaurant/$restaurantId/select-qloo', {
+      final response = await _httpClient.postJson('/restaurant/select', {
         'qlooEntityId': qlooEntityId,
         'restaurantData': restaurantData.toJson(),
       });

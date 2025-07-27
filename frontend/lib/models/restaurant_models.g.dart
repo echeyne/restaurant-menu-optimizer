@@ -72,8 +72,12 @@ QlooSearchResult _$QlooSearchResultFromJson(Map<String, dynamic> json) =>
       entityId: json['entityId'] as String,
       address: json['address'] as String,
       priceLevel: (json['priceLevel'] as num).toInt(),
-      tags: (json['tags'] as List<dynamic>)
-          .map((e) => QlooTag.fromJson(e as Map<String, dynamic>))
+      cuisine: json['cuisine'] as String?,
+      popularity: (json['popularity'] as num).toDouble(),
+      description: json['description'] as String?,
+      businessRating: (json['businessRating'] as num).toDouble(),
+      specialtyDishes: (json['specialtyDishes'] as List<dynamic>)
+          .map((e) => SpecialtyDishInfo.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
@@ -83,7 +87,27 @@ Map<String, dynamic> _$QlooSearchResultToJson(QlooSearchResult instance) =>
       'entityId': instance.entityId,
       'address': instance.address,
       'priceLevel': instance.priceLevel,
-      'tags': instance.tags,
+      'cuisine': instance.cuisine,
+      'popularity': instance.popularity,
+      'description': instance.description,
+      'businessRating': instance.businessRating,
+      'specialtyDishes': instance.specialtyDishes,
+    };
+
+SpecialtyDishInfo _$SpecialtyDishInfoFromJson(Map<String, dynamic> json) =>
+    SpecialtyDishInfo(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: json['type'] as String,
+      weight: (json['weight'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$SpecialtyDishInfoToJson(SpecialtyDishInfo instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'type': instance.type,
+      'weight': instance.weight,
     };
 
 QlooTag _$QlooTagFromJson(Map<String, dynamic> json) => QlooTag(
@@ -98,23 +122,6 @@ Map<String, dynamic> _$QlooTagToJson(QlooTag instance) => <String, dynamic>{
       'tagId': instance.tagId,
       'type': instance.type,
       'value': instance.value,
-    };
-
-QlooRestaurantData _$QlooRestaurantDataFromJson(Map<String, dynamic> json) =>
-    QlooRestaurantData(
-      entityId: json['entityId'] as String,
-      address: json['address'] as String,
-      priceLevel: (json['priceLevel'] as num).toInt(),
-      genreTags:
-          (json['genreTags'] as List<dynamic>).map((e) => e as String).toList(),
-    );
-
-Map<String, dynamic> _$QlooRestaurantDataToJson(QlooRestaurantData instance) =>
-    <String, dynamic>{
-      'entityId': instance.entityId,
-      'address': instance.address,
-      'priceLevel': instance.priceLevel,
-      'genreTags': instance.genreTags,
     };
 
 SimilarRestaurantData _$SimilarRestaurantDataFromJson(

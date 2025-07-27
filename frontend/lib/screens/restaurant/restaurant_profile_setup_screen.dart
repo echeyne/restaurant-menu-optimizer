@@ -394,24 +394,24 @@ class _RestaurantProfileSetupScreenState
                     Text('Price Level: ${_selectedRestaurant!.priceLevel}'),
                   ],
                 ),
-                if (_selectedRestaurant!.tags.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  const Text('Cuisine Types:',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 8,
-                    children: _selectedRestaurant!.tags
-                        .where((tag) => tag.type.contains('genre'))
-                        .map((tag) => Chip(
-                              label: Text(tag.name),
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
-                            ))
-                        .toList(),
-                  ),
-                ],
+                // if (_selectedRestaurant!.tags.isNotEmpty) ...[
+                //   const SizedBox(height: 8),
+                //   const Text('Cuisine Types:',
+                //       style: TextStyle(fontWeight: FontWeight.w500)),
+                //   const SizedBox(height: 4),
+                //   Wrap(
+                //     spacing: 8,
+                //     children: _selectedRestaurant!.tags
+                //         .where((tag) => tag.type.contains('genre'))
+                //         .map((tag) => Chip(
+                //               label: Text(tag.name),
+                //               backgroundColor: Theme.of(context)
+                //                   .colorScheme
+                //                   .primaryContainer,
+                //             ))
+                //         .toList(),
+                //   ),
+                // ],
               ],
             ),
           ),
@@ -599,18 +599,10 @@ class _RestaurantProfileSetupScreenState
 
   Future<bool> _selectRestaurant(RestaurantProvider provider) async {
     if (_selectedRestaurant == null) return false;
-    final restaurantData = QlooRestaurantData(
-      entityId: _selectedRestaurant!.entityId,
-      address: _selectedRestaurant!.address,
-      priceLevel: _selectedRestaurant!.priceLevel,
-      genreTags: _selectedRestaurant!.tags
-          .where((tag) => tag.type.contains('genre'))
-          .map((tag) => tag.tagId)
-          .toList(),
-    );
+
     final success = await provider.selectRestaurant(
       _selectedRestaurant!.entityId,
-      restaurantData,
+      _selectedRestaurant!,
     );
     if (!success) {
       _showErrorSnackBar(provider.error ?? 'Failed to select restaurant');

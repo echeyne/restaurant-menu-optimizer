@@ -5,17 +5,14 @@
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
-import { QlooRestaurantData } from "../../models/database";
+import { QlooSearchResult } from "../../models/database";
 
 /**
  * Request body interface for restaurant selection
  */
 interface SelectRestaurantRequest {
   restaurantId: string;
-  qlooEntityId: string;
-  address: string;
-  priceLevel: number;
-  genreTags: string[];
+  qlooSearchResult: QlooSearchResult;
 }
 
 /**
@@ -58,7 +55,7 @@ export const handler = async (
     const requestBody: SelectRestaurantRequest = JSON.parse(event.body);
 
     // Validate required fields
-    if (!requestBody.restaurantId || !requestBody.qlooEntityId) {
+    if (!requestBody.restaurantId || !requestBody.qlooSearchResult) {
       return {
         statusCode: 400,
         headers: {
@@ -69,7 +66,27 @@ export const handler = async (
         },
         body: JSON.stringify({
           success: false,
-          message: "Restaurant ID and Qloo entity ID are required",
+          message: "Restaurant ID and Qloo search result are required",
+        }),
+      };
+    }
+
+    // Validate Qloo search result has required fields
+    if (
+      !requestBody.qlooSearchResult.entityId ||
+      !requestBody.qlooSearchResult.name
+    ) {
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Qloo search result must include entityId and name",
         }),
       };
     }
@@ -97,23 +114,10 @@ export const handler = async (
       };
     }
 
-    // Prepare Qloo data for update
-    const qlooData: QlooRestaurantData = {
-      entityId: requestBody.qlooEntityId,
-      address: requestBody.address || "",
-      priceLevel: requestBody.priceLevel || 0,
-      genreTags: requestBody.genreTags || [],
-    };
-
     // Update restaurant with Qloo data
     const updatedRestaurant = await restaurantRepository.updateWithQlooData(
       requestBody.restaurantId,
-      {
-        qlooEntityId: qlooData.entityId,
-        address: qlooData.address,
-        priceLevel: qlooData.priceLevel,
-        genreTags: qlooData.genreTags,
-      }
+      requestBody.qlooSearchResult
     );
 
     console.log("Restaurant updated with Qloo data:", updatedRestaurant);

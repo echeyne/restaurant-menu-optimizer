@@ -15,7 +15,7 @@ class Restaurant {
   final List<String>? genreTags;
   final DateTime createdAt;
   final bool profileSetupComplete;
-  
+
   Restaurant({
     required this.restaurantId,
     required this.ownerId,
@@ -29,7 +29,7 @@ class Restaurant {
     required this.createdAt,
     required this.profileSetupComplete,
   });
-  
+
   Restaurant copyWith({
     String? restaurantId,
     String? ownerId,
@@ -57,8 +57,9 @@ class Restaurant {
       profileSetupComplete: profileSetupComplete ?? this.profileSetupComplete,
     );
   }
-  
-  factory Restaurant.fromJson(Map<String, dynamic> json) => _$RestaurantFromJson(json);
+
+  factory Restaurant.fromJson(Map<String, dynamic> json) =>
+      _$RestaurantFromJson(json);
   Map<String, dynamic> toJson() => _$RestaurantToJson(this);
 }
 
@@ -68,27 +69,29 @@ class RestaurantProfile {
   final String city;
   final String state;
   final String ownerId;
-  
+
   RestaurantProfile({
     required this.name,
     required this.city,
     required this.state,
     required this.ownerId,
   });
-  
-  factory RestaurantProfile.fromJson(Map<String, dynamic> json) => _$RestaurantProfileFromJson(json);
+
+  factory RestaurantProfile.fromJson(Map<String, dynamic> json) =>
+      _$RestaurantProfileFromJson(json);
   Map<String, dynamic> toJson() => _$RestaurantProfileToJson(this);
 }
 
 @JsonSerializable()
 class RestaurantSetupResponse {
   final Restaurant restaurant;
-  
+
   RestaurantSetupResponse({
     required this.restaurant,
   });
-  
-  factory RestaurantSetupResponse.fromJson(Map<String, dynamic> json) => _$RestaurantSetupResponseFromJson(json);
+
+  factory RestaurantSetupResponse.fromJson(Map<String, dynamic> json) =>
+      _$RestaurantSetupResponseFromJson(json);
   Map<String, dynamic> toJson() => _$RestaurantSetupResponseToJson(this);
 }
 
@@ -98,18 +101,46 @@ class QlooSearchResult {
   final String entityId;
   final String address;
   final int priceLevel;
-  final List<QlooTag> tags;
-  
+  final String? cuisine;
+  final double popularity;
+  final String? description;
+  final double businessRating;
+  final List<SpecialtyDishInfo> specialtyDishes;
+
   QlooSearchResult({
     required this.name,
     required this.entityId,
     required this.address,
     required this.priceLevel,
-    required this.tags,
+    this.cuisine,
+    required this.popularity,
+    this.description,
+    required this.businessRating,
+    required this.specialtyDishes,
   });
-  
-  factory QlooSearchResult.fromJson(Map<String, dynamic> json) => _$QlooSearchResultFromJson(json);
+
+  factory QlooSearchResult.fromJson(Map<String, dynamic> json) =>
+      _$QlooSearchResultFromJson(json);
   Map<String, dynamic> toJson() => _$QlooSearchResultToJson(this);
+}
+
+@JsonSerializable()
+class SpecialtyDishInfo {
+  final String id;
+  final String name;
+  final String type;
+  final double weight;
+
+  SpecialtyDishInfo({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.weight,
+  });
+
+  factory SpecialtyDishInfo.fromJson(Map<String, dynamic> json) =>
+      _$SpecialtyDishInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$SpecialtyDishInfoToJson(this);
 }
 
 @JsonSerializable()
@@ -118,34 +149,17 @@ class QlooTag {
   final String tagId;
   final String type;
   final String value;
-  
+
   QlooTag({
     required this.name,
     required this.tagId,
     required this.type,
     required this.value,
   });
-  
-  factory QlooTag.fromJson(Map<String, dynamic> json) => _$QlooTagFromJson(json);
-  Map<String, dynamic> toJson() => _$QlooTagToJson(this);
-}
 
-@JsonSerializable()
-class QlooRestaurantData {
-  final String entityId;
-  final String address;
-  final int priceLevel;
-  final List<String> genreTags;
-  
-  QlooRestaurantData({
-    required this.entityId,
-    required this.address,
-    required this.priceLevel,
-    required this.genreTags,
-  });
-  
-  factory QlooRestaurantData.fromJson(Map<String, dynamic> json) => _$QlooRestaurantDataFromJson(json);
-  Map<String, dynamic> toJson() => _$QlooRestaurantDataToJson(this);
+  factory QlooTag.fromJson(Map<String, dynamic> json) =>
+      _$QlooTagFromJson(json);
+  Map<String, dynamic> toJson() => _$QlooTagToJson(this);
 }
 
 @JsonSerializable()
@@ -156,7 +170,7 @@ class SimilarRestaurantData {
   final List<SpecialtyDish> specialtyDishes;
   final double minRatingFilter;
   final DateTime retrievedAt;
-  
+
   SimilarRestaurantData({
     required this.restaurantId,
     required this.qlooEntityId,
@@ -165,8 +179,9 @@ class SimilarRestaurantData {
     required this.minRatingFilter,
     required this.retrievedAt,
   });
-  
-  factory SimilarRestaurantData.fromJson(Map<String, dynamic> json) => _$SimilarRestaurantDataFromJson(json);
+
+  factory SimilarRestaurantData.fromJson(Map<String, dynamic> json) =>
+      _$SimilarRestaurantDataFromJson(json);
   Map<String, dynamic> toJson() => _$SimilarRestaurantDataToJson(this);
 }
 
@@ -178,7 +193,7 @@ class SimilarRestaurant {
   final double businessRating;
   final int priceLevel;
   final List<String> specialtyDishes;
-  
+
   SimilarRestaurant({
     required this.name,
     required this.entityId,
@@ -187,8 +202,9 @@ class SimilarRestaurant {
     required this.priceLevel,
     required this.specialtyDishes,
   });
-  
-  factory SimilarRestaurant.fromJson(Map<String, dynamic> json) => _$SimilarRestaurantFromJson(json);
+
+  factory SimilarRestaurant.fromJson(Map<String, dynamic> json) =>
+      _$SimilarRestaurantFromJson(json);
   Map<String, dynamic> toJson() => _$SimilarRestaurantToJson(this);
 }
 
@@ -198,15 +214,16 @@ class SpecialtyDish {
   final String tagId;
   final int restaurantCount;
   final double popularity;
-  
+
   SpecialtyDish({
     required this.dishName,
     required this.tagId,
     required this.restaurantCount,
     required this.popularity,
   });
-  
-  factory SpecialtyDish.fromJson(Map<String, dynamic> json) => _$SpecialtyDishFromJson(json);
+
+  factory SpecialtyDish.fromJson(Map<String, dynamic> json) =>
+      _$SpecialtyDishFromJson(json);
   Map<String, dynamic> toJson() => _$SpecialtyDishToJson(this);
 }
 
@@ -218,7 +235,7 @@ class DemographicsData {
   final List<String> interests;
   final List<DiningPattern> diningPatterns;
   final DateTime retrievedAt;
-  
+
   DemographicsData({
     required this.restaurantId,
     required this.qlooEntityId,
@@ -227,8 +244,9 @@ class DemographicsData {
     required this.diningPatterns,
     required this.retrievedAt,
   });
-  
-  factory DemographicsData.fromJson(Map<String, dynamic> json) => _$DemographicsDataFromJson(json);
+
+  factory DemographicsData.fromJson(Map<String, dynamic> json) =>
+      _$DemographicsDataFromJson(json);
   Map<String, dynamic> toJson() => _$DemographicsDataToJson(this);
 }
 
@@ -237,14 +255,15 @@ class AgeGroupData {
   final String ageRange;
   final double percentage;
   final List<String> preferences;
-  
+
   AgeGroupData({
     required this.ageRange,
     required this.percentage,
     required this.preferences,
   });
-  
-  factory AgeGroupData.fromJson(Map<String, dynamic> json) => _$AgeGroupDataFromJson(json);
+
+  factory AgeGroupData.fromJson(Map<String, dynamic> json) =>
+      _$AgeGroupDataFromJson(json);
   Map<String, dynamic> toJson() => _$AgeGroupDataToJson(this);
 }
 
@@ -253,13 +272,14 @@ class DiningPattern {
   final String pattern;
   final double frequency;
   final List<String> timeOfDay;
-  
+
   DiningPattern({
     required this.pattern,
     required this.frequency,
     required this.timeOfDay,
   });
-  
-  factory DiningPattern.fromJson(Map<String, dynamic> json) => _$DiningPatternFromJson(json);
+
+  factory DiningPattern.fromJson(Map<String, dynamic> json) =>
+      _$DiningPatternFromJson(json);
   Map<String, dynamic> toJson() => _$DiningPatternToJson(this);
 }

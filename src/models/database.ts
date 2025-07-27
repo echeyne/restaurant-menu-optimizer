@@ -14,11 +14,18 @@ export interface Restaurant {
   state: string;
   qlooEntityId?: string;
   address?: string;
-  priceLevel?: number;
-  genreTags?: string[]; // e.g., ["urn:tag:genre:restaurant:mexican"]
   createdAt: string;
   profileSetupComplete: boolean;
   settings?: RestaurantSettings;
+  entityId: string;
+  priceLevel?: number;
+  cuisine: string;
+  // A percentile value that represents an entity's rank in terms of its signal
+  // compared to all other entities within the same domain
+  popularity: number;
+  description: string;
+  specialtyDishes: QlooTag[];
+  businessRating: number;
 }
 
 /**
@@ -180,7 +187,7 @@ export interface QlooSearchResult {
   // compared to all other entities within the same domain
   popularity: number;
   description: string;
-  specialtyDishes: QlooTag[];
+  // specialtyDishes: QlooTag[];
   businessRating: number;
   // tags: QlooTag[];
 }
@@ -193,16 +200,6 @@ export interface QlooTag {
   tag_id: string;
   type: string;
   value: string;
-}
-
-/**
- * Qloo restaurant data interface
- */
-export interface QlooRestaurantData {
-  entityId: string;
-  address: string;
-  priceLevel: number;
-  genreTags: string[];
 }
 
 /**
