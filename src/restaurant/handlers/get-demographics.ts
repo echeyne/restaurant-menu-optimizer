@@ -35,37 +35,27 @@ interface GetDemographicsResponse {
  * Qloo demographics API response interface
  */
 interface QlooDemographicsResponse {
-  data: {
+  success: boolean;
+  results: {
     demographics: QlooDemographicData[];
-    insights: QlooInsight[];
   };
-  meta?: {
-    entity_id: string;
-    analysis_date: string;
-  };
+  duration: number;
 }
 
 /**
  * Qloo demographic data interface
  */
 interface QlooDemographicData {
-  type: string;
-  category: string;
-  value: string;
-  percentage: number;
-  confidence: number;
-  preferences?: string[];
-}
-
-/**
- * Qloo insight interface
- */
-interface QlooInsight {
-  type: string;
-  category: string;
-  value: string;
-  frequency: number;
-  time_of_day?: string[];
+  entity_id: string;
+  query: {
+    age?: {
+      [key: string]: number;
+    };
+    gender?: {
+      [key: string]: number;
+    };
+    [key: string]: any;
+  };
 }
 
 /**
@@ -292,38 +282,64 @@ function formatDemographicsData(
   qlooEntityId: string,
   demographicsData: QlooDemographicsResponse
 ): DemographicsData {
-  // Process age groups
-  const ageGroups: AgeGroupData[] = demographicsData.data.demographics
-    .filter((item) => item.type === "age_group" || item.category === "age")
-    .map((item) => ({
-      ageRange: item.value,
-      percentage: item.percentage,
-      preferences: item.preferences || [],
-    }));
+  const ageGroups: AgeGroupData[] = [];
+  const interests: string[] = [];
+  const diningPatterns: DiningPattern[] = [];
 
-  // Process interests
-  const interests: string[] = demographicsData.data.demographics
-    .filter((item) => item.type === "interest" || item.category === "interests")
-    .map((item) => item.value);
+  // Process demographics data from the API response
+  if (demographicsData.results?.demographics) {
+    for (const demographic of demographicsData.results.demographics) {
+      // Process age groups
+      if (demographic.query.age) {
+        for (const [ageRange, percentage] of Object.entries(
+          demographic.query.age
+        )) {
+          ageGroups.push({
+            ageRange: ageRange.replace(/_/g, " "), // Convert "24_and_younger" to "24 and younger"
+            percentage: Math.abs(percentage), // Convert to positive percentage
+            preferences: [], // No preferences data in current API response
+          });
+        }
+      }
 
-  // Process dining patterns from insights
-  const diningPatterns: DiningPattern[] = demographicsData.data.insights
-    .filter(
-      (insight) =>
-        insight.type === "dining_pattern" || insight.category === "dining"
-    )
-    .map((insight) => ({
-      pattern: insight.value,
-      frequency: insight.frequency,
-      timeOfDay: insight.time_of_day || [],
-    }));
+      // Process gender data (could be treated as interests or separate category)
+      if (demographic.query.gender) {
+        for (const [gender, percentage] of Object.entries(
+          demographic.query.gender
+        )) {
+          if (percentage > 0) {
+            interests.push(
+              `${gender} preference: ${(percentage * 100).toFixed(1)}%`
+            );
+          }
+        }
+      }
+
+      // Process any other demographic categories as interests
+      for (const [category, data] of Object.entries(demographic.query)) {
+        if (
+          category !== "age" &&
+          category !== "gender" &&
+          typeof data === "object"
+        ) {
+          for (const [key, value] of Object.entries(
+            data as Record<string, number>
+          )) {
+            if (value > 0) {
+              interests.push(`${category}: ${key.replace(/_/g, " ")}`);
+            }
+          }
+        }
+      }
+    }
+  }
 
   return {
     restaurantId,
     qlooEntityId,
     ageGroups,
     interests,
-    diningPatterns,
+    diningPatterns, // Empty for now as the API response doesn't include dining patterns
     retrievedAt: new Date().toISOString(),
   };
 }
