@@ -19,8 +19,7 @@ import {
  * Request body interface for similar restaurant search
  */
 interface SearchSimilarRestaurantsRequest {
-  restaurantId: string;
-  qlooEntityId: string;
+  entityId: string;
   minRating?: number;
 }
 
@@ -29,7 +28,7 @@ interface SearchSimilarRestaurantsRequest {
  */
 interface SearchSimilarRestaurantsResponse {
   success: boolean;
-  data?: SimilarRestaurantData;
+  results?: SimilarRestaurant[];
   message?: string;
 }
 
@@ -109,8 +108,9 @@ export const handler = async (
 
     const requestBody: SearchSimilarRestaurantsRequest = JSON.parse(event.body);
 
-    // Validate required fields
-    if (!requestBody.restaurantId || !requestBody.qlooEntityId) {
+    // Get restaurantId from path parameters
+    const restaurantId = event.pathParameters?.restaurantId;
+    if (!restaurantId) {
       return {
         statusCode: 400,
         headers: {
@@ -121,7 +121,24 @@ export const handler = async (
         },
         body: JSON.stringify({
           success: false,
-          message: "Restaurant ID and Qloo entity ID are required",
+          message: "Restaurant ID is required in path",
+        }),
+      };
+    }
+
+    // Validate required fields
+    if (!requestBody.entityId) {
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Entity ID is required",
         }),
       };
     }
@@ -131,9 +148,7 @@ export const handler = async (
     const restaurantRepository = new RestaurantRepository();
 
     // Verify restaurant exists
-    const restaurant = await restaurantRepository.getById(
-      requestBody.restaurantId
-    );
+    const restaurant = await restaurantRepository.getById(restaurantId);
     if (!restaurant) {
       return {
         statusCode: 404,
@@ -155,7 +170,7 @@ export const handler = async (
 
     // Search for similar restaurants using Qloo API
     const similarRestaurants = await searchSimilarRestaurantsFromQloo(
-      requestBody.qlooEntityId,
+      requestBody.entityId,
       apiKey,
       requestBody.minRating || 3.0
     );
@@ -165,8 +180,8 @@ export const handler = async (
 
     // Create similar restaurant data object
     const similarRestaurantData: SimilarRestaurantData = {
-      restaurantId: requestBody.restaurantId,
-      qlooEntityId: requestBody.qlooEntityId,
+      restaurantId: restaurantId,
+      qlooEntityId: requestBody.entityId,
       similarRestaurants: similarRestaurants.map(formatSimilarRestaurant),
       specialtyDishes,
       minRatingFilter: requestBody.minRating || 3.0,
@@ -182,7 +197,7 @@ export const handler = async (
 
     const response: SearchSimilarRestaurantsResponse = {
       success: true,
-      data: savedData,
+      results: savedData.similarRestaurants,
       message: `Found ${similarRestaurants.length} similar restaurants with ${specialtyDishes.length} specialty dishes`,
     };
 

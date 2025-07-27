@@ -308,7 +308,8 @@ class _RestaurantProfileSetupScreenState
                   children: [
                     Text(result.address),
                     const SizedBox(height: 4),
-                    Text('Cuisine: ${result.length > 0 result.cuisine : ''}'),
+                    Text(
+                        'Cuisine: ${result.cuisine!.isNotEmpty ? result.cuisine : 'unknown'}'),
                   ],
                 ),
                 trailing: Radio<QlooSearchResult>(
@@ -383,7 +384,8 @@ class _RestaurantProfileSetupScreenState
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('Cuisine: ${_selectedRestaurant!.cuisine.length > 0 result.cuisine : ''}'),
+                Text(
+                    'Cuisine: ${_selectedRestaurant!.cuisine!.isNotEmpty ? _selectedRestaurant!.cuisine : 'unknown'}'),
               ],
             ),
           ),

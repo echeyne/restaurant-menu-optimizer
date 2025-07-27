@@ -656,7 +656,7 @@ functions:
     handler: src/restaurant/handlers/setup-restaurant-profile.handler
     events:
       - http:
-          path: restaurant/setup-profile
+          path: restaurant/profile
           method: post
           cors:
             origin: "*"
@@ -687,6 +687,19 @@ functions:
                       type: string
                     ownerId:
                       type: string
+      - http:
+          path: restaurant/profile
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -730,6 +743,19 @@ functions:
                       type: string
                     state:
                       type: string
+      - http:
+          path: restaurant/search-qloo
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -805,7 +831,7 @@ functions:
     handler: src/restaurant/handlers/search-similar-restaurants.handler
     events:
       - http:
-          path: restaurant/search-similar
+          path: restaurant/{restaurantId}/similar-restaurants
           method: post
           cors:
             origin: "*"
@@ -818,22 +844,35 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: true
           request:
+            parameters:
+              paths:
+                restaurantId: true
             schemas:
               application/json:
                 schema:
                   type: object
                   required:
-                    - restaurantId
-                    - qlooEntityId
+                    - entityId
                   properties:
-                    restaurantId:
-                      type: string
-                    qlooEntityId:
+                    entityId:
                       type: string
                     minRating:
                       type: number
                       minimum: 1
                       maximum: 5
+      - http:
+          path: restaurant/{restaurantId}/similar-restaurants
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -854,7 +893,7 @@ functions:
     handler: src/restaurant/handlers/get-demographics.handler
     events:
       - http:
-          path: restaurant/demographics
+          path: restaurant/{restaurantId}/demographics
           method: post
           cors:
             origin: "*"
@@ -867,18 +906,31 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: true
           request:
+            parameters:
+              paths:
+                restaurantId: true
             schemas:
               application/json:
                 schema:
                   type: object
                   required:
-                    - restaurantId
-                    - qlooEntityId
+                    - entityId
                   properties:
-                    restaurantId:
+                    entityId:
                       type: string
-                    qlooEntityId:
-                      type: string
+      - http:
+          path: restaurant/{restaurantId}/demographics
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}

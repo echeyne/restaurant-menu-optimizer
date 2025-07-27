@@ -18,8 +18,7 @@ import {
  * Request body interface for demographics data collection
  */
 interface GetDemographicsRequest {
-  restaurantId: string;
-  qlooEntityId: string;
+  entityId: string;
 }
 
 /**
@@ -98,8 +97,9 @@ export const handler = async (
 
     const requestBody: GetDemographicsRequest = JSON.parse(event.body);
 
-    // Validate required fields
-    if (!requestBody.restaurantId || !requestBody.qlooEntityId) {
+    // Get restaurantId from path parameters
+    const restaurantId = event.pathParameters?.restaurantId;
+    if (!restaurantId) {
       return {
         statusCode: 400,
         headers: {
@@ -110,7 +110,24 @@ export const handler = async (
         },
         body: JSON.stringify({
           success: false,
-          message: "Restaurant ID and Qloo entity ID are required",
+          message: "Restaurant ID is required in path",
+        }),
+      };
+    }
+
+    // Validate required fields
+    if (!requestBody.entityId) {
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Entity ID is required",
         }),
       };
     }
@@ -120,9 +137,7 @@ export const handler = async (
     const restaurantRepository = new RestaurantRepository();
 
     // Verify restaurant exists
-    const restaurant = await restaurantRepository.getById(
-      requestBody.restaurantId
-    );
+    const restaurant = await restaurantRepository.getById(restaurantId);
     if (!restaurant) {
       return {
         statusCode: 404,
@@ -144,14 +159,14 @@ export const handler = async (
 
     // Get demographics data from Qloo API
     const demographicsData = await getDemographicsFromQloo(
-      requestBody.qlooEntityId,
+      requestBody.entityId,
       apiKey
     );
 
     // Process and format demographics data
     const formattedDemographics = formatDemographicsData(
-      requestBody.restaurantId,
-      requestBody.qlooEntityId,
+      restaurantId,
+      requestBody.entityId,
       demographicsData
     );
 
