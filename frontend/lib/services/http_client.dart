@@ -4,9 +4,13 @@ import 'auth_service.dart';
 
 class HttpClient {
   final AuthService _authService = AuthService();
-  static const String baseUrl = 'https://ofjfkha65m.execute-api.us-east-1.amazonaws.com/dev';
+  static const String baseUrl =
+      'https://ofjfkha65m.execute-api.us-east-1.amazonaws.com/dev';
 
-  Future<http.Response> get(String endpoint, {Map<String, String>? headers}) async {
+  Future<http.Response> get(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
     return await _authService.authenticatedRequest(
       method: 'GET',
       endpoint: endpoint,
@@ -14,7 +18,11 @@ class HttpClient {
     );
   }
 
-  Future<http.Response> post(String endpoint, {Object? body, Map<String, String>? headers}) async {
+  Future<http.Response> post(
+    String endpoint, {
+    Object? body,
+    Map<String, String>? headers,
+  }) async {
     return await _authService.authenticatedRequest(
       method: 'POST',
       endpoint: endpoint,
@@ -23,7 +31,11 @@ class HttpClient {
     );
   }
 
-  Future<http.Response> put(String endpoint, {Object? body, Map<String, String>? headers}) async {
+  Future<http.Response> put(
+    String endpoint, {
+    Object? body,
+    Map<String, String>? headers,
+  }) async {
     return await _authService.authenticatedRequest(
       method: 'PUT',
       endpoint: endpoint,
@@ -32,7 +44,10 @@ class HttpClient {
     );
   }
 
-  Future<http.Response> delete(String endpoint, {Map<String, String>? headers}) async {
+  Future<http.Response> delete(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
     return await _authService.authenticatedRequest(
       method: 'DELETE',
       endpoint: endpoint,
@@ -41,11 +56,17 @@ class HttpClient {
   }
 
   // Helper method for JSON requests
-  Future<http.Response> postJson(String endpoint, Map<String, dynamic> data) async {
+  Future<http.Response> postJson(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
     return await post(endpoint, body: jsonEncode(data));
   }
 
-  Future<http.Response> putJson(String endpoint, Map<String, dynamic> data) async {
+  Future<http.Response> putJson(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
     return await put(endpoint, body: jsonEncode(data));
   }
 }

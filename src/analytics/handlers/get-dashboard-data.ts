@@ -8,6 +8,7 @@ import {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
+import { createResponse } from "../../models/api";
 import { AnalyticsService } from "../../services/analytics-service";
 
 const analyticsService = new AnalyticsService();
@@ -16,6 +17,11 @@ export const handler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   console.log("Get dashboard data request:", {
     requestId: context.awsRequestId,
     queryStringParameters: event.queryStringParameters,

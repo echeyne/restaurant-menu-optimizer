@@ -14,6 +14,7 @@ import {
   SpecialtyDish,
   KeywordData,
 } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Request body interface for similar restaurant search
@@ -83,42 +84,23 @@ interface QlooKeyword {
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   console.log(
     "Search similar restaurants request:",
     JSON.stringify(event, null, 2)
   );
 
-  // Handle CORS preflight request
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-        "Access-Control-Allow-Credentials": "true",
-      },
-      body: "",
-    };
-  }
-
   try {
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Request body is required",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Request body is required",
+      });
     }
 
     const requestBody: SearchSimilarRestaurantsRequest = JSON.parse(event.body);
@@ -126,36 +108,18 @@ export const handler = async (
     // Get restaurantId from path parameters
     const restaurantId = event.pathParameters?.restaurantId;
     if (!restaurantId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant ID is required in path",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Restaurant ID is required in path",
+      });
     }
 
     // Validate required fields
     if (!requestBody.entityId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Entity ID is required",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Entity ID is required",
+      });
     }
 
     // Initialize repositories
@@ -165,20 +129,13 @@ export const handler = async (
     // Verify restaurant exists
     const restaurant = await restaurantRepository.getById(restaurantId);
     if (!restaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant not found",
-        }),
-      };
+      return createResponse(404, {
+        success: false,
+        message: "Restaurant not found",
+      });
     }
+
+    console.log(`resturant ${restaurant}`);
 
     // Get Qloo API key
     const apiKey = await getQlooApiKey();
@@ -187,7 +144,9 @@ export const handler = async (
     const similarRestaurants = await searchSimilarRestaurantsFromQloo(
       requestBody.entityId,
       apiKey,
-      requestBody.minRating || 3.0
+      requestBody.minRating || 3.0,
+      restaurant.cuisine,
+      `${restaurant.city}, ${restaurant.state}`
     );
 
     // Extract specialty dishes from similar restaurants
@@ -215,17 +174,7 @@ export const handler = async (
       results: savedData.similarRestaurants,
       message: `Found ${similarRestaurants.length} similar restaurants with ${specialtyDishes.length} specialty dishes`,
     };
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-      },
-      body: JSON.stringify(response),
-    };
+    return createResponse(200, response);
   } catch (error: any) {
     console.error("Error searching similar restaurants:", error);
 
@@ -250,20 +199,11 @@ export const handler = async (
       message = "Failed to authenticate with Qloo API";
     }
 
-    return {
-      statusCode,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-      },
-      body: JSON.stringify({
-        success: false,
-        message,
-        error: error.message,
-      }),
-    };
+    return createResponse(statusCode, {
+      success: false,
+      message,
+      error: error.message,
+    });
   }
 };
 
@@ -277,19 +217,22 @@ export const handler = async (
 async function searchSimilarRestaurantsFromQloo(
   entityId: string,
   apiKey: string,
-  minRating: number
+  minRating: number,
+  cuisine: string,
+  location: string
 ): Promise<QlooSimilarRestaurant[]> {
   const qlooBaseUrl =
     process.env.QLOO_API_URL || "https://hackathon.api.qloo.com";
 
   // Construct similar restaurants search URL
-  const searchUrl = `${qlooBaseUrl}/similar`;
+  const searchUrl = `${qlooBaseUrl}/insights`;
   const searchParams = new URLSearchParams({
-    entity_id: entityId,
-    "filter.business_rating": minRating.toString(),
-    limit: "20", // Get up to 20 similar restaurants
-    include_tags: "true",
-    include_keywords: "true",
+    "filter.type": "urn:entity:place",
+    "filter.location": location,
+    "filter.tags": `urn:tag:genre:place:restaurant:${cuisine}`,
+    "signal.interests.entities": entityId,
+    count: "10",
+    "filter.external.tripadvisor.rating.min": minRating.toString(),
   });
 
   const fullUrl = `${searchUrl}?${searchParams.toString()}`;
