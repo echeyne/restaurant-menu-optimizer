@@ -172,4 +172,9 @@ class RestaurantProvider extends ChangeNotifier {
   void clearError() {
     _setError(null);
   }
+
+  void clearSimilarRestaurants() {
+    _similarRestaurants = [];
+    notifyListeners();
+  }
 }

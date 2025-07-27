@@ -192,6 +192,7 @@ class SimilarRestaurant {
   final String address;
   final double businessRating;
   final int priceLevel;
+  final double popularity;
   final List<String> specialtyDishes;
 
   SimilarRestaurant({
@@ -200,6 +201,7 @@ class SimilarRestaurant {
     required this.address,
     required this.businessRating,
     required this.priceLevel,
+    required this.popularity,
     required this.specialtyDishes,
   });
 

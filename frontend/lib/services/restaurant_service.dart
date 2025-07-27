@@ -94,8 +94,30 @@ class RestaurantService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> results = data['results'] ?? [];
-        return results.map((json) => SimilarRestaurant.fromJson(json)).toList();
+        final List<dynamic> restaurants = data['restaurants'] ?? [];
+
+        // Transform the API response to match the SimilarRestaurant model
+        return restaurants.map((json) {
+          // Extract specialty dish names from the objects
+          final List<dynamic> specialtyDishObjects =
+              json['specialtyDishes'] ?? [];
+          final List<String> specialtyDishNames = specialtyDishObjects
+              .map((dish) => dish['name'] as String)
+              .toList();
+
+          // Create a new map with the transformed data
+          final transformedJson = {
+            'name': json['name'],
+            'entityId': json['entityId'],
+            'address': json['address'],
+            'businessRating': json['businessRating'],
+            'priceLevel': json['priceLevel'],
+            'specialtyDishes': specialtyDishNames,
+            'popularity': json['popularity']
+          };
+
+          return SimilarRestaurant.fromJson(transformedJson);
+        }).toList();
       } else {
         throw Exception(
             'Failed to search similar restaurants: ${response.body}');

@@ -23,6 +23,7 @@ class _RestaurantProfileSetupScreenState
   QlooSearchResult? _selectedRestaurant;
   double _minRating = 4.0;
   bool _initialized = false;
+  bool _similarRestaurantsSearched = false;
 
   @override
   void initState() {
@@ -49,10 +50,22 @@ class _RestaurantProfileSetupScreenState
                 if (restaurant.qlooEntityId != null &&
                     restaurant.qlooEntityId!.isNotEmpty) {
                   _currentStep = 3;
-                  if (restaurantProvider.similarRestaurants.isEmpty) {
-                    restaurantProvider.searchSimilarRestaurants(
-                        restaurant.qlooEntityId!, _minRating);
-                  }
+                  // Create a QlooSearchResult from the existing restaurant data
+                  _selectedRestaurant = QlooSearchResult(
+                    name: restaurant.name,
+                    entityId: restaurant.qlooEntityId!,
+                    address: restaurant.address ??
+                        '${restaurant.city}, ${restaurant.state}',
+                    priceLevel: restaurant.priceLevel ?? 1,
+                    cuisine: restaurant.genreTags?.isNotEmpty == true
+                        ? restaurant.genreTags!.first
+                        : '',
+                    popularity: 0.0,
+                    businessRating: 0.0,
+                    specialtyDishes: [],
+                  );
+                  // Clear any previous similar restaurants data
+                  restaurantProvider.clearSimilarRestaurants();
                 } else {
                   _currentStep = 1;
                   if (restaurantProvider.searchResults.isEmpty) {
@@ -72,10 +85,22 @@ class _RestaurantProfileSetupScreenState
             if (restaurant.qlooEntityId != null &&
                 restaurant.qlooEntityId!.isNotEmpty) {
               _currentStep = 3;
-              if (restaurantProvider.similarRestaurants.isEmpty) {
-                restaurantProvider.searchSimilarRestaurants(
-                    restaurant.qlooEntityId!, _minRating);
-              }
+              // Create a QlooSearchResult from the existing restaurant data
+              _selectedRestaurant = QlooSearchResult(
+                name: restaurant.name,
+                entityId: restaurant.qlooEntityId!,
+                address: restaurant.address ??
+                    '${restaurant.city}, ${restaurant.state}',
+                priceLevel: restaurant.priceLevel ?? 1,
+                cuisine: restaurant.genreTags?.isNotEmpty == true
+                    ? restaurant.genreTags!.first
+                    : '',
+                popularity: 0.0,
+                businessRating: 0.0,
+                specialtyDishes: [],
+              );
+              // Clear any previous similar restaurants data
+              restaurantProvider.clearSimilarRestaurants();
             } else {
               _currentStep = 1;
               if (restaurantProvider.searchResults.isEmpty) {
@@ -138,11 +163,30 @@ class _RestaurantProfileSetupScreenState
                       child: const Text('Back'),
                     ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: details.onStepContinue,
-                    child: Text(
-                        details.stepIndex == 3 ? 'Complete Setup' : 'Continue'),
-                  ),
+                  if (details.stepIndex == 3 &&
+                      !_similarRestaurantsSearched) ...[
+                    ElevatedButton(
+                      onPressed: details.onStepContinue,
+                      child: const Text('Search Similar Restaurants'),
+                    ),
+                  ] else if (details.stepIndex == 3 &&
+                      _similarRestaurantsSearched) ...[
+                    ElevatedButton(
+                      onPressed: () =>
+                          _searchSimilarRestaurants(restaurantProvider),
+                      child: const Text('Search Again'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: details.onStepContinue,
+                      child: const Text('Complete Setup'),
+                    ),
+                  ] else ...[
+                    ElevatedButton(
+                      onPressed: details.onStepContinue,
+                      child: const Text('Continue'),
+                    ),
+                  ],
                 ],
               );
             },
@@ -287,7 +331,7 @@ class _RestaurantProfileSetupScreenState
             'No matching restaurants found. You can continue with manual setup.',
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
       );
     }
@@ -433,12 +477,16 @@ class _RestaurantProfileSetupScreenState
           ],
         ),
         const SizedBox(height: 16),
-        if (provider.similarRestaurants.isNotEmpty) ...[
+        if (!_similarRestaurantsSearched) ...[
+          const Text(
+            'Click "Search Similar Restaurants" to find similar restaurants with the selected minimum rating.',
+            style: TextStyle(fontStyle: FontStyle.italic),
+          ),
+        ] else if (provider.similarRestaurants.isNotEmpty) ...[
           Text(
             'Found ${provider.similarRestaurants.length} similar restaurants:',
             style: const TextStyle(fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 8),
           SizedBox(
             height: 200,
             child: ListView.builder(
@@ -463,6 +511,9 @@ class _RestaurantProfileSetupScreenState
                             Text(' Level ${restaurant.priceLevel}'),
                           ],
                         ),
+                        Text(
+                          'Qloo Popularity Score ${(restaurant.popularity * 100).toStringAsFixed(2)}%',
+                        ),
                         if (restaurant.specialtyDishes.isNotEmpty)
                           Text(
                               'Specialty: ${restaurant.specialtyDishes.first}'),
@@ -473,9 +524,13 @@ class _RestaurantProfileSetupScreenState
               },
             ),
           ),
-        ],
-        if (provider.error != null) ...[
           const SizedBox(height: 16),
+          const Text(
+            'You can adjust the minimum rating and click "Search Again" to find different results, or click "Complete Setup" to finish.',
+            style: TextStyle(fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(height: 16),
+        ] else if (provider.error != null) ...[
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -498,6 +553,16 @@ class _RestaurantProfileSetupScreenState
                 ),
               ],
             ),
+          ),
+        ] else ...[
+          const Text(
+            'No similar restaurants found with the selected criteria.',
+            style: TextStyle(fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'You can adjust the minimum rating and click "Search Again" to try different criteria, or click "Complete Setup" to finish.',
+            style: TextStyle(fontStyle: FontStyle.italic),
           ),
         ],
       ],
@@ -529,8 +594,10 @@ class _RestaurantProfileSetupScreenState
           if (success) {
             setState(() {
               _currentStep = 3;
+              _similarRestaurantsSearched = false;
             });
-            await _searchSimilarRestaurants(provider);
+            // Clear any previous similar restaurants data
+            provider.clearSimilarRestaurants();
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -540,7 +607,14 @@ class _RestaurantProfileSetupScreenState
         }
         break;
       case 3:
-        await _completeSetup(provider);
+        if (!_similarRestaurantsSearched) {
+          await _searchSimilarRestaurants(provider);
+          setState(() {
+            _similarRestaurantsSearched = true;
+          });
+        } else {
+          await _completeSetup(provider);
+        }
         break;
     }
   }

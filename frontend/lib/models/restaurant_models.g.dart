@@ -157,6 +157,7 @@ SimilarRestaurant _$SimilarRestaurantFromJson(Map<String, dynamic> json) =>
       address: json['address'] as String,
       businessRating: (json['businessRating'] as num).toDouble(),
       priceLevel: (json['priceLevel'] as num).toInt(),
+      popularity: (json['popularity'] as num).toDouble(),
       specialtyDishes: (json['specialtyDishes'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
@@ -169,6 +170,7 @@ Map<String, dynamic> _$SimilarRestaurantToJson(SimilarRestaurant instance) =>
       'address': instance.address,
       'businessRating': instance.businessRating,
       'priceLevel': instance.priceLevel,
+      'popularity': instance.popularity,
       'specialtyDishes': instance.specialtyDishes,
     };
 
