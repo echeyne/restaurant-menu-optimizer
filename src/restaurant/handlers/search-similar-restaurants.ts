@@ -29,7 +29,9 @@ interface SearchSimilarRestaurantsRequest {
  * Qloo API response interface
  */
 interface QlooApiResponse {
-  results: {}[];
+  results: {
+    entities: [];
+  };
 }
 
 /**
@@ -219,7 +221,7 @@ async function searchSimilarRestaurantsFromQloo(
     JSON.stringify(response.data, null, 2)
   );
 
-  const restaurants = response.data.results || [];
+  const restaurants = response.data.results.entities || [];
 
   const formattedRestaurants: QlooSearchResult[] = restaurants.map(
     (restaurant: any) => ({
