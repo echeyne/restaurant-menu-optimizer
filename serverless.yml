@@ -698,7 +698,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -756,7 +755,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -820,7 +818,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -877,7 +874,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -937,7 +933,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -1367,153 +1362,6 @@ functions:
           - dynamodb:GetItem
           - dynamodb:Query
           - dynamodb:Scan
-        Resource: "*"
-
-  GetMenuItems:
-    handler: src/menu/handlers/get-menu-items.handler
-    events:
-      - http:
-          path: menu/items
-          method: get
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            parameters:
-              querystrings:
-                restaurantId: true
-                category: false
-                page: false
-                limit: false
-          authorizer: aws_iam
-    environment:
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:Query
-          - dynamodb:Scan
-        Resource: "*"
-
-  GetMenuItem:
-    handler: src/menu/handlers/get-menu-item.handler
-    events:
-      - http:
-          path: menu/items/{itemId}
-          method: get
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            parameters:
-              paths:
-                itemId: true
-          authorizer: aws_iam
-    environment:
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-        Resource: "*"
-
-  UpdateMenuItem:
-    handler: src/menu/handlers/update-menu-item.handler
-    events:
-      - http:
-          path: menu/items/{itemId}
-          method: put
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            parameters:
-              paths:
-                itemId: true
-            schemas:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    description:
-                      type: string
-                    price:
-                      type: number
-                    category:
-                      type: string
-                    ingredients:
-                      type: array
-                      items:
-                        type: string
-                    dietaryTags:
-                      type: array
-                      items:
-                        type: string
-                    allergens:
-                      type: array
-                      items:
-                        type: string
-          authorizer: aws_iam
-    environment:
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:UpdateItem
-        Resource: "*"
-
-  DeleteMenuItem:
-    handler: src/menu/handlers/delete-menu-item.handler
-    events:
-      - http:
-          path: menu/items/{itemId}
-          method: delete
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            parameters:
-              paths:
-                itemId: true
-          authorizer: aws_iam
-    environment:
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:DeleteItem
         Resource: "*"
 
 resources:
