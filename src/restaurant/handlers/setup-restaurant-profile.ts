@@ -7,6 +7,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { Restaurant } from "../../models/database";
 import { createResponse } from "../../models/api";
+import { AuthService } from "../../auth/services/auth-service";
 
 /**
  * Request body interface for restaurant profile setup
@@ -34,6 +35,11 @@ interface SetupRestaurantProfileResponse {
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  // Handle OPTIONS request for CORS
+  if (event.httpMethod === "OPTIONS") {
+    return createResponse(200, {});
+  }
+
   console.log(
     "Setup restaurant profile request:",
     JSON.stringify(event, null, 2)
@@ -42,30 +48,60 @@ export const handler = async (
   try {
     // Parse request body
     if (!event.body) {
-      return createResponse(400, {
-        success: false,
-        message: "Request body is required",
-      });
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Request body is required",
+        }),
+      };
     }
 
     const requestBody: SetupRestaurantProfileRequest = JSON.parse(event.body);
 
     // Validate required fields
     if (!requestBody.name || !requestBody.city || !requestBody.state) {
-      return createResponse(400, {
-        success: false,
-        message: "Name, city, and state are required",
-      });
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Name, city, and state are required",
+        }),
+      };
     }
 
-    // Extract user ID from Cognito authorizer context
-    const ownerId = event.requestContext?.authorizer?.claims?.sub;
+    // Extract user ID from JWT token
+    const authService = new AuthService();
+    const authorizationHeader =
+      event.headers.Authorization || event.headers.authorization || "";
+    const ownerId = await authService.getCurrentUserId(authorizationHeader);
 
     if (!ownerId) {
-      return createResponse(401, {
-        success: false,
-        message: "Authentication required",
-      });
+      return {
+        statusCode: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Authentication required",
+        }),
+      };
     }
 
     // Initialize repository
@@ -74,11 +110,20 @@ export const handler = async (
     // Check if restaurant already exists for this owner
     const existingRestaurant = await restaurantRepository.getByOwnerId(ownerId);
     if (existingRestaurant) {
-      return createResponse(409, {
-        success: false,
-        message: "Restaurant profile already exists for this owner",
-        restaurant: existingRestaurant,
-      });
+      return {
+        statusCode: 409,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Restaurant profile already exists for this owner",
+          restaurant: existingRestaurant,
+        }),
+      };
     }
 
     // Create new restaurant profile
@@ -104,14 +149,32 @@ export const handler = async (
       message: "Restaurant profile created successfully",
     };
 
-    return createResponse(201, response);
+    return {
+      statusCode: 201,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+      },
+      body: JSON.stringify(response),
+    };
   } catch (error: any) {
     console.error("Error setting up restaurant profile:", error);
 
-    return createResponse(500, {
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+    return {
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+      },
+      body: JSON.stringify({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      }),
+    };
   }
 };

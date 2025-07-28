@@ -76,11 +76,6 @@ class _RestaurantProfileSetupScreenState
                 }
               });
             }
-          } else {
-            // No existing restaurant found, start at step 0 for new setup
-            setState(() {
-              _currentStep = 0;
-            });
           }
         } else {
           final restaurant = restaurantProvider.restaurant;

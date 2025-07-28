@@ -8,6 +8,7 @@ import axios from "axios";
 import { SSM } from "aws-sdk";
 import { QlooSearchResult } from "../../models/database";
 import { createResponse, createErrorResponse } from "../../models/api";
+import { AuthService } from "../../auth/services/auth-service";
 
 /**
  * Request body interface for Qloo restaurant search
@@ -62,9 +63,39 @@ export const handler = async (
   }
 
   try {
+    // Authentication check - get user ID from JWT token or Cognito authorizer context
+    let userId: string | null = null;
+
+    // Check if we have Cognito authorizer context (production)
+    if (event.requestContext?.authorizer?.claims?.sub) {
+      userId = event.requestContext.authorizer.claims.sub;
+    } else {
+      // Fallback to manual token validation (local development)
+      const authService = new AuthService();
+      userId = await authService.getCurrentUserId(
+        event.headers.Authorization || event.headers.authorization || ""
+      );
+    }
+
+    if (!userId) {
+      return createErrorResponse(401, "Unauthorized: Invalid or missing token");
+    }
+
     // Parse request body
     if (!event.body) {
-      return createErrorResponse(400, "Request body is required");
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Request body is required",
+        }),
+      };
     }
 
     const requestBody: SearchQlooRestaurantsRequest = JSON.parse(event.body);
@@ -75,10 +106,19 @@ export const handler = async (
       !requestBody.city ||
       !requestBody.state
     ) {
-      return createErrorResponse(
-        400,
-        "Restaurant name, city, and state are required"
-      );
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Restaurant name, city, and state are required",
+        }),
+      };
     }
 
     // Get Qloo API key from Parameter Store
@@ -154,7 +194,16 @@ export const handler = async (
       message: `Found ${formattedRestaurants.length} restaurants matching "${requestBody.restaurantName}" in ${locationText} (there may have been more than 10 results...we only pull the top 10)`,
     };
 
-    return createResponse(200, searchResponse);
+    return {
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+      },
+      body: JSON.stringify(searchResponse),
+    };
   } catch (error: any) {
     console.error("Error searching Qloo restaurants:", error);
 
@@ -179,7 +228,20 @@ export const handler = async (
       message = "Failed to authenticate with Qloo API";
     }
 
-    return createErrorResponse(statusCode, message, undefined, error.message);
+    return {
+      statusCode,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "POST,OPTIONS",
+      },
+      body: JSON.stringify({
+        success: false,
+        message,
+        error: error.message,
+      }),
+    };
   }
 };
 
