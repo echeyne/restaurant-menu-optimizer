@@ -85,25 +85,10 @@ export const handler = async (
     const existingRestaurant = await restaurantRepository.getByOwnerId(
       requestBody.ownerId
     );
-    if (existingRestaurant) {
-      return {
-        statusCode: 409,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant profile already exists for this owner",
-          restaurant: existingRestaurant,
-        }),
-      };
-    }
 
     // Create new restaurant profile
     const restaurant = await restaurantRepository.create({
+      restaurantId: existingRestaurant?.restaurantId ?? "",
       ownerId: requestBody.ownerId,
       name: requestBody.name,
       city: requestBody.city,

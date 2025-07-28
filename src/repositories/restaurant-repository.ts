@@ -17,15 +17,17 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
   /**
    * Create a new restaurant
    * @param restaurant The restaurant to create
+   * @param restaurantId The restaurantId to update
    * @returns The created restaurant
    */
   async create(
-    restaurant: Omit<Restaurant, "restaurantId" | "createdAt">
+    restaurant: Omit<Restaurant, "createdAt">,
+    restaurantId?: string
   ): Promise<Restaurant> {
     const now = new Date().toISOString();
     const newRestaurant: Restaurant = {
       ...restaurant,
-      restaurantId: uuidv4(),
+      restaurantId: restaurantId ?? uuidv4(),
       createdAt: now,
       profileSetupComplete: false,
     };

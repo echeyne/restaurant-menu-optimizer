@@ -137,7 +137,7 @@ class RestaurantService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return DemographicsData.fromJson(data);
+        return DemographicsData.fromJson(data['data']);
       } else if (response.statusCode == 404) {
         return null;
       } else {

@@ -488,14 +488,6 @@ class _RestaurantProfileSetupScreenState
               Text('Gender distribution'),
             ],
           ),
-          const SizedBox(height: 8),
-          const Row(
-            children: [
-              Icon(Icons.interests, size: 24),
-              SizedBox(width: 8),
-              Text('Customer interests and patterns'),
-            ],
-          ),
           const SizedBox(height: 16),
           if (provider.isDemographicsLoading) ...[
             const Center(
@@ -517,13 +509,14 @@ class _RestaurantProfileSetupScreenState
               'Click "Search Demographics" to retrieve demographic insights for your restaurant.',
               style: TextStyle(fontStyle: FontStyle.italic),
             ),
+            const SizedBox(height: 16),
           ],
         ],
       );
     }
 
     final demographics = provider.demographicsData;
-    if (demographics == null) {
+    if (demographics == null || provider.error != null) {
       return Column(
         children: [
           Icon(
@@ -549,10 +542,11 @@ class _RestaurantProfileSetupScreenState
     // Find the main demographic groups
     String mainGender = 'Mixed';
     String mainAgeGroup = 'Various ages';
-    
+
     // Process age groups to find the largest
     if (demographics.ageGroups.isNotEmpty) {
-      demographics.ageGroups.sort((a, b) => b.percentage.compareTo(a.percentage));
+      demographics.ageGroups
+          .sort((a, b) => b.percentage.compareTo(a.percentage));
       mainAgeGroup = demographics.ageGroups.first.ageRange;
     }
 
@@ -570,7 +564,7 @@ class _RestaurantProfileSetupScreenState
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 16),
-        
+
         // Main demographics summary
         Card(
           child: Padding(
@@ -602,101 +596,12 @@ class _RestaurantProfileSetupScreenState
             ),
           ),
         ),
-        
-        const SizedBox(height: 16),
-        
-        // Age groups breakdown
-        if (demographics.ageGroups.isNotEmpty) ...[
-          const Text(
-            'Age Group Distribution',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: demographics.ageGroups.take(3).map((ageGroup) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(ageGroup.ageRange),
-                        Text('${ageGroup.percentage.toStringAsFixed(1)}%'),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
 
-        // Gender breakdown
-        if (demographics.genders.isNotEmpty) ...[
-          const Text(
-            'Gender Distribution',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: demographics.genders.map((gender) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(gender.gender),
-                        Text('${gender.percentage.toStringAsFixed(1)}%'),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        
-        // Additional insights
-        if (demographics.interests.isNotEmpty) ...[
-          const Text(
-            'Additional Insights',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: demographics.interests.take(3).map((interest) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.fiber_manual_record, size: 8),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(interest, style: const TextStyle(fontSize: 13))),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        
         const Text(
           'This demographic information will help us find similar restaurants and optimize your menu recommendations.',
           style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -740,6 +645,7 @@ class _RestaurantProfileSetupScreenState
             'Click "Search Similar Restaurants" to find similar restaurants with the selected minimum rating.',
             style: TextStyle(fontStyle: FontStyle.italic),
           ),
+          const SizedBox(height: 16),
         ] else if (provider.similarRestaurants.isNotEmpty) ...[
           Text(
             'Found ${provider.similarRestaurants.length} similar restaurants:',
@@ -928,7 +834,8 @@ class _RestaurantProfileSetupScreenState
     if (_selectedRestaurant == null) return;
 
     provider.clearError();
-    final success = await provider.getDemographics(_selectedRestaurant!.entityId);
+    final success =
+        await provider.getDemographics(_selectedRestaurant!.entityId);
     if (success) {
       setState(() {
         _demographicsLoaded = true;
