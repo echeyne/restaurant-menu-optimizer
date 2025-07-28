@@ -4,7 +4,6 @@
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
-import { AuthService } from "../../auth/services/auth-service";
 import { createResponse, createErrorResponse } from "../../models/api";
 
 /**
@@ -23,22 +22,11 @@ export const handler = async (
   }
 
   try {
-    // Get user ID from the JWT token or Cognito authorizer context
-    let userId: string | null = null;
-
-    // Check if we have Cognito authorizer context (production)
-    if (event.requestContext?.authorizer?.claims?.sub) {
-      userId = event.requestContext.authorizer.claims.sub;
-    } else {
-      // Fallback to manual token validation (local development)
-      const authService = new AuthService();
-      userId = await authService.getCurrentUserId(
-        event.headers.Authorization || event.headers.authorization || ""
-      );
-    }
+    // Extract user ID from Cognito authorizer context
+    const userId = event.requestContext?.authorizer?.claims?.sub;
 
     if (!userId) {
-      return createErrorResponse(401, "Unauthorized: Invalid or missing token");
+      return createErrorResponse(401, "Authentication required");
     }
 
     // Get restaurant from repository by owner ID

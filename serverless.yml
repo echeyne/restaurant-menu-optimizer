@@ -690,19 +690,6 @@ functions:
                     state:
                       type: string
           authorizer: ${self:custom.authorizer}
-      - http:
-          path: restaurant/profile
-          method: options
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -746,19 +733,7 @@ functions:
                       type: string
                     state:
                       type: string
-      - http:
-          path: restaurant/search-qloo
-          method: options
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -1000,19 +975,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-      - http:
-          path: restaurant/get
-          method: options
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}

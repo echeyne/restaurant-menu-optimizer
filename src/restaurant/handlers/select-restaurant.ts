@@ -6,7 +6,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { QlooSearchResult } from "../../models/database";
-import { createResponse } from "../../models/api";
+import { createResponse, createErrorResponse } from "../../models/api";
 
 /**
  * Request body interface for restaurant selection
@@ -43,38 +43,17 @@ export const handler = async (
   try {
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Request body is required",
-        }),
-      };
+      return createErrorResponse(400, "Request body is required");
     }
 
     const requestBody: SelectRestaurantRequest = JSON.parse(event.body);
 
     // Validate required fields
     if (!requestBody.restaurantId || !requestBody.qlooSearchResult) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant ID and Qloo search result are required",
-        }),
-      };
+      return createErrorResponse(
+        400,
+        "Restaurant ID and Qloo search result are required"
+      );
     }
 
     // Validate Qloo search result has required fields
@@ -82,19 +61,10 @@ export const handler = async (
       !requestBody.qlooSearchResult.entityId ||
       !requestBody.qlooSearchResult.name
     ) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Qloo search result must include entityId and name",
-        }),
-      };
+      return createErrorResponse(
+        400,
+        "Qloo search result must include entityId and name"
+      );
     }
 
     // Initialize repository
@@ -105,19 +75,7 @@ export const handler = async (
       requestBody.restaurantId
     );
     if (!existingRestaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant not found",
-        }),
-      };
+      return createErrorResponse(404, "Restaurant not found");
     }
 
     // Update restaurant with Qloo data
@@ -134,32 +92,15 @@ export const handler = async (
       message: "Restaurant selected and updated successfully",
     };
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-      },
-      body: JSON.stringify(response),
-    };
+    return createResponse(200, response);
   } catch (error: any) {
     console.error("Error selecting restaurant:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-      },
-      body: JSON.stringify({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      }),
-    };
+    return createErrorResponse(
+      500,
+      "Internal server error",
+      undefined,
+      error.message
+    );
   }
 };
