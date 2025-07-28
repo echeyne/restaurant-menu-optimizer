@@ -252,6 +252,7 @@ export interface DemographicsData {
   restaurantId: string; // PK
   qlooEntityId: string; // GSI
   ageGroups: AgeGroupData[];
+  genders: GenderData[];
   interests: string[];
   diningPatterns: DiningPattern[];
   retrievedAt: string;
@@ -262,6 +263,15 @@ export interface DemographicsData {
  */
 export interface AgeGroupData {
   ageRange: string;
+  percentage: number;
+  preferences: string[];
+}
+
+/**
+ * Gender data interface
+ */
+export interface GenderData {
+  gender: string;
   percentage: number;
   preferences: string[];
 }

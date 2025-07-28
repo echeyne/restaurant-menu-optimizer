@@ -12,6 +12,7 @@ import {
   DemographicsData,
   AgeGroupData,
   DiningPattern,
+  GenderData,
 } from "../../models/database";
 import { createResponse } from "../../models/api";
 
@@ -283,6 +284,7 @@ function formatDemographicsData(
   demographicsData: QlooDemographicsResponse
 ): DemographicsData {
   const ageGroups: AgeGroupData[] = [];
+  const genders: GenderData[] = [];
   const interests: string[] = [];
   const diningPatterns: DiningPattern[] = [];
 
@@ -296,7 +298,7 @@ function formatDemographicsData(
         )) {
           ageGroups.push({
             ageRange: ageRange.replace(/_/g, " "), // Convert "24_and_younger" to "24 and younger"
-            percentage: Math.abs(percentage), // Convert to positive percentage
+            percentage: percentage, // Convert to positive percentage
             preferences: [], // No preferences data in current API response
           });
         }
@@ -307,28 +309,11 @@ function formatDemographicsData(
         for (const [gender, percentage] of Object.entries(
           demographic.query.gender
         )) {
-          if (percentage > 0) {
-            interests.push(
-              `${gender} preference: ${(percentage * 100).toFixed(1)}%`
-            );
-          }
-        }
-      }
-
-      // Process any other demographic categories as interests
-      for (const [category, data] of Object.entries(demographic.query)) {
-        if (
-          category !== "age" &&
-          category !== "gender" &&
-          typeof data === "object"
-        ) {
-          for (const [key, value] of Object.entries(
-            data as Record<string, number>
-          )) {
-            if (value > 0) {
-              interests.push(`${category}: ${key.replace(/_/g, " ")}`);
-            }
-          }
+          genders.push({
+            gender: gender,
+            percentage: percentage,
+            preferences: [], // No preferences data in current API response
+          });
         }
       }
     }
@@ -341,6 +326,7 @@ function formatDemographicsData(
     interests,
     diningPatterns, // Empty for now as the API response doesn't include dining patterns
     retrievedAt: new Date().toISOString(),
+    genders,
   };
 }
 

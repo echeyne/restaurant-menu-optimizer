@@ -14,6 +14,7 @@ class RestaurantProvider extends ChangeNotifier {
   List<SimilarRestaurant> _similarRestaurants = [];
   DemographicsData? _demographicsData;
   bool _isLoading = false;
+  bool _isDemographicsLoading = false;
   String? _error;
 
   Restaurant? get restaurant => _restaurant;
@@ -21,6 +22,7 @@ class RestaurantProvider extends ChangeNotifier {
   List<SimilarRestaurant> get similarRestaurants => _similarRestaurants;
   DemographicsData? get demographicsData => _demographicsData;
   bool get isLoading => _isLoading;
+  bool get isDemographicsLoading => _isDemographicsLoading;
   String? get error => _error;
   bool get isProfileComplete => _restaurant?.profileSetupComplete ?? false;
 
@@ -128,8 +130,9 @@ class RestaurantProvider extends ChangeNotifier {
   }
 
   Future<bool> getDemographics(String entityId) async {
-    _setLoading(true);
+    _isDemographicsLoading = true;
     _setError(null);
+    notifyListeners();
 
     try {
       final restaurantId = _restaurant?.restaurantId;
@@ -145,7 +148,8 @@ class RestaurantProvider extends ChangeNotifier {
       _setError(e.toString());
       return false;
     } finally {
-      _setLoading(false);
+      _isDemographicsLoading = false;
+      notifyListeners();
     }
   }
 

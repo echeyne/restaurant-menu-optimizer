@@ -197,6 +197,9 @@ DemographicsData _$DemographicsDataFromJson(Map<String, dynamic> json) =>
       ageGroups: (json['ageGroups'] as List<dynamic>)
           .map((e) => AgeGroupData.fromJson(e as Map<String, dynamic>))
           .toList(),
+      genders: (json['genders'] as List<dynamic>)
+          .map((e) => GenderData.fromJson(e as Map<String, dynamic>))
+          .toList(),
       interests:
           (json['interests'] as List<dynamic>).map((e) => e as String).toList(),
       diningPatterns: (json['diningPatterns'] as List<dynamic>)
@@ -210,6 +213,7 @@ Map<String, dynamic> _$DemographicsDataToJson(DemographicsData instance) =>
       'restaurantId': instance.restaurantId,
       'qlooEntityId': instance.qlooEntityId,
       'ageGroups': instance.ageGroups,
+      'genders': instance.genders,
       'interests': instance.interests,
       'diningPatterns': instance.diningPatterns,
       'retrievedAt': instance.retrievedAt.toIso8601String(),
@@ -226,6 +230,21 @@ AgeGroupData _$AgeGroupDataFromJson(Map<String, dynamic> json) => AgeGroupData(
 Map<String, dynamic> _$AgeGroupDataToJson(AgeGroupData instance) =>
     <String, dynamic>{
       'ageRange': instance.ageRange,
+      'percentage': instance.percentage,
+      'preferences': instance.preferences,
+    };
+
+GenderData _$GenderDataFromJson(Map<String, dynamic> json) => GenderData(
+      gender: json['gender'] as String,
+      percentage: (json['percentage'] as num).toDouble(),
+      preferences: (json['preferences'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+    );
+
+Map<String, dynamic> _$GenderDataToJson(GenderData instance) =>
+    <String, dynamic>{
+      'gender': instance.gender,
       'percentage': instance.percentage,
       'preferences': instance.preferences,
     };

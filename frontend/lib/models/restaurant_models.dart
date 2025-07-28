@@ -234,6 +234,7 @@ class DemographicsData {
   final String restaurantId;
   final String qlooEntityId;
   final List<AgeGroupData> ageGroups;
+  final List<GenderData> genders;
   final List<String> interests;
   final List<DiningPattern> diningPatterns;
   final DateTime retrievedAt;
@@ -242,6 +243,7 @@ class DemographicsData {
     required this.restaurantId,
     required this.qlooEntityId,
     required this.ageGroups,
+    required this.genders,
     required this.interests,
     required this.diningPatterns,
     required this.retrievedAt,
@@ -267,6 +269,23 @@ class AgeGroupData {
   factory AgeGroupData.fromJson(Map<String, dynamic> json) =>
       _$AgeGroupDataFromJson(json);
   Map<String, dynamic> toJson() => _$AgeGroupDataToJson(this);
+}
+
+@JsonSerializable()
+class GenderData {
+  final String gender;
+  final double percentage;
+  final List<String> preferences;
+
+  GenderData({
+    required this.gender,
+    required this.percentage,
+    required this.preferences,
+  });
+
+  factory GenderData.fromJson(Map<String, dynamic> json) =>
+      _$GenderDataFromJson(json);
+  Map<String, dynamic> toJson() => _$GenderDataToJson(this);
 }
 
 @JsonSerializable()

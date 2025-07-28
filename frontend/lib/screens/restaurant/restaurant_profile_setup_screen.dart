@@ -164,10 +164,10 @@ class _RestaurantProfileSetupScreenState
                       child: const Text('Back'),
                     ),
                   const SizedBox(width: 8),
-                  if (details.stepIndex == 3 && !_demographicsLoaded) ...[
+                  if (details.stepIndex == 3 && _demographicsLoaded) ...[
                     ElevatedButton(
                       onPressed: details.onStepContinue,
-                      child: const Text('Load Demographics'),
+                      child: const Text('Continue'),
                     ),
                   ] else if (details.stepIndex == 4 &&
                       !_similarRestaurantsSearched) ...[
@@ -497,10 +497,27 @@ class _RestaurantProfileSetupScreenState
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Click "Load Demographics" to retrieve demographic insights for your restaurant.',
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
+          if (provider.isDemographicsLoading) ...[
+            const Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading demographic insights...'),
+                ],
+              ),
+            ),
+          ] else ...[
+            ElevatedButton(
+              onPressed: () => _loadDemographics(provider),
+              child: const Text('Search Demographics'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Click "Search Demographics" to retrieve demographic insights for your restaurant.',
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ],
         ],
       );
     }
@@ -539,15 +556,10 @@ class _RestaurantProfileSetupScreenState
       mainAgeGroup = demographics.ageGroups.first.ageRange;
     }
 
-    // Process interests to find gender information
-    for (String interest in demographics.interests) {
-      if (interest.toLowerCase().contains('male preference') || 
-          interest.toLowerCase().contains('female preference')) {
-        if (interest.toLowerCase().contains('male preference')) {
-          mainGender = interest.toLowerCase().contains('female') ? 'Female' : 'Male';
-        }
-        break;
-      }
+    // Process genders to find the largest
+    if (demographics.genders.isNotEmpty) {
+      demographics.genders.sort((a, b) => b.percentage.compareTo(a.percentage));
+      mainGender = demographics.genders.first.gender;
     }
 
     return Column(
@@ -612,6 +624,35 @@ class _RestaurantProfileSetupScreenState
                       children: [
                         Text(ageGroup.ageRange),
                         Text('${ageGroup.percentage.toStringAsFixed(1)}%'),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Gender breakdown
+        if (demographics.genders.isNotEmpty) ...[
+          const Text(
+            'Gender Distribution',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: demographics.genders.map((gender) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(gender.gender),
+                        Text('${gender.percentage.toStringAsFixed(1)}%'),
                       ],
                     ),
                   );
@@ -822,19 +863,13 @@ class _RestaurantProfileSetupScreenState
         }
         break;
       case 3:
-        if (!_demographicsLoaded) {
-          await _loadDemographics(provider);
+        if (_demographicsLoaded) {
           setState(() {
-            _demographicsLoaded = true;
             _currentStep = 4;
             _similarRestaurantsSearched = false;
           });
           // Clear any previous similar restaurants data
           provider.clearSimilarRestaurants();
-        } else {
-          setState(() {
-            _currentStep = 4;
-          });
         }
         break;
       case 4:
@@ -893,7 +928,12 @@ class _RestaurantProfileSetupScreenState
     if (_selectedRestaurant == null) return;
 
     provider.clearError();
-    await provider.getDemographics(_selectedRestaurant!.entityId);
+    final success = await provider.getDemographics(_selectedRestaurant!.entityId);
+    if (success) {
+      setState(() {
+        _demographicsLoaded = true;
+      });
+    }
   }
 
   Future<void> _searchSimilarRestaurants(RestaurantProvider provider) async {
