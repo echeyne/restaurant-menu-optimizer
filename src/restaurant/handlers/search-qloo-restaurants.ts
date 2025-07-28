@@ -7,7 +7,8 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import axios from "axios";
 import { SSM } from "aws-sdk";
 import { QlooSearchResult } from "../../models/database";
-import { createResponse } from "../../models/api";
+import { createResponse, createErrorResponse } from "../../models/api";
+import { AuthService } from "../../auth/services/auth-service";
 
 /**
  * Request body interface for Qloo restaurant search
@@ -62,6 +63,24 @@ export const handler = async (
   }
 
   try {
+    // Authentication check - get user ID from JWT token or Cognito authorizer context
+    let userId: string | null = null;
+
+    // Check if we have Cognito authorizer context (production)
+    if (event.requestContext?.authorizer?.claims?.sub) {
+      userId = event.requestContext.authorizer.claims.sub;
+    } else {
+      // Fallback to manual token validation (local development)
+      const authService = new AuthService();
+      userId = await authService.getCurrentUserId(
+        event.headers.Authorization || event.headers.authorization || ""
+      );
+    }
+
+    if (!userId) {
+      return createErrorResponse(401, "Unauthorized: Invalid or missing token");
+    }
+
     // Parse request body
     if (!event.body) {
       return {
