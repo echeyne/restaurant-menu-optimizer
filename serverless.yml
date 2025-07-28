@@ -35,6 +35,11 @@ custom:
   userPoolId: ${param:userPoolId, env:USER_POOL_ID, 'dev-user-pool'}
   clientId: ${param:clientId, env:CLIENT_ID, 'local-client-id'}
   menuFilesBucket: ${param:menuFilesBucket, env:MENU_FILES_BUCKET, 'local-menu-files-bucket'}
+  authorizer:
+    name: cognitoAuthorizer
+    type: COGNITO_USER_POOLS
+    arn: 
+      Fn::GetAtt: [userpool, Arn]
   dotenv:
     basePath: ${self:custom.basePath, './'}
     logging: true
@@ -514,7 +519,7 @@ functions:
                       type: string
                     fileSize:
                       type: number
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
       STAGE: ${self:provider.stage}
@@ -566,7 +571,7 @@ functions:
                       type: string
                     fileId:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
       STAGE: ${self:provider.stage}
@@ -635,7 +640,7 @@ functions:
                   oneOf:
                     - required: ["itemId"]
                     - required: ["restaurantId"]
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -684,7 +689,7 @@ functions:
                       type: string
                     state:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
       - http:
           path: restaurant/profile
           method: options
@@ -698,7 +703,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -742,7 +747,7 @@ functions:
                       type: string
                     state:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
       - http:
           path: restaurant/search-qloo
           method: options
@@ -756,7 +761,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -806,7 +811,7 @@ functions:
                       type: array
                       items:
                         type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
       - http:
           path: restaurant/select
           method: options
@@ -820,7 +825,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -863,7 +868,7 @@ functions:
                       type: number
                       minimum: 1
                       maximum: 5
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
       - http:
           path: restaurant/{restaurantId}/similar-restaurants
           method: options
@@ -877,7 +882,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -923,7 +928,7 @@ functions:
                   properties:
                     entityId:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
       - http:
           path: restaurant/{restaurantId}/demographics
           method: options
@@ -937,7 +942,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -974,7 +979,7 @@ functions:
             parameters:
               paths:
                 restaurantId: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -999,7 +1004,7 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1028,7 +1033,7 @@ functions:
             parameters:
               querystrings:
                 restaurantId: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1073,7 +1078,7 @@ functions:
                       enum: ["casual", "upscale", "trendy", "traditional"]
                     targetAudience:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1130,7 +1135,7 @@ functions:
                       type: array
                       items:
                         type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1170,7 +1175,7 @@ functions:
               querystrings:
                 restaurantId: true
                 type: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
       - http:
           path: menu/review-optimizations
           method: post
@@ -1207,7 +1212,7 @@ functions:
                       enum: ["approved", "rejected"]
                     feedback:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1256,7 +1261,7 @@ functions:
                   oneOf:
                     - required: ["itemId"]
                     - required: ["restaurantId"]
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -1304,7 +1309,7 @@ functions:
                       type: string
                     restaurantId:
                       type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1358,7 +1363,7 @@ functions:
                 timeframe: false
                 page: false
                 limit: false
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1392,7 +1397,7 @@ functions:
                 category: false
                 page: false
                 limit: false
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1422,7 +1427,7 @@ functions:
             parameters:
               paths:
                 itemId: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1476,7 +1481,7 @@ functions:
                       type: array
                       items:
                         type: string
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1506,7 +1511,7 @@ functions:
             parameters:
               paths:
                 itemId: true
-          authorizer: aws_iam
+          authorizer: ${self:custom.authorizer}
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1565,11 +1570,11 @@ resources:
     menufilesbucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-files-${self:provider.stage}
+        BucketName: menufiles-${self:provider.stage}
     frontendwebsitebucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-optimizer-frontend-${self:provider.stage}
+        BucketName: menu-optimizer-frontend-${self:provider.stage}
         WebsiteConfiguration:
           IndexDocument: index.html
           ErrorDocument: index.html
