@@ -48,19 +48,10 @@ export const handler = async (
   try {
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Request body is required",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Request body is required",
+      });
     }
 
     const requestBody: SetupRestaurantProfileRequest = JSON.parse(event.body);
