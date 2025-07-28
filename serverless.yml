@@ -1409,11 +1409,11 @@ resources:
     menufilesbucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-files-${self:provider.stage}
+        BucketName: restaurant-menu-files-${self:provider.stage}-${sls:instanceId}
     frontendwebsitebucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-optimizer-frontend-${self:provider.stage}
+        BucketName: restaurant-menu-optimizer-frontend-${self:provider.stage}-${sls:instanceId}
         WebsiteConfiguration:
           IndexDocument: index.html
           ErrorDocument: index.html
