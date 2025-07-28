@@ -677,6 +677,7 @@ functions:
                     - name
                     - city
                     - state
+                    - ownerId
                   properties:
                     name:
                       type: string
@@ -684,7 +685,8 @@ functions:
                       type: string
                     state:
                       type: string
-          authorizer: aws_iam
+                    ownerId:
+                      type: string
       - http:
           path: restaurant/profile
           method: options
@@ -741,7 +743,6 @@ functions:
                       type: string
                     state:
                       type: string
-          authorizer: aws_iam
       - http:
           path: restaurant/search-qloo
           method: options
@@ -804,7 +805,6 @@ functions:
                       type: array
                       items:
                         type: string
-          authorizer: aws_iam
       - http:
           path: restaurant/select
           method: options
@@ -860,7 +860,6 @@ functions:
                       type: number
                       minimum: 1
                       maximum: 5
-          authorizer: aws_iam
       - http:
           path: restaurant/{restaurantId}/similar-restaurants
           method: options
@@ -919,7 +918,6 @@ functions:
                   properties:
                     entityId:
                       type: string
-          authorizer: aws_iam
       - http:
           path: restaurant/{restaurantId}/demographics
           method: options
@@ -969,7 +967,6 @@ functions:
             parameters:
               paths:
                 restaurantId: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -994,7 +991,6 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:

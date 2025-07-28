@@ -7,7 +7,6 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { Restaurant } from "../../models/database";
 import { createResponse } from "../../models/api";
-import { AuthService } from "../../auth/services/auth-service";
 
 /**
  * Request body interface for restaurant profile setup
@@ -16,6 +15,7 @@ interface SetupRestaurantProfileRequest {
   name: string;
   city: string;
   state: string;
+  ownerId: string;
 }
 
 /**
@@ -66,7 +66,12 @@ export const handler = async (
     const requestBody: SetupRestaurantProfileRequest = JSON.parse(event.body);
 
     // Validate required fields
-    if (!requestBody.name || !requestBody.city || !requestBody.state) {
+    if (
+      !requestBody.name ||
+      !requestBody.city ||
+      !requestBody.state ||
+      !requestBody.ownerId
+    ) {
       return {
         statusCode: 400,
         headers: {
@@ -77,29 +82,7 @@ export const handler = async (
         },
         body: JSON.stringify({
           success: false,
-          message: "Name, city, and state are required",
-        }),
-      };
-    }
-
-    // Extract user ID from JWT token
-    const authService = new AuthService();
-    const authorizationHeader =
-      event.headers.Authorization || event.headers.authorization || "";
-    const ownerId = await authService.getCurrentUserId(authorizationHeader);
-
-    if (!ownerId) {
-      return {
-        statusCode: 401,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Authentication required",
+          message: "Name, city, state, and ownerId are required",
         }),
       };
     }
@@ -108,7 +91,9 @@ export const handler = async (
     const restaurantRepository = new RestaurantRepository();
 
     // Check if restaurant already exists for this owner
-    const existingRestaurant = await restaurantRepository.getByOwnerId(ownerId);
+    const existingRestaurant = await restaurantRepository.getByOwnerId(
+      requestBody.ownerId
+    );
     if (existingRestaurant) {
       return {
         statusCode: 409,
@@ -128,7 +113,7 @@ export const handler = async (
 
     // Create new restaurant profile
     const restaurant = await restaurantRepository.create({
-      ownerId: ownerId,
+      ownerId: requestBody.ownerId,
       name: requestBody.name,
       city: requestBody.city,
       state: requestBody.state,

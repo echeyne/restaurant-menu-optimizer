@@ -31,6 +31,7 @@ class RestaurantService {
         'name': profile.name,
         'city': profile.city,
         'state': profile.state,
+        'ownerId': profile.ownerId,
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
