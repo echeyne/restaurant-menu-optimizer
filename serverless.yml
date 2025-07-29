@@ -492,7 +492,7 @@ functions:
     handler: src/menu/handlers/upload-menu.handler
     events:
       - http:
-          path: menu/upload
+          path: menu/upload-menu
           method: post
           cors:
             origin: "*"
@@ -1340,6 +1340,134 @@ functions:
           - dynamodb:UpdateItem
           - dynamodb:Query
           - dynamodb:PutItem
+        Resource: "*"
+
+  GetMenuItems:
+    handler: src/menu/handlers/get-menu-items.handler
+    events:
+      - http:
+          path: menu/get-menu-items
+          method: get
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              querystrings:
+                restaurantId: true
+                category: false
+                search: false
+                isActive: false
+                checkOptimizationReadiness: false
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+        Resource: "*"
+
+  GetMenuItem:
+    handler: src/menu/handlers/get-menu-item.handler
+    events:
+      - http:
+          path: menu/get-menu-item
+          method: get
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              querystrings:
+                itemId: true
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: "*"
+
+  UpdateMenuItem:
+    handler: src/menu/handlers/update-menu-item.handler
+    events:
+      - http:
+          path: menu/update-menu-item
+          method: put
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - itemId
+                    - updates
+                  properties:
+                    itemId:
+                      type: string
+                    updates:
+                      type: object
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem
+        Resource: "*"
+
+  DeleteMenuItem:
+    handler: src/menu/handlers/delete-menu-item.handler
+    events:
+      - http:
+          path: menu/delete-menu-item
+          method: delete
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              querystrings:
+                itemId: true
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+          - dynamodb:GetItem
         Resource: "*"
 
   ScheduledAnalyticsUpdate:

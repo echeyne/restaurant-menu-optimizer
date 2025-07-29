@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/utils/app_routes.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../providers/menu_provider.dart';
@@ -24,7 +25,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadMenuItems();
+      _loadRestaurantAndMenu();
     });
   }
 
@@ -32,6 +33,19 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRestaurantAndMenu() async {
+    final restaurantProvider =
+        Provider.of<RestaurantProvider>(context, listen: false);
+
+    // First try to fetch the restaurant profile if it's not already loaded
+    if (restaurantProvider.restaurant == null) {
+      await restaurantProvider.getCurrentRestaurant();
+    }
+
+    // Then load menu items if we have a restaurant
+    _loadMenuItems();
   }
 
   void _loadMenuItems() {
@@ -153,8 +167,9 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Menu Management'),
+              automaticallyImplyLeading: false,
             ),
-            body: const Center(
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -170,6 +185,12 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey),
                   ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context)
+                        .pushReplacementNamed(AppRoutes.restaurantSetup),
+                    child: Text('Go back to setup'),
+                  ),
                 ],
               ),
             ),
@@ -182,23 +203,30 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Menu Management'),
-            actions: [
-              IconButton(
-                icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-                onPressed: () {
-                  setState(() {
-                    _isGridView = !_isGridView;
-                  });
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.upload_file),
-                onPressed: _uploadMenu,
-              ),
-            ],
+            automaticallyImplyLeading: false,
           ),
           body: Column(
             children: [
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.upload_file),
+                    onPressed: _uploadMenu,
+                    label: Text('Upload menu'),
+                  ),
+                  ElevatedButton.icon(
+                    icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
+                    onPressed: () {
+                      setState(() {
+                        _isGridView = !_isGridView;
+                      });
+                    },
+                    label: Text(
+                        _isGridView ? 'Toggle list view' : 'Toggle grid view'),
+                  ),
+                ],
+              ),
+
               // Search and filter bar
               Container(
                 padding: const EdgeInsets.all(16),

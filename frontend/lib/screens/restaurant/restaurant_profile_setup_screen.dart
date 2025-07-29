@@ -587,7 +587,7 @@ class _RestaurantProfileSetupScreenState
                   children: [
                     const Icon(Icons.person, size: 20),
                     const SizedBox(width: 8),
-                    Text('Main Gender: $mainGender'),
+                    Text('Primary Gender: $mainGender'),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -734,6 +734,7 @@ class _RestaurantProfileSetupScreenState
             'You can adjust the minimum rating and click "Search Again" to try different criteria, or click "Complete Setup" to finish.',
             style: TextStyle(fontStyle: FontStyle.italic),
           ),
+          const SizedBox(height: 16),
         ],
       ],
     );
