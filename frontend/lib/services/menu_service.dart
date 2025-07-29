@@ -103,4 +103,30 @@ class MenuService {
       throw Exception('Error reviewing optimization: $e');
     }
   }
+  
+  Future<void> deleteMenuItem(String itemId) async {
+    try {
+      final response = await _httpClient.delete('/menu/delete-menu-item?itemId=$itemId');
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete menu item: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting menu item: $e');
+    }
+  }
+  
+  Future<MenuItem> getMenuItem(String itemId) async {
+    try {
+      final response = await _httpClient.get('/menu/get-menu-item?itemId=$itemId');
+      
+      if (response.statusCode == 200) {
+        return MenuItem.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to get menu item: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error getting menu item: $e');
+    }
+  }
 }

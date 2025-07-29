@@ -147,4 +147,19 @@ class RestaurantService {
       throw Exception('Error getting demographics: $e');
     }
   }
+
+  Future<Restaurant> completeSetup() async {
+    try {
+      final response = await _httpClient.post('/restaurant/complete-setup');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Restaurant.fromJson(data['restaurant']);
+      } else {
+        throw Exception('Failed to complete setup: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error completing setup: $e');
+    }
+  }
 }

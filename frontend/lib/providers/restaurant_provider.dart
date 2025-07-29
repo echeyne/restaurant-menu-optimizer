@@ -181,4 +181,21 @@ class RestaurantProvider extends ChangeNotifier {
     _similarRestaurants = [];
     notifyListeners();
   }
+
+  Future<bool> completeSetup() async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final updatedRestaurant = await _restaurantService.completeSetup();
+      _restaurant = updatedRestaurant;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

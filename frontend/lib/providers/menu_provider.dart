@@ -134,6 +134,38 @@ class MenuProvider extends ChangeNotifier {
     }
   }
   
+  Future<bool> deleteMenuItem(String itemId) async {
+    _setLoading(true);
+    _setError(null);
+    
+    try {
+      await _menuService.deleteMenuItem(itemId);
+      _menuItems.removeWhere((item) => item.itemId == itemId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
+  Future<MenuItem?> getMenuItem(String itemId) async {
+    _setLoading(true);
+    _setError(null);
+    
+    try {
+      final item = await _menuService.getMenuItem(itemId);
+      return item;
+    } catch (e) {
+      _setError(e.toString());
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+  
   void clearError() {
     _setError(null);
   }

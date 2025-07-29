@@ -48,7 +48,15 @@ class _RestaurantProfileSetupScreenState
                 _nameController.text = restaurant.name;
                 _cityController.text = restaurant.city;
                 _stateController.text = restaurant.state;
-                if (restaurant.qlooEntityId != null &&
+                
+                // If profile setup is not complete, always start at step 1
+                if (!restaurant.profileSetupComplete) {
+                  _currentStep = 1;
+                  if (restaurantProvider.searchResults.isEmpty) {
+                    restaurantProvider.searchQlooRestaurants(
+                        restaurant.name, restaurant.city, restaurant.state);
+                  }
+                } else if (restaurant.qlooEntityId != null &&
                     restaurant.qlooEntityId!.isNotEmpty) {
                   _currentStep = 4;
                   // Create a QlooSearchResult from the existing restaurant data
@@ -83,7 +91,15 @@ class _RestaurantProfileSetupScreenState
             _nameController.text = restaurant.name;
             _cityController.text = restaurant.city;
             _stateController.text = restaurant.state;
-            if (restaurant.qlooEntityId != null &&
+            
+            // If profile setup is not complete, always start at step 1
+            if (!restaurant.profileSetupComplete) {
+              _currentStep = 1;
+              if (restaurantProvider.searchResults.isEmpty) {
+                restaurantProvider.searchQlooRestaurants(
+                    restaurant.name, restaurant.city, restaurant.state);
+              }
+            } else if (restaurant.qlooEntityId != null &&
                 restaurant.qlooEntityId!.isNotEmpty) {
               _currentStep = 4;
               // Create a QlooSearchResult from the existing restaurant data
@@ -856,17 +872,16 @@ class _RestaurantProfileSetupScreenState
   Future<void> _completeSetup(RestaurantProvider provider) async {
     if (_selectedRestaurant == null) return;
 
-    // Get demographics data
-    final demographicsSuccess =
-        await provider.getDemographics(_selectedRestaurant!.entityId);
-
-    if (demographicsSuccess || provider.similarRestaurants.isNotEmpty) {
+    // Mark profile setup as complete
+    final success = await provider.completeSetup();
+    
+    if (success) {
       // Setup is complete, navigate to menu management
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.menuManagement);
       }
     } else {
-      _showErrorSnackBar('Failed to complete setup. Please try again.');
+      _showErrorSnackBar(provider.error ?? 'Failed to complete setup. Please try again.');
     }
   }
 

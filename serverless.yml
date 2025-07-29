@@ -999,6 +999,31 @@ functions:
           - dynamodb:Scan
         Resource: "*"
 
+  CompleteRestaurantSetup:
+    handler: src/restaurant/handlers/complete-setup.handler
+    events:
+      - http:
+          path: restaurant/complete-setup
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+    environment:
+      STAGE: ${self:provider.stage}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+        Resource: "*"
+
   OptimizationOptions:
     handler: src/menu/handlers/optimization-options.handler
     events:
