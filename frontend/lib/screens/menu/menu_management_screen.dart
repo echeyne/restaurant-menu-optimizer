@@ -207,24 +207,31 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           ),
           body: Column(
             children: [
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.upload_file),
-                    onPressed: _uploadMenu,
-                    label: Text('Upload menu'),
-                  ),
-                  ElevatedButton.icon(
-                    icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-                    onPressed: () {
-                      setState(() {
-                        _isGridView = !_isGridView;
-                      });
-                    },
-                    label: Text(
-                        _isGridView ? 'Toggle list view' : 'Toggle grid view'),
-                  ),
-                ],
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, left: 16.0),
+                child: Row(
+                  children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.upload_file),
+                      onPressed: _uploadMenu,
+                      label: Text('Upload Menu'),
+                    ),
+                    SizedBox(
+                      width: 8,
+                    ),
+                    OutlinedButton.icon(
+                      icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
+                      onPressed: () {
+                        setState(() {
+                          _isGridView = !_isGridView;
+                        });
+                      },
+                      label: Text(_isGridView
+                          ? 'Toggle List view'
+                          : 'Toggle Grid View'),
+                    ),
+                  ],
+                ),
               ),
 
               // Search and filter bar
