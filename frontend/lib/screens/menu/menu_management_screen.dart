@@ -20,6 +20,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
   bool _isGridView = false;
   String _selectedCategory = 'All';
   final TextEditingController _searchController = TextEditingController();
+  bool _isParsingMenu = false;
+  String? _uploadedFileId;
 
   @override
   void initState() {
@@ -73,31 +75,107 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png'],
+        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'csv', 'xls', 'xlsx'],
+        allowMultiple: false,
+        withData: true, // Ensure we get file bytes for web compatibility
       );
 
-      if (result != null) {
-        final success = await menuProvider.uploadMenu(
-          restaurantProvider.restaurant!.restaurantId,
-          result.files.first,
-        );
-
-        if (success) {
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        
+        // Validate file size (10MB limit)
+        const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxFileSize) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Menu uploaded successfully')),
+              const SnackBar(
+                content: Text('File size exceeds 10MB limit. Please choose a smaller file.'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
-          _loadMenuItems();
+          return;
+        }
+
+        // Show loading dialog
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 16),
+                  Text('Uploading menu...'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final uploadResponse = await menuProvider.uploadMenu(
+          restaurantProvider.restaurant!.restaurantId,
+          file,
+        );
+
+        // Close loading dialog
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+
+        if (uploadResponse != null && uploadResponse.status == 'success') {
+          setState(() {
+            _isParsingMenu = true;
+            _uploadedFileId = uploadResponse.uploadId;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Menu uploaded successfully! Parsing can take a few minutes. Please check back later.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Upload failed: ${menuProvider.error ?? 'Unknown error'}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
+      // Close loading dialog if it's open
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error uploading menu: $e')),
+        SnackBar(
+          content: Text('Error uploading menu: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+  }
+
+  Future<void> _refreshMenuItems() async {
+    setState(() {
+      _isParsingMenu = false;
+    });
+    _loadMenuItems();
+  }
+
+  void _goBackToRestaurantSetup() {
+    Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
   }
 
   void _showMenuItemDetail(MenuItem item) {
@@ -204,21 +282,78 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           appBar: AppBar(
             title: const Text('Menu Management'),
             automaticallyImplyLeading: false,
+            actions: [
+              TextButton.icon(
+                onPressed: _goBackToRestaurantSetup,
+                icon: const Icon(Icons.settings),
+                label: const Text('Restaurant Setup'),
+              ),
+            ],
           ),
           body: Column(
             children: [
+              // Menu parsing status banner
+              if (_isParsingMenu) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const CircularProgressIndicator(strokeWidth: 2),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Menu Parsing in Progress',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Your menu is being processed. This can take a few minutes.',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _refreshMenuItems,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Refresh to Check Status'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              
               Padding(
-                padding: const EdgeInsets.only(top: 16.0, left: 16.0),
+                padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
                 child: Row(
                   children: [
                     ElevatedButton.icon(
                       icon: const Icon(Icons.upload_file),
-                      onPressed: _uploadMenu,
+                      onPressed: _isParsingMenu ? null : _uploadMenu,
                       label: Text('Upload Menu'),
                     ),
-                    SizedBox(
-                      width: 8,
-                    ),
+                    const SizedBox(width: 8),
                     OutlinedButton.icon(
                       icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
                       onPressed: () {
@@ -227,9 +362,17 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                         });
                       },
                       label: Text(_isGridView
-                          ? 'Toggle List view'
-                          : 'Toggle Grid View'),
+                          ? 'List View'
+                          : 'Grid View'),
                     ),
+                    const Spacer(),
+                    if (!_isParsingMenu && menuProvider.menuItems.isNotEmpty) ...[
+                      IconButton(
+                        onPressed: _refreshMenuItems,
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh Menu Items',
+                      ),
+                    ],
                   ],
                 ),
               ),

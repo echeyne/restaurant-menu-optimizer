@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/restaurant_provider.dart';
 import '../../utils/app_routes.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,7 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         if (result.success) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
+          // Check if restaurant profile is complete
+          final restaurantProvider = Provider.of<RestaurantProvider>(context, listen: false);
+          await restaurantProvider.getCurrentRestaurant();
+          
+          if (restaurantProvider.restaurant?.profileSetupComplete == true) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.menuManagement);
+          } else {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
+          }
         } else if (result.needsConfirmation && result.email != null) {
           Navigator.of(context).pushReplacementNamed(
             AppRoutes.emailConfirmation,

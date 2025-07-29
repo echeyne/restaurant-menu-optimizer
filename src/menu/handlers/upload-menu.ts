@@ -4,7 +4,7 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { S3, Lambda } from "aws-sdk";
+import { S3 } from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { createResponse } from "../../models/api";
 import { MenuFileRepository } from "../../repositories/menu-file-repository";
@@ -67,108 +67,59 @@ export const handler = async (
 
     // Validate request parameters
     if (!restaurantId || !fileName || !fileType || !fileSize) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Missing required parameters: restaurantId, fileName, fileType, fileSize",
-        }),
-      };
+      return createResponse(400, {
+        message:
+          "Missing required parameters: restaurantId, fileName, fileType, fileSize",
+      });
     }
 
     // Check if restaurant profile setup is complete
     const restaurant = await restaurantRepository.getById(restaurantId);
     if (!restaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Restaurant not found",
-        }),
-      };
+      return createResponse(404, {
+        message: "Restaurant not found",
+      });
     }
 
     if (!restaurant.profileSetupComplete) {
-      return {
-        statusCode: 403,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Restaurant profile setup must be completed before uploading menu",
-          profileSetupComplete: false,
-        }),
-      };
+      return createResponse(403, {
+        message:
+          "Restaurant profile setup must be completed before uploading menu",
+        profileSetupComplete: false,
+      });
     }
 
     // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(fileType)) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Invalid file type. Allowed types: ${ALLOWED_FILE_TYPES.join(
-            ", "
-          )}`,
-        }),
-      };
+      return createResponse(400, {
+        message: `Invalid file type. Allowed types: ${ALLOWED_FILE_TYPES.join(
+          ", "
+        )}`,
+      });
     }
 
     // Additional validation for file extension matching the MIME type
     const fileExtension = fileName.split(".").pop()?.toLowerCase();
     if (fileExtension && FILE_EXTENSIONS_MAP[fileExtension]) {
       if (!FILE_EXTENSIONS_MAP[fileExtension].includes(fileType)) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message: `File extension .${fileExtension} does not match the provided MIME type ${fileType}`,
-          }),
-        };
+        return createResponse(400, {
+          message: `File extension .${fileExtension} does not match the provided MIME type ${fileType}`,
+        });
       }
     } else if (fileExtension) {
       // If we have an extension but it's not in our map, reject it
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Unsupported file extension: .${fileExtension}`,
-        }),
-      };
+      return createResponse(400, {
+        message: `Unsupported file extension: .${fileExtension}`,
+      });
     }
 
     // Validate file size
     if (fileSize > MAX_FILE_SIZE) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `File size exceeds maximum allowed size of ${
-            MAX_FILE_SIZE / (1024 * 1024)
-          }MB`,
-        }),
-      };
+      return createResponse(400, {
+        message: `File size exceeds maximum allowed size of ${
+          MAX_FILE_SIZE / (1024 * 1024)
+        }MB`,
+      });
     }
 
     // Generate a unique file key (fileExtension is already defined above)
@@ -207,32 +158,18 @@ export const handler = async (
     });
 
     // Return the pre-signed URL and file details
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        uploadUrl: presignedUrl,
-        fileKey,
-        fileId: menuFile.fileId,
-        expiresIn: 300,
-      }),
-    };
+    return createResponse(200, {
+      uploadUrl: presignedUrl,
+      fileKey,
+      fileId: menuFile.fileId,
+      expiresIn: 300,
+    });
   } catch (error: any) {
     console.error("Error generating upload URL:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error generating upload URL",
-        error: error.message || String(error),
-      }),
-    };
+    return createResponse(500, {
+      message: "Error generating upload URL",
+      error: error.message || String(error),
+    });
   }
 };

@@ -209,3 +209,41 @@ class UploadResponse {
   factory UploadResponse.fromJson(Map<String, dynamic> json) => _$UploadResponseFromJson(json);
   Map<String, dynamic> toJson() => _$UploadResponseToJson(this);
 }
+
+@JsonSerializable()
+class OptimizationOption {
+  final String id;
+  final String title;
+  final String description;
+  
+  OptimizationOption({
+    required this.id,
+    required this.title,
+    required this.description,
+  });
+  
+  factory OptimizationOption.fromJson(Map<String, dynamic> json) => _$OptimizationOptionFromJson(json);
+  Map<String, dynamic> toJson() => _$OptimizationOptionToJson(this);
+}
+
+@JsonSerializable()
+class ParseMenuResponse {
+  final String message;
+  final List<MenuItem> menuItems;
+  final int itemCount;
+  final String nextStep;
+  final bool optimizationOptionsAvailable;
+  final List<OptimizationOption> optimizationOptions;
+  
+  ParseMenuResponse({
+    required this.message,
+    required this.menuItems,
+    required this.itemCount,
+    required this.nextStep,
+    required this.optimizationOptionsAvailable,
+    required this.optimizationOptions,
+  });
+  
+  factory ParseMenuResponse.fromJson(Map<String, dynamic> json) => _$ParseMenuResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$ParseMenuResponseToJson(this);
+}

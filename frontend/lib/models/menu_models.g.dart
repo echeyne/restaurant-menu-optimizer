@@ -125,3 +125,42 @@ Map<String, dynamic> _$UploadResponseToJson(UploadResponse instance) =>
       'status': instance.status,
       'message': instance.message,
     };
+
+OptimizationOption _$OptimizationOptionFromJson(Map<String, dynamic> json) =>
+    OptimizationOption(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+    );
+
+Map<String, dynamic> _$OptimizationOptionToJson(OptimizationOption instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'title': instance.title,
+      'description': instance.description,
+    };
+
+ParseMenuResponse _$ParseMenuResponseFromJson(Map<String, dynamic> json) =>
+    ParseMenuResponse(
+      message: json['message'] as String,
+      menuItems: (json['menuItems'] as List<dynamic>)
+          .map((e) => MenuItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      itemCount: (json['itemCount'] as num).toInt(),
+      nextStep: json['nextStep'] as String,
+      optimizationOptionsAvailable:
+          json['optimizationOptionsAvailable'] as bool,
+      optimizationOptions: (json['optimizationOptions'] as List<dynamic>)
+          .map((e) => OptimizationOption.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$ParseMenuResponseToJson(ParseMenuResponse instance) =>
+    <String, dynamic>{
+      'message': instance.message,
+      'menuItems': instance.menuItems,
+      'itemCount': instance.itemCount,
+      'nextStep': instance.nextStep,
+      'optimizationOptionsAvailable': instance.optimizationOptionsAvailable,
+      'optimizationOptions': instance.optimizationOptions,
+    };

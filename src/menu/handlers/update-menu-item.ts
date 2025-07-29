@@ -21,22 +21,8 @@ export const handler = async (
       return createResponse(200, {});
     }
 
-    // Get item ID from path parameters
+    // Get item ID from path parameters (optional for creating new items)
     const itemId = event.pathParameters?.itemId;
-
-    // Validate item ID
-    if (!itemId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required parameter: itemId",
-        }),
-      };
-    }
 
     // Parse request body
     if (!event.body) {
@@ -68,55 +54,96 @@ export const handler = async (
       };
     }
 
-    // Prevent updating of certain fields
-    const protectedFields = ["itemId", "restaurantId", "createdAt"];
-    const hasProtectedFields = protectedFields.some(
-      (field) => field in updates
-    );
+    // Prevent updating of certain fields (only for updates, not creation)
+    if (itemId) {
+      const protectedFields = ["itemId", "restaurantId", "createdAt"];
+      const hasProtectedFields = protectedFields.some(
+        (field) => field in updates
+      );
 
-    if (hasProtectedFields) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Cannot update protected fields: ${protectedFields.join(
-            ", "
-          )}`,
-        }),
-      };
+      if (hasProtectedFields) {
+        return {
+          statusCode: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify({
+            message: `Cannot update protected fields: ${protectedFields.join(
+              ", "
+            )}`,
+          }),
+        };
+      }
     }
 
     // Get menu item repository
     const menuItemRepository = new MenuItemRepository();
 
-    // Check if menu item exists
-    const existingItem = await menuItemRepository.getById(itemId);
-    if (!existingItem) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Menu item with ID ${itemId} not found`,
-        }),
-      };
-    }
+    let resultItem: MenuItem;
+    let message: string;
 
-    // Update menu item
-    const updatedItem = await menuItemRepository.update(itemId, updates);
+    if (!itemId) {
+      // Creating a new menu item
+      // Validate required fields for creation
+      if (
+        !updates.name ||
+        !updates.restaurantId ||
+        updates.price === undefined
+      ) {
+        return {
+          statusCode: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify({
+            message:
+              "Missing required fields for creating menu item: name, restaurantId, price",
+          }),
+        };
+      }
+
+      // Create new menu item
+      const newItem = {
+        ...updates,
+        isActive: updates.isActive ?? true,
+        isAiGenerated: updates.isAiGenerated ?? false,
+        ingredients: updates.ingredients ?? [],
+        dietaryTags: updates.dietaryTags ?? [],
+        description: updates.description ?? "",
+        category: updates.category ?? "Main Course",
+      } as Omit<MenuItem, "itemId" | "createdAt" | "updatedAt">;
+
+      resultItem = await menuItemRepository.create(newItem);
+      message = "Menu item created successfully";
+    } else {
+      // Updating existing menu item
+      const existingItem = await menuItemRepository.getById(itemId);
+      if (!existingItem) {
+        return {
+          statusCode: 404,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify({
+            message: `Menu item with ID ${itemId} not found`,
+          }),
+        };
+      }
+
+      resultItem = await menuItemRepository.update(itemId, updates);
+      message = "Menu item updated successfully";
+    }
 
     // Check if this update affects optimization readiness
     const optimizationReadiness =
       await menuItemRepository.checkOptimizationReadiness(
-        existingItem.restaurantId
+        resultItem.restaurantId
       );
 
-    // Return updated menu item with optimization readiness info
+    // Return updated/created menu item with optimization readiness info
     return {
       statusCode: 200,
       headers: {
@@ -124,8 +151,8 @@ export const handler = async (
         "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({
-        message: "Menu item updated successfully",
-        menuItem: updatedItem,
+        message,
+        menuItem: resultItem,
         optimizationReadiness,
       }),
     };

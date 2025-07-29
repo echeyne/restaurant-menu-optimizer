@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/menu_models.dart';
 import '../services/menu_service.dart';
 
@@ -27,13 +28,53 @@ class MenuProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  Future<bool> uploadMenu(String restaurantId, dynamic menuFile) async {
+  Future<UploadResponse?> uploadMenu(String restaurantId, PlatformFile menuFile) async {
     _setLoading(true);
     _setError(null);
     
     try {
-      await _menuService.uploadMenu(restaurantId, menuFile);
+      final response = await _menuService.uploadMenu(restaurantId, menuFile);
       // Handle upload response
+      if (response.status == 'success') {
+        notifyListeners();
+        return response;
+      } else {
+        _setError(response.message ?? 'Upload failed');
+        return null;
+      }
+    } catch (e) {
+      _setError(e.toString());
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<ParseMenuResponse?> parseMenu(String restaurantId, String fileKey, String fileType, String fileId) async {
+    _setLoading(true);
+    _setError(null);
+    
+    try {
+      final response = await _menuService.parseMenu(restaurantId, fileKey, fileType, fileId);
+      // Update menu items with parsed items
+      _menuItems = response.menuItems;
+      notifyListeners();
+      return response;
+    } catch (e) {
+      _setError(e.toString());
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> createMenuItem(MenuItem newItem) async {
+    _setLoading(true);
+    _setError(null);
+    
+    try {
+      final createdItem = await _menuService.createMenuItem(newItem);
+      _menuItems.add(createdItem);
       notifyListeners();
       return true;
     } catch (e) {

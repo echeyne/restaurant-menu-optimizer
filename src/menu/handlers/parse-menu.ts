@@ -94,9 +94,13 @@ export const handler = async (
       // Parse the extracted text into menu items using LLM
       const menuItems = await parseMenuWithLLM(extractedText, restaurantId);
 
-      // Store the parsed menu items
+      // Store the parsed menu items in the database
       const menuItemRepository = new MenuItemRepository();
       const savedItems = await menuItemRepository.batchCreate(menuItems);
+
+      console.log(
+        `Successfully saved ${savedItems.length} menu items to database`
+      );
 
       // Update file status to processed if fileId is provided
       if (fileId) {
@@ -112,8 +116,9 @@ export const handler = async (
           "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          message: "Menu parsed successfully",
+          message: "Menu parsed and saved successfully",
           menuItems: savedItems,
+          itemCount: savedItems.length,
           nextStep: "optimization",
           optimizationOptionsAvailable: true,
           optimizationOptions: [

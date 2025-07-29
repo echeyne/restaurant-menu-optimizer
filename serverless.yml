@@ -1407,8 +1407,20 @@ functions:
     handler: src/menu/handlers/update-menu-item.handler
     events:
       - http:
-          path: menu/update-menu-item
+          path: menu/update-menu-item/{itemId}
           method: put
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+      - http:
+          path: menu/update-menu-item
+          method: post
           cors:
             origin: "*"
             headers:
