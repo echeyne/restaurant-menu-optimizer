@@ -323,4 +323,5 @@ export const TableNames = {
 export const IndexNames = {
   RESTAURANT_ID: "restaurantId-index",
   QLOO_ENTITY_ID: "qlooEntityId-index",
+  OWNER_ID: "ownerId-index",
 };

@@ -48,7 +48,7 @@ class _RestaurantProfileSetupScreenState
                 _nameController.text = restaurant.name;
                 _cityController.text = restaurant.city;
                 _stateController.text = restaurant.state;
-                
+
                 // If profile setup is not complete, always start at step 1
                 if (!restaurant.profileSetupComplete) {
                   _currentStep = 1;
@@ -91,10 +91,10 @@ class _RestaurantProfileSetupScreenState
             _nameController.text = restaurant.name;
             _cityController.text = restaurant.city;
             _stateController.text = restaurant.state;
-            
+
             // If profile setup is not complete, always start at step 1
             if (!restaurant.profileSetupComplete) {
-              _currentStep = 1;
+              _currentStep = 0;
               if (restaurantProvider.searchResults.isEmpty) {
                 restaurantProvider.searchQlooRestaurants(
                     restaurant.name, restaurant.city, restaurant.state);
@@ -471,6 +471,7 @@ class _RestaurantProfileSetupScreenState
           'We\'ll use this information to find similar restaurants and gather demographic insights for your area.',
           style: TextStyle(fontStyle: FontStyle.italic),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -515,17 +516,6 @@ class _RestaurantProfileSetupScreenState
                 ],
               ),
             ),
-          ] else ...[
-            ElevatedButton(
-              onPressed: () => _loadDemographics(provider),
-              child: const Text('Search Demographics'),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Click "Search Demographics" to retrieve demographic insights for your restaurant.',
-              style: TextStyle(fontStyle: FontStyle.italic),
-            ),
-            const SizedBox(height: 16),
           ],
         ],
       );
@@ -614,7 +604,7 @@ class _RestaurantProfileSetupScreenState
         ),
 
         const Text(
-          'This demographic information will help us find similar restaurants and optimize your menu recommendations.',
+          'This demographic information will help us optimize your menu recommendations.',
           style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
         ),
         const SizedBox(height: 16),
@@ -776,6 +766,8 @@ class _RestaurantProfileSetupScreenState
               _currentStep = 3;
               _demographicsLoaded = false;
             });
+            // Automatically load demographics when reaching step 3
+            await _loadDemographics(provider);
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -792,6 +784,9 @@ class _RestaurantProfileSetupScreenState
           });
           // Clear any previous similar restaurants data
           provider.clearSimilarRestaurants();
+        } else {
+          // Auto-load demographics when continuing to step 3
+          await _loadDemographics(provider);
         }
         break;
       case 4:
@@ -874,14 +869,15 @@ class _RestaurantProfileSetupScreenState
 
     // Mark profile setup as complete
     final success = await provider.completeSetup();
-    
+
     if (success) {
       // Setup is complete, navigate to menu management
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.menuManagement);
       }
     } else {
-      _showErrorSnackBar(provider.error ?? 'Failed to complete setup. Please try again.');
+      _showErrorSnackBar(
+          provider.error ?? 'Failed to complete setup. Please try again.');
     }
   }
 

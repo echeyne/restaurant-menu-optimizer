@@ -6,6 +6,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { MenuItem } from "../../models/database";
+import { createResponse } from "../../models/api";
 
 /**
  * Handler for update menu item requests
@@ -16,6 +17,10 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    if (event.httpMethod === "OPTIONS") {
+      return createResponse(200, {});
+    }
+
     // Get item ID from path parameters
     const itemId = event.pathParameters?.itemId;
 

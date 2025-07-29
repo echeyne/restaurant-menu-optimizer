@@ -43,13 +43,14 @@ export class RestaurantRepository extends AbstractRepository<Restaurant> {
   async getByOwnerId(ownerId: string): Promise<Restaurant | null> {
     const params = {
       TableName: this.tableName,
-      FilterExpression: "ownerId = :ownerId",
+      IndexName: "ownerId-index",
+      KeyConditionExpression: "ownerId = :ownerId",
       ExpressionAttributeValues: {
         ":ownerId": ownerId,
       },
     };
 
-    const result = await this.docClient.scan(params).promise();
+    const result = await this.docClient.query(params).promise();
     if (!result.Items || result.Items.length === 0) {
       return null;
     }

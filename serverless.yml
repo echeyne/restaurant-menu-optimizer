@@ -69,9 +69,18 @@ custom:
         AttributeDefinitions:
           - AttributeName: restaurantId
             AttributeType: S
+          - AttributeName: ownerId
+            AttributeType: S
         KeySchema:
           - AttributeName: restaurantId
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ownerId-index
+            KeySchema:
+              - AttributeName: ownerId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
       - TableName: ${self:provider.stage}-menu-items
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
@@ -708,7 +717,7 @@ functions:
           - dynamodb:PutItem
           - dynamodb:GetItem
           - dynamodb:UpdateItem
-          - dynamodb:Scan
+          - dynamodb:Query
         Resource: "*"
 
   SearchQlooRestaurants:
@@ -996,7 +1005,7 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - dynamodb:Scan
+          - dynamodb:Query
         Resource: "*"
 
   CompleteRestaurantSetup:
@@ -1022,6 +1031,7 @@ functions:
         Action:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
+          - dynamodb:Query
         Resource: "*"
 
   OptimizationOptions:
@@ -1428,9 +1438,18 @@ resources:
         AttributeDefinitions:
           - AttributeName: restaurantId
             AttributeType: S
+          - AttributeName: ownerId
+            AttributeType: S
         KeySchema:
           - AttributeName: restaurantId
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ownerId-index
+            KeySchema:
+              - AttributeName: ownerId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
     menufilesbucket:
       Type: AWS::S3::Bucket
       Properties:
