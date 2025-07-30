@@ -531,7 +531,9 @@ functions:
         Action:
           - s3:PutObject
           - s3:GetObject
-        Resource: "*"
+          - s3:PutObjectTagging
+        Resource:
+          - arn:aws:s3:::restaurantmenufiles${self:provider.stage}/*
       - Effect: Allow
         Action:
           - dynamodb:PutItem
@@ -1490,6 +1492,7 @@ functions:
         Action:
           - dynamodb:UpdateItem
           - dynamodb:GetItem
+          - dynamodb:PutItem
         Resource: "*"
 
   DeleteMenuItem:
