@@ -537,9 +537,6 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-          - dynamodb:GetItem
-          - dynamodb:UpdateItem
-          - dynamodb:Query
         Resource: "*"
 
   ParseMenu:
@@ -1493,6 +1490,7 @@ functions:
           - dynamodb:UpdateItem
           - dynamodb:GetItem
           - dynamodb:PutItem
+          - dynamodb:Query
         Resource: "*"
 
   DeleteMenuItem:

@@ -161,16 +161,9 @@ export const handler = async (
       Key: fileKey,
       ContentType: fileType,
       Expires: 300, // URL expires in 5 minutes
-      // Add metadata to track the file
-      Metadata: {
-        restaurantId,
-        fileName: encodeURIComponent(fileName),
-      },
-      // Add a tagging configuration for easier management
-      Tagging: `restaurantId=${encodeURIComponent(
-        restaurantId
-      )}&fileType=${encodeURIComponent(fileType)}`,
     });
+
+    console.log(`presigned url: ${presignedUrl}`);
 
     // Store menu file metadata in DynamoDB
     const menuFile = await menuFileRepository.create({
