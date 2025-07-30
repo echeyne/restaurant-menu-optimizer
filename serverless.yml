@@ -15,7 +15,7 @@ provider:
     LLM_MODEL: ${env:LLM_MODEL, 'claude-3-5-sonnet-20241022'}
     USER_POOL_ID: ${self:custom.userPoolId}
     CLIENT_ID: ${self:custom.clientId}
-    MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
+    MENU_FILES_BUCKET: restaurantmenufiles${self:provider.stage}
     QLOO_API_KEY: ${env:QLOO_API_KEY, ''}
   apiGateway:
     shouldStartNameWithService: true
@@ -524,8 +524,7 @@ functions:
                     fileSize:
                       type: number
     environment:
-      MENU_FILES_BUCKET:
-        Fn::GetAtt: [menufilesbucket, BucketName]
+      MENU_FILES_BUCKET: restaurantmenufiles${self:provider.stage}
       STAGE: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -576,8 +575,7 @@ functions:
                     fileId:
                       type: string
     environment:
-      MENU_FILES_BUCKET:
-        Fn::GetAtt: [menufilesbucket, BucketName]
+      MENU_FILES_BUCKET: restaurantmenufiles${self:provider.stage}
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
       LLM_MODEL: ${self:provider.environment.LLM_MODEL}
@@ -1633,7 +1631,7 @@ resources:
     menufilesbucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-files-${self:provider.stage}
+        BucketName: restaurantmenufiles${self:provider.stage}
     frontendwebsitebucket:
       Type: AWS::S3::Bucket
       Properties:
