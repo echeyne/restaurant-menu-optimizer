@@ -145,7 +145,7 @@ class MenuService {
   Future<ParseMenuResponse> parseMenu(String restaurantId, String fileKey,
       String fileType, String fileId) async {
     try {
-      final response = await _httpClient.postJson('/menu/parse-menu', {
+      final response = await _httpClient.postJson('/menu/parse', {
         'restaurantId': restaurantId,
         'fileKey': fileKey,
         'fileType': fileType,

@@ -35,7 +35,7 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MenuProvider()),
       ],
       child: MaterialApp(
-        title: 'Restaurant Menu Optimizer',
+        title: 'Menu Optimizer',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
@@ -73,7 +73,8 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
               break;
             case AppRoutes.optimizationReview:
               final optimizationType = settings.arguments as String;
-              page = OptimizationReviewScreen(optimizationType: optimizationType);
+              page =
+                  OptimizationReviewScreen(optimizationType: optimizationType);
               break;
             case AppRoutes.dashboard:
               page = const DashboardScreen();

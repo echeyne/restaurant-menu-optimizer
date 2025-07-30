@@ -15,7 +15,7 @@ void main() {
     await tester.pumpWidget(const RestaurantMenuOptimizerApp());
 
     // Verify that the login screen loads
-    expect(find.text('Restaurant Menu Optimizer'), findsOneWidget);
+    expect(find.text('Menu Optimizer'), findsOneWidget);
     expect(find.text('Sign in to your account'), findsOneWidget);
     expect(find.text('Sign In'), findsOneWidget);
   });

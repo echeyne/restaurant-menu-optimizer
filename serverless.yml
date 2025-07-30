@@ -1822,9 +1822,7 @@ resources:
                 - HEAD
               AllowedOrigins:
                 - "http://localhost:*"
-                - "http://*.amazonaws.com"
-                - "http://*.s3-website-*.amazonaws.com"
-                - "https://*.s3-website-*.amazonaws.com"
+                - "https://*.amazonaws.com"
                 - "http://restaurantmenuoptimizerfrontenddev.s3-website-us-east-1.amazonaws.com"
                 - "https://restaurantmenuoptimizerfrontenddev.s3-website-us-east-1.amazonaws.com"
               ExposedHeaders:

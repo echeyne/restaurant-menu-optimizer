@@ -36,13 +36,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         if (result.success) {
           // Check if restaurant profile is complete
-          final restaurantProvider = Provider.of<RestaurantProvider>(context, listen: false);
+          final restaurantProvider =
+              Provider.of<RestaurantProvider>(context, listen: false);
           await restaurantProvider.getCurrentRestaurant();
-          
+
           if (restaurantProvider.restaurant?.profileSetupComplete == true) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.menuManagement);
+            Navigator.of(context)
+                .pushReplacementNamed(AppRoutes.menuManagement);
           } else {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
+            Navigator.of(context)
+                .pushReplacementNamed(AppRoutes.restaurantSetup);
           }
         } else if (result.needsConfirmation && result.email != null) {
           Navigator.of(context).pushReplacementNamed(
@@ -82,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Restaurant Menu Optimizer',
+                        'Menu Optimizer',
                         style: Theme.of(context).textTheme.headlineMedium,
                         textAlign: TextAlign.center,
                       ),
@@ -104,7 +107,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your email';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                              .hasMatch(value)) {
                             return 'Please enter a valid email';
                           }
                           return null;
@@ -117,7 +121,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                            icon: Icon(_obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off),
                             onPressed: () {
                               setState(() {
                                 _obscurePassword = !_obscurePassword;
@@ -142,14 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.errorContainer,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .errorContainer,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
                                       Icons.error_outline,
-                                      color: Theme.of(context).colorScheme.error,
+                                      color:
+                                          Theme.of(context).colorScheme.error,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 8),
@@ -157,7 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: Text(
                                         authProvider.error!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.error,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .error,
                                         ),
                                       ),
                                     ),
@@ -172,12 +183,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       Consumer<AuthProvider>(
                         builder: (context, authProvider, child) {
                           return ElevatedButton(
-                            onPressed: authProvider.isLoading ? null : _handleLogin,
+                            onPressed:
+                                authProvider.isLoading ? null : _handleLogin,
                             child: authProvider.isLoading
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   )
                                 : const Text('Sign In'),
                           );
