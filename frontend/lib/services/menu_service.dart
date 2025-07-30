@@ -101,7 +101,8 @@ class MenuService {
 
   Future<MenuItem> updateMenuItem(String itemId, MenuItem updates) async {
     try {
-      final response = await _httpClient.putJson('/menu/update-menu-item/$itemId', updates.toJson());
+      final response = await _httpClient.putJson(
+          '/menu/update-menu-item/$itemId', updates.toJson());
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -116,7 +117,10 @@ class MenuService {
 
   Future<MenuItem> createMenuItem(MenuItem newItem) async {
     try {
-      final response = await _httpClient.postJson('/menu/update-menu-item', newItem.toJson());
+      final Map<String, dynamic> menuItemJson = newItem.toJson();
+      menuItemJson.remove('itemId');
+      final response =
+          await _httpClient.postJson('/menu/update-menu-item', menuItemJson);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -129,7 +133,8 @@ class MenuService {
     }
   }
 
-  Future<ParseMenuResponse> parseMenu(String restaurantId, String fileKey, String fileType, String fileId) async {
+  Future<ParseMenuResponse> parseMenu(String restaurantId, String fileKey,
+      String fileType, String fileId) async {
     try {
       final response = await _httpClient.postJson('/menu/parse-menu', {
         'restaurantId': restaurantId,

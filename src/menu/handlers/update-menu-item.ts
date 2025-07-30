@@ -26,32 +26,18 @@ export const handler = async (
 
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Request body is required",
-        }),
-      };
+      return createResponse(400, {
+        message: "Request body is required",
+      });
     }
 
     const updates = JSON.parse(event.body) as Partial<MenuItem>;
 
     // Validate updates
     if (Object.keys(updates).length === 0) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "No updates provided",
-        }),
-      };
+      return createResponse(400, {
+        message: "No updates provided",
+      });
     }
 
     // Prevent updating of certain fields (only for updates, not creation)
@@ -62,18 +48,11 @@ export const handler = async (
       );
 
       if (hasProtectedFields) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message: `Cannot update protected fields: ${protectedFields.join(
-              ", "
-            )}`,
-          }),
-        };
+        return createResponse(400, {
+          message: `Cannot update protected fields: ${protectedFields.join(
+            ", "
+          )}`,
+        });
       }
     }
 
@@ -91,17 +70,10 @@ export const handler = async (
         !updates.restaurantId ||
         updates.price === undefined
       ) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message:
-              "Missing required fields for creating menu item: name, restaurantId, price",
-          }),
-        };
+        return createResponse(400, {
+          message:
+            "Missing required fields for creating menu item: name, restaurantId, price",
+        });
       }
 
       // Create new menu item
@@ -121,16 +93,9 @@ export const handler = async (
       // Updating existing menu item
       const existingItem = await menuItemRepository.getById(itemId);
       if (!existingItem) {
-        return {
-          statusCode: 404,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message: `Menu item with ID ${itemId} not found`,
-          }),
-        };
+        return createResponse(404, {
+          message: `Menu item with ID ${itemId} not found`,
+        });
       }
 
       resultItem = await menuItemRepository.update(itemId, updates);
@@ -144,31 +109,17 @@ export const handler = async (
       );
 
     // Return updated/created menu item with optimization readiness info
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message,
-        menuItem: resultItem,
-        optimizationReadiness,
-      }),
-    };
+    return createResponse(200, {
+      message,
+      menuItem: resultItem,
+      optimizationReadiness,
+    });
   } catch (error: any) {
     console.error("Error updating menu item:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error updating menu item",
-        error: error.message || String(error),
-      }),
-    };
+    return createResponse(500, {
+      message: "Error updating menu item",
+      error: error.message || String(error),
+    });
   }
 };
