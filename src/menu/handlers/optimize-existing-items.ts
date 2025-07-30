@@ -33,6 +33,7 @@ interface SelectedSpecialtyDish {
   tagId: string;
   restaurantName: string;
   popularity: number;
+  weight: number; // Weight indicating customer preference strength
   businessRating: number;
 }
 
@@ -46,6 +47,7 @@ interface OptimizeExistingItemsRequest {
   selectedSpecialtyDishes?: SelectedSpecialtyDish[]; // Optional: highly rated specialty dishes from similar restaurants
   optimizationStyle?: "casual" | "upscale" | "trendy" | "traditional";
   targetAudience?: string; // Optional: specific target audience override
+  cuisineType?: string; // Optional: cuisine type for optimization context
 }
 
 /**
@@ -222,7 +224,8 @@ export const handler = async (
           request.selectedSpecialtyDishes || [],
           llmService,
           request.optimizationStyle,
-          request.targetAudience
+          request.targetAudience,
+          request.cuisineType
         );
 
         // Save optimized item
@@ -291,7 +294,8 @@ async function optimizeMenuItem(
   selectedSpecialtyDishes: SelectedSpecialtyDish[],
   llmService: LLMService,
   optimizationStyle?: string,
-  targetAudience?: string
+  targetAudience?: string,
+  cuisineType?: string
 ): Promise<OptimizedMenuItem> {
   // Build demographic insights for the prompt using selected demographics
   const demographicInsights = buildSelectedDemographicInsights(
@@ -305,7 +309,8 @@ async function optimizeMenuItem(
     demographicInsights,
     selectedSpecialtyDishes,
     optimizationStyle,
-    targetAudience
+    targetAudience,
+    cuisineType
   );
 
   // Call LLM for optimization
@@ -457,26 +462,31 @@ function createOptimizationPrompt(
   demographicInsights: string[],
   selectedSpecialtyDishes: SelectedSpecialtyDish[],
   optimizationStyle?: string,
-  targetAudience?: string
+  targetAudience?: string,
+  cuisineType?: string
 ): string {
   const style = optimizationStyle || "appealing";
   const audience =
     targetAudience || "the restaurant's primary customer demographic";
+  const cuisine = cuisineType || "the restaurant's cuisine style";
 
   // Build specialty dishes context if available
   let specialtyDishesContext = "";
   if (selectedSpecialtyDishes && selectedSpecialtyDishes.length > 0) {
     const dishDescriptions = selectedSpecialtyDishes.map(
       (dish) =>
-        `- "${dish.dishName}" from ${dish.restaurantName} (Popularity: ${dish.popularity}, Rating: ${dish.businessRating})`
+        `- "${dish.dishName}" from ${dish.restaurantName} (Popularity: ${dish.popularity}, Weight: ${dish.weight}, Rating: ${dish.businessRating})`
     );
     specialtyDishesContext = `\n\nHIGHLY RATED SPECIALTY DISHES FROM SIMILAR RESTAURANTS:
 ${dishDescriptions.join("\n")}
 
-Use these popular dishes as inspiration for naming and description techniques that resonate with customers in this market. Consider what makes these dishes appealing and incorporate similar language patterns, descriptive techniques, or presentation styles that could enhance the menu item being optimized.`;
+Use these popular dishes as inspiration for naming and description techniques that resonate with customers in this market. The weight value indicates customer preference strength (1.0 = highest preference, 0.0 = lowest preference). Focus on dishes with higher weights as they represent stronger customer affinity. Consider what makes these dishes appealing and incorporate similar language patterns, descriptive techniques, or presentation styles that could enhance the menu item being optimized.`;
   }
 
   return `You are a professional menu consultant helping to optimize menu item names and descriptions based on customer demographics and successful dishes from similar restaurants.
+
+RESTAURANT CONTEXT:
+Cuisine Type: ${cuisine}
 
 MENU ITEM TO OPTIMIZE:
 Name: "${menuItem.name}"
@@ -500,12 +510,14 @@ ${demographicInsights.join("\n")}${specialtyDishesContext}
 OPTIMIZATION REQUIREMENTS:
 - Style: ${style}
 - Target Audience: ${audience}
+- Cuisine Context: ${cuisine}
 - Keep the essence and accuracy of the original dish
 - Make the name and description more appealing to the target demographic
 - Use language and terminology that resonates with the customer base
 - Highlight aspects that would appeal to their interests and preferences
 - Draw inspiration from successful dishes in similar restaurants for naming and description techniques
 - Maintain authenticity while enhancing appeal
+- Ensure the optimized content fits well within the ${cuisine} cuisine style
 
 Please provide your optimization in the following JSON format:
 {
@@ -514,7 +526,7 @@ Please provide your optimization in the following JSON format:
   "reason": "Brief explanation of why these changes appeal to the demographic and how they draw inspiration from successful similar dishes"
 }
 
-Focus on making the menu item more appealing while staying true to the original dish and incorporating successful techniques from similar restaurants.`;
+Focus on making the menu item more appealing while staying true to the original dish and incorporating successful techniques from similar restaurants within the ${cuisine} cuisine context.`;
 }
 
 /**

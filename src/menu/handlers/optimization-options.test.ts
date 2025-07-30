@@ -6,10 +6,12 @@ import { handler } from "./optimization-options";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { DemographicsDataRepository } from "../../repositories/demographics-data-repository";
 import { SimilarRestaurantDataRepository } from "../../repositories/similar-restaurant-data-repository";
+import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import {
   MenuItem,
   DemographicsData,
   SimilarRestaurantData,
+  Restaurant,
 } from "../../models/database";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
@@ -17,6 +19,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 jest.mock("../../repositories/menu-item-repository");
 jest.mock("../../repositories/demographics-data-repository");
 jest.mock("../../repositories/similar-restaurant-data-repository");
+jest.mock("../../repositories/restaurant-repository");
 
 // Mock the auth utils
 jest.mock("../../utils/auth-utils", () => ({
@@ -27,6 +30,7 @@ describe("optimization-options handler", () => {
   let mockMenuItemRepository: jest.Mocked<MenuItemRepository>;
   let mockDemographicsRepository: jest.Mocked<DemographicsDataRepository>;
   let mockSimilarRestaurantRepository: jest.Mocked<SimilarRestaurantDataRepository>;
+  let mockRestaurantRepository: jest.Mocked<RestaurantRepository>;
 
   beforeEach(() => {
     // Clear all mocks
@@ -45,6 +49,10 @@ describe("optimization-options handler", () => {
       getById: jest.fn(),
     } as unknown as jest.Mocked<SimilarRestaurantDataRepository>;
 
+    mockRestaurantRepository = {
+      getById: jest.fn(),
+    } as unknown as jest.Mocked<RestaurantRepository>;
+
     // Mock the constructors
     (MenuItemRepository as jest.Mock).mockImplementation(
       () => mockMenuItemRepository
@@ -54,6 +62,9 @@ describe("optimization-options handler", () => {
     );
     (SimilarRestaurantDataRepository as jest.Mock).mockImplementation(
       () => mockSimilarRestaurantRepository
+    );
+    (RestaurantRepository as jest.Mock).mockImplementation(
+      () => mockRestaurantRepository
     );
   });
 
@@ -111,17 +122,20 @@ describe("optimization-options handler", () => {
         qlooEntityId: "qloo-entity-123",
         similarRestaurants: [
           {
-            name: "Test Restaurant",
+            name: "Test Restaurant 1",
             entityId: "test-entity-123",
             address: "123 Test St",
             businessRating: 4.5,
             priceLevel: 2,
+            popularity: 0.8,
             specialtyDishes: [
               {
                 dishName: "Specialty Pasta",
                 tagId: "urn:tag:specialty_dish:place:pasta",
                 restaurantCount: 5,
                 popularity: 0.8,
+                weight: 0.9,
+                totalWeight: 4.5,
               },
             ],
             keywords: [],
@@ -133,12 +147,16 @@ describe("optimization-options handler", () => {
             tagId: "urn:tag:specialty_dish:place:pasta",
             restaurantCount: 5,
             popularity: 0.8,
+            weight: 0.9,
+            totalWeight: 4.5,
           },
           {
             dishName: "Gourmet Burger",
             tagId: "urn:tag:specialty_dish:place:burger",
             restaurantCount: 3,
             popularity: 0.7,
+            weight: 0.8,
+            totalWeight: 2.4,
           },
         ],
         minRatingFilter: 4.0,
@@ -150,6 +168,24 @@ describe("optimization-options handler", () => {
       mockSimilarRestaurantRepository.getById.mockResolvedValue(
         similarRestaurantData
       );
+
+      // Mock restaurant data
+      const restaurantData: Restaurant = {
+        restaurantId,
+        ownerId: "test-owner-id",
+        name: "Test Restaurant",
+        city: "Test City",
+        state: "Test State",
+        entityId: "test-entity-id",
+        cuisine: "Italian",
+        popularity: 0.8,
+        description: "A test restaurant",
+        specialtyDishes: [],
+        businessRating: 4.5,
+        createdAt: "2023-01-01T00:00:00Z",
+        profileSetupComplete: true,
+      };
+      mockRestaurantRepository.getById.mockResolvedValue(restaurantData);
 
       const event = {
         httpMethod: "GET",
@@ -361,13 +397,35 @@ describe("optimization-options handler", () => {
       const similarRestaurantData: SimilarRestaurantData = {
         restaurantId,
         qlooEntityId: "qloo-entity-123",
-        similarRestaurants: [],
+        similarRestaurants: [
+          {
+            name: "Test Restaurant 1",
+            entityId: "test-entity-123",
+            address: "123 Test St",
+            businessRating: 4.5,
+            priceLevel: 2,
+            popularity: 0.8,
+            specialtyDishes: [
+              {
+                dishName: "Specialty Pasta",
+                tagId: "urn:tag:specialty_dish:place:pasta",
+                restaurantCount: 5,
+                popularity: 0.8,
+                weight: 0.9,
+                totalWeight: 4.5,
+              },
+            ],
+            keywords: [],
+          },
+        ],
         specialtyDishes: [
           {
             dishName: "Specialty Pasta",
             tagId: "urn:tag:specialty_dish:place:pasta",
             restaurantCount: 5,
             popularity: 0.8,
+            weight: 0.9,
+            totalWeight: 4.5,
           },
         ],
         minRatingFilter: 4.0,
@@ -481,18 +539,58 @@ describe("optimization-options handler", () => {
       mockSimilarRestaurantRepository.getById.mockResolvedValue({
         restaurantId,
         qlooEntityId: "qloo-entity-123",
-        similarRestaurants: [],
+        similarRestaurants: [
+          {
+            name: "Test Restaurant 1",
+            entityId: "test-entity-123",
+            address: "123 Test St",
+            businessRating: 4.5,
+            priceLevel: 2,
+            popularity: 0.8,
+            specialtyDishes: [
+              {
+                dishName: "Specialty Pasta",
+                tagId: "urn:tag:specialty_dish:place:pasta",
+                restaurantCount: 5,
+                popularity: 0.8,
+                weight: 0.9,
+                totalWeight: 4.5,
+              },
+            ],
+            keywords: [],
+          },
+        ],
         specialtyDishes: [
           {
             dishName: "Specialty Pasta",
             tagId: "urn:tag:specialty_dish:place:pasta",
             restaurantCount: 5,
             popularity: 0.8,
+            weight: 0.9,
+            totalWeight: 4.5,
           },
         ],
         minRatingFilter: 4.0,
         retrievedAt: "2023-01-01T00:00:00Z",
       });
+
+      // Mock restaurant data
+      const restaurantData: Restaurant = {
+        restaurantId,
+        ownerId: "test-owner-id",
+        name: "Test Restaurant",
+        city: "Test City",
+        state: "Test State",
+        entityId: "test-entity-id",
+        cuisine: "Italian",
+        popularity: 0.8,
+        description: "A test restaurant",
+        specialtyDishes: [],
+        businessRating: 4.5,
+        createdAt: "2023-01-01T00:00:00Z",
+        profileSetupComplete: true,
+      };
+      mockRestaurantRepository.getById.mockResolvedValue(restaurantData);
 
       const event = {
         httpMethod: "POST",

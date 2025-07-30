@@ -155,7 +155,7 @@ class MenuProvider extends ChangeNotifier {
   Future<bool> suggestNewItems(
     String restaurantId, {
     int? maxSuggestions,
-    String? cuisineStyle,
+    String? cuisineType,
     String? priceRange,
     List<String>? excludeCategories,
   }) async {
@@ -166,7 +166,7 @@ class MenuProvider extends ChangeNotifier {
       _suggestions = await _menuService.suggestNewItems(
         restaurantId,
         maxSuggestions: maxSuggestions,
-        cuisineStyle: cuisineStyle,
+        cuisineType: cuisineType,
         priceRange: priceRange,
         excludeCategories: excludeCategories,
       );

@@ -10,23 +10,24 @@ class OptimizationOptionsScreen extends StatefulWidget {
   const OptimizationOptionsScreen({super.key});
 
   @override
-  State<OptimizationOptionsScreen> createState() => _OptimizationOptionsScreenState();
+  State<OptimizationOptionsScreen> createState() =>
+      _OptimizationOptionsScreenState();
 }
 
 class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
   final MenuService _menuService = MenuService();
-  
+
   String? _selectedOption;
   bool _isLoading = false;
   bool _isProcessing = false;
   String? _error;
-  
+
   // Optimization data from backend
   List<OptimizationOption> _optimizationOptions = [];
   DemographicDisplay? _demographicInfo;
   List<SpecialtyDishDisplay> _specialtyDishes = [];
   OptimizationReadiness? _readiness;
-  
+
   // User selections
   List<String> _selectedAgeGroups = [];
   List<String> _selectedGenderGroups = [];
@@ -49,7 +50,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             title: const Text('LLM Menu Optimization'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pushReplacementNamed(AppRoutes.menuManagement),
+              onPressed: () => Navigator.of(context)
+                  .pushReplacementNamed(AppRoutes.menuManagement),
             ),
           ),
           body: _isLoading
@@ -85,12 +87,11 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
     );
   }
 
-
-
   Future<void> _loadOptimizationOptions() async {
-    final restaurantProvider = Provider.of<RestaurantProvider>(context, listen: false);
+    final restaurantProvider =
+        Provider.of<RestaurantProvider>(context, listen: false);
     final restaurantId = restaurantProvider.restaurant?.restaurantId;
-    
+
     if (restaurantId == null) {
       setState(() {
         _error = 'Restaurant not found. Please complete your profile setup.';
@@ -105,25 +106,19 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
 
     try {
       final response = await _menuService.getOptimizationOptions(restaurantId);
-      
+
       setState(() {
         _optimizationOptions = response.optimizationOptions;
         _demographicInfo = response.demographicInformation;
         _specialtyDishes = response.specialtyDishes;
         _readiness = response.readiness;
-        
-        // Set default cuisine type from restaurant genre tags
-        if (restaurantProvider.restaurant?.genreTags?.isNotEmpty == true) {
-          final genreTag = restaurantProvider.restaurant!.genreTags!.first;
-          // Extract cuisine type from genre tag (e.g., "urn:tag:genre:restaurant:mexican" -> "Mexican")
-          if (genreTag.contains(':')) {
-            final parts = genreTag.split(':');
-            if (parts.length > 3) {
-              _selectedCuisineType = parts.last.replaceAll('_', ' ').split(' ').map((word) => 
-                word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : word
-              ).join(' ');
-            }
-          }
+
+        // Set default cuisine type from response or restaurant data
+        if (response.cuisine != null && response.cuisine!.isNotEmpty) {
+          _selectedCuisineType = response.cuisine;
+        } else if (restaurantProvider.restaurant?.cuisine != null &&
+            restaurantProvider.restaurant!.cuisine!.isNotEmpty) {
+          _selectedCuisineType = restaurantProvider.restaurant!.cuisine;
         }
       });
     } catch (e) {
@@ -147,8 +142,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
           Text(
             'Error Loading Optimization Options',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Colors.red[600],
-            ),
+                  color: Colors.red[600],
+                ),
           ),
           const SizedBox(height: 8),
           Padding(
@@ -204,17 +199,18 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                   children: [
                     Text(
                       'AI Menu Optimization',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
+                              ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Choose how you\'d like to optimize your menu using demographic insights and similar restaurant data',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                            color: Colors.grey[600],
+                          ),
                     ),
                   ],
                 ),
@@ -257,21 +253,21 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
         Text(
           'Select an optimization option:',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 16),
         ..._optimizationOptions.map((option) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildOptionCard(
-            context,
-            option: option,
-            isSelected: _selectedOption == option.id,
-            onTap: option.available 
-                ? () => setState(() => _selectedOption = option.id)
-                : null,
-          ),
-        )),
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildOptionCard(
+                context,
+                option: option,
+                isSelected: _selectedOption == option.id,
+                onTap: option.available
+                    ? () => setState(() => _selectedOption = option.id)
+                    : null,
+              ),
+            )),
       ],
     );
   }
@@ -283,7 +279,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
     required VoidCallback? onTap,
   }) {
     final isDisabled = !option.available;
-    
+
     return Card(
       elevation: isSelected ? 8 : 2,
       child: InkWell(
@@ -296,14 +292,14 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             border: Border.all(
               color: isDisabled
                   ? Colors.grey[300]!
-                  : isSelected 
-                      ? Theme.of(context).primaryColor 
+                  : isSelected
+                      ? Theme.of(context).primaryColor
                       : Colors.grey[300]!,
               width: isSelected ? 2 : 1,
             ),
             color: isDisabled
                 ? Colors.grey[50]
-                : isSelected 
+                : isSelected
                     ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
                     : null,
           ),
@@ -317,16 +313,20 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                     decoration: BoxDecoration(
                       color: isDisabled
                           ? Colors.grey[200]
-                          : isSelected 
-                              ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                          : isSelected
+                              ? Theme.of(context)
+                                  .primaryColor
+                                  .withValues(alpha: 0.1)
                               : Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      option.id == 'optimize-existing' ? Icons.edit_outlined : Icons.add_circle_outline,
+                      option.id == 'optimize-existing'
+                          ? Icons.edit_outlined
+                          : Icons.add_circle_outline,
                       color: isDisabled
                           ? Colors.grey[400]
-                          : isSelected 
+                          : isSelected
                               ? Theme.of(context).primaryColor
                               : Colors.grey[600],
                       size: 28,
@@ -339,21 +339,25 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                       children: [
                         Text(
                           option.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDisabled
-                                ? Colors.grey[500]
-                                : isSelected 
-                                    ? Theme.of(context).primaryColor
-                                    : null,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDisabled
+                                        ? Colors.grey[500]
+                                        : isSelected
+                                            ? Theme.of(context).primaryColor
+                                            : null,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           option.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isDisabled ? Colors.grey[400] : Colors.grey[600],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: isDisabled
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -368,31 +372,33 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               ),
               const SizedBox(height: 16),
               ...option.requirements.map((requirement) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check,
-                      color: isDisabled
-                          ? Colors.grey[400]
-                          : isSelected 
-                              ? Theme.of(context).primaryColor
-                              : Colors.grey[500],
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        requirement,
-                        style: TextStyle(
-                          color: isDisabled ? Colors.grey[400] : Colors.grey[700],
-                          fontSize: 14,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check,
+                          color: isDisabled
+                              ? Colors.grey[400]
+                              : isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey[500],
+                          size: 16,
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            requirement,
+                            style: TextStyle(
+                              color: isDisabled
+                                  ? Colors.grey[400]
+                                  : Colors.grey[700],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              )),
+                  )),
               if (isDisabled && option.reason != null) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -404,7 +410,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_outlined, color: Colors.orange[700], size: 16),
+                      Icon(Icons.warning_outlined,
+                          color: Colors.orange[700], size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -441,7 +448,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             const SizedBox(height: 8),
             Text(
               'No demographic data available',
-              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.grey[600], fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
@@ -472,9 +480,9 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               Text(
                 'Customer Demographics',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[800],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[800],
+                    ),
               ),
             ],
           ),
@@ -487,7 +495,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Age Groups
           if (_demographicInfo!.ageGroups.isNotEmpty) ...[
             Text(
@@ -500,15 +508,15 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             ),
             const SizedBox(height: 8),
             ..._demographicInfo!.ageGroups.map((ageGroup) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                '• ${ageGroup.interpretation}',
-                style: TextStyle(color: Colors.blue[700], fontSize: 13),
-              ),
-            )),
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• ${ageGroup.interpretation}',
+                    style: TextStyle(color: Colors.blue[700], fontSize: 13),
+                  ),
+                )),
             const SizedBox(height: 12),
           ],
-          
+
           // Gender Groups
           if (_demographicInfo!.genderGroups.isNotEmpty) ...[
             Text(
@@ -521,12 +529,12 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             ),
             const SizedBox(height: 8),
             ..._demographicInfo!.genderGroups.map((genderGroup) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                '• ${genderGroup.interpretation}',
-                style: TextStyle(color: Colors.blue[700], fontSize: 13),
-              ),
-            )),
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• ${genderGroup.interpretation}',
+                    style: TextStyle(color: Colors.blue[700], fontSize: 13),
+                  ),
+                )),
           ],
         ],
       ),
@@ -554,14 +562,14 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               Text(
                 'Select Demographics to Optimize For',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green[800],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800],
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Age Group Selection
           if (_demographicInfo!.ageGroups.isNotEmpty) ...[
             Text(
@@ -576,9 +584,11 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               spacing: 8,
               runSpacing: 8,
               children: _demographicInfo!.ageGroups.map((ageGroup) {
-                final isSelected = _selectedAgeGroups.contains(ageGroup.ageRange);
+                final isSelected =
+                    _selectedAgeGroups.contains(ageGroup.ageRange);
                 return FilterChip(
-                  label: Text('${ageGroup.ageRange} (${ageGroup.percentage.toStringAsFixed(1)}%)'),
+                  label: Text(
+                      '${ageGroup.ageRange} (${ageGroup.percentage.toStringAsFixed(1)}%)'),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -596,7 +606,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          
+
           // Gender Group Selection
           if (_demographicInfo!.genderGroups.isNotEmpty) ...[
             Text(
@@ -611,9 +621,11 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               spacing: 8,
               runSpacing: 8,
               children: _demographicInfo!.genderGroups.map((genderGroup) {
-                final isSelected = _selectedGenderGroups.contains(genderGroup.gender);
+                final isSelected =
+                    _selectedGenderGroups.contains(genderGroup.gender);
                 return FilterChip(
-                  label: Text('${genderGroup.gender} (${genderGroup.percentage.toStringAsFixed(1)}%)'),
+                  label: Text(
+                      '${genderGroup.gender} (${genderGroup.percentage.toStringAsFixed(1)}%)'),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -631,7 +643,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          
+
           // Interests Selection
           if (_demographicInfo!.interests.isNotEmpty) ...[
             Text(
@@ -685,7 +697,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
             const SizedBox(height: 8),
             Text(
               'No specialty dishes available',
-              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.grey[600], fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
@@ -716,17 +729,18 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               Text(
                 'Select Popular Dishes from Similar Restaurants',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.purple[800],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple[800],
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Specialty Dishes List
           ...(_specialtyDishes.take(10).map((dish) {
-            final isSelected = _selectedSpecialtyDishes.any((selected) => selected.tagId == dish.tagId);
+            final isSelected = _selectedSpecialtyDishes
+                .any((selected) => selected.tagId == dish.tagId);
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Card(
@@ -735,7 +749,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                   onTap: () {
                     setState(() {
                       if (isSelected) {
-                        _selectedSpecialtyDishes.removeWhere((selected) => selected.tagId == dish.tagId);
+                        _selectedSpecialtyDishes.removeWhere(
+                            (selected) => selected.tagId == dish.tagId);
                       } else {
                         _selectedSpecialtyDishes.add(dish);
                       }
@@ -746,7 +761,9 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isSelected ? Colors.purple[300]! : Colors.grey[200]!,
+                        color: isSelected
+                            ? Colors.purple[300]!
+                            : Colors.grey[200]!,
                         width: isSelected ? 2 : 1,
                       ),
                       color: isSelected ? Colors.purple[50] : null,
@@ -761,21 +778,29 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                                 dish.dishName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.purple[800] : Colors.grey[800],
+                                  color: isSelected
+                                      ? Colors.purple[800]
+                                      : Colors.grey[800],
                                 ),
                               ),
                             ),
                             if (isSelected)
-                              Icon(Icons.check_circle, color: Colors.purple[600], size: 20),
+                              Icon(Icons.check_circle,
+                                  color: Colors.purple[600], size: 20),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            _buildRatingChip('Qloo', dish.qlooRating, Colors.blue),
+                            _buildRatingChip(
+                                'Qloo', dish.qlooRating, Colors.blue),
+                            const SizedBox(width: 8),
+                            _buildRatingChip(
+                                'Weight', dish.weight, Colors.orange),
                             const SizedBox(width: 8),
                             if (dish.tripAdvisorRating != null)
-                              _buildRatingChip('TripAdvisor', dish.tripAdvisorRating!, Colors.green),
+                              _buildRatingChip('TripAdvisor',
+                                  dish.tripAdvisorRating!, Colors.green),
                             const Spacer(),
                             Text(
                               '${dish.restaurantCount} restaurants',
@@ -801,7 +826,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               ),
             );
           })),
-          
+
           if (_selectedSpecialtyDishes.isNotEmpty) ...[
             const SizedBox(height: 16),
             Container(
@@ -876,9 +901,9 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               Text(
                 'Cuisine Type',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange[800],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange[800],
+                    ),
               ),
             ],
           ),
@@ -899,7 +924,8 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               isDense: true,
               filled: true,
               fillColor: Colors.white,
-              prefixIcon: Icon(Icons.restaurant_menu, color: Colors.orange[600]),
+              prefixIcon:
+                  Icon(Icons.restaurant_menu, color: Colors.orange[600]),
             ),
             onChanged: (value) {
               setState(() {
@@ -914,14 +940,17 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
 
   Widget _buildActionButtons() {
     final hasValidSelection = _selectedOption != null && _isSelectionValid();
-    
+
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: _isProcessing ? null : () {
-              Navigator.of(context).pushReplacementNamed(AppRoutes.menuManagement);
-            },
+            onPressed: _isProcessing
+                ? null
+                : () {
+                    Navigator.of(context)
+                        .pushReplacementNamed(AppRoutes.menuManagement);
+                  },
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -968,9 +997,10 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
   }
 
   Future<void> _processOptimization() async {
-    final restaurantProvider = Provider.of<RestaurantProvider>(context, listen: false);
+    final restaurantProvider =
+        Provider.of<RestaurantProvider>(context, listen: false);
     final restaurantId = restaurantProvider.restaurant?.restaurantId;
-    
+
     if (restaurantId == null || _selectedOption == null) {
       return;
     }

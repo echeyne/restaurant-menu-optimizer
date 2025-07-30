@@ -19,6 +19,7 @@ import {
   SpecialtyDish,
   SimilarRestaurant,
 } from "../../models/database";
+import { RestaurantRepository } from "../../repositories/restaurant-repository";
 
 /**
  * Interface for optimization option
@@ -92,6 +93,8 @@ interface SpecialtyDishDisplay {
   tagId: string;
   restaurantCount: number;
   popularity: number;
+  weight: number; // Average weight from all restaurants
+  totalWeight: number; // Sum of all weights
   qlooRating: number;
   tripAdvisorRating?: number;
   restaurantName?: string;
@@ -192,6 +195,10 @@ async function handleGetOptimizationOptions(
     // Get specialty dishes from similar restaurants with ratings
     const specialtyDishes = await getSpecialtyDishesWithRatings(restaurantId);
 
+    // Get restaurant data to include cuisine
+    const restaurantRepository = new RestaurantRepository();
+    const restaurant = await restaurantRepository.getById(restaurantId);
+
     // Define optimization options
     const options: OptimizationOption[] = [
       {
@@ -250,6 +257,7 @@ async function handleGetOptimizationOptions(
             readiness.hasDemographicsData &&
             readiness.hasSimilarRestaurantData,
         },
+        cuisine: restaurant?.cuisine,
       }),
     };
   } catch (error: any) {
@@ -432,6 +440,8 @@ async function getSpecialtyDishesWithRatings(
           tagId: dish.tagId,
           restaurantCount: dish.restaurantCount,
           popularity: dish.popularity,
+          weight: dish.weight, // Assuming weight is part of the SpecialtyDish object
+          totalWeight: dish.totalWeight, // Assuming totalWeight is part of the SpecialtyDish object
           qlooRating: dish.popularity * 5, // Convert popularity to 5-star rating
           tripAdvisorRating: restaurantWithDish?.businessRating,
           restaurantName: restaurantWithDish?.name,
@@ -442,8 +452,14 @@ async function getSpecialtyDishesWithRatings(
         };
       });
 
-    // Sort by popularity (highest first)
-    return specialtyDishes.sort((a, b) => b.popularity - a.popularity);
+    // Sort by popularity and weight (highest first)
+    return specialtyDishes.sort((a, b) => {
+      // Primary sort by popularity, secondary sort by weight
+      if (b.popularity !== a.popularity) {
+        return b.popularity - a.popularity;
+      }
+      return b.weight - a.weight;
+    });
   } catch (error) {
     console.error("Error getting specialty dishes with ratings:", error);
     return [];
@@ -451,44 +467,58 @@ async function getSpecialtyDishesWithRatings(
 }
 
 /**
- * Generate interpretation for age group data
+ * Generate interpretation for age group affinity data
  * @param ageGroup Age group data
  * @returns Human-readable interpretation
  */
 function generateAgeGroupInterpretation(ageGroup: AgeGroupData): string {
-  const percentage = ageGroup.percentage;
+  const score = ageGroup.percentage;
   const preferences = ageGroup.preferences.join(", ");
+  const percentage = Math.abs(score * 100).toFixed(1);
+  const direction =
+    score > 0 ? "more likely" : score < 0 ? "less likely" : "equally likely";
 
-  let interpretation = `${percentage}% of your customers are in the ${ageGroup.ageRange} age range`;
+  let interpretation = `People aged ${ageGroup.ageRange} are ${percentage}% ${direction} than average to visit your restaurant`;
 
-  if (percentage > 30) {
-    interpretation += " (major demographic)";
-  } else if (percentage > 15) {
-    interpretation += " (significant segment)";
-  } else {
-    interpretation += " (smaller segment)";
+  if (score > 0.2) {
+    interpretation += " (strong positive alignment)";
+  } else if (score < -0.2) {
+    interpretation += " (strong negative alignment)";
+  } else if (Math.abs(score) < 0.05) {
+    interpretation += " (neutral alignment)";
   }
 
   if (preferences) {
-    interpretation += `. They prefer: ${preferences}`;
+    interpretation += `. Top preferences: ${preferences}`;
   }
 
   return interpretation;
 }
 
 /**
- * Generate interpretation for gender data
+ * Generate interpretation for gender affinity data
  * @param gender Gender data
  * @returns Human-readable interpretation
  */
 function generateGenderInterpretation(gender: GenderData): string {
-  const percentage = gender.percentage;
+  const score = gender.percentage;
   const preferences = gender.preferences.join(", ");
+  const percentage = Math.abs(score * 100).toFixed(1);
+  const direction =
+    score > 0 ? "more likely" : score < 0 ? "less likely" : "equally likely";
 
-  let interpretation = `${percentage}% of your customers identify as ${gender.gender}`;
+  let interpretation = `${gender.gender}s are ${percentage}% ${direction} than average to visit your restaurant`;
+
+  if (score > 0.2) {
+    interpretation += " (strong positive alignment)";
+  } else if (score < -0.2) {
+    interpretation += " (strong negative alignment)";
+  } else if (Math.abs(score) < 0.05) {
+    interpretation += " (neutral alignment)";
+  }
 
   if (preferences) {
-    interpretation += `. They tend to prefer: ${preferences}`;
+    interpretation += `. Top preferences: ${preferences}`;
   }
 
   return interpretation;
@@ -520,23 +550,63 @@ function generateOverallDemographicInterpretation(
     return "No demographic data available. Complete your restaurant profile setup to get demographic insights for menu optimization.";
   }
 
-  let interpretation = "Your customer demographics: ";
+  let interpretation = "Your customer demographic affinities: ";
 
   if (ageGroups.length > 0) {
-    const primaryAgeGroup = ageGroups.reduce((prev, current) =>
+    // Find the most positively aligned age group
+    const mostAlignedAgeGroup = ageGroups.reduce((prev, current) =>
       prev.percentage > current.percentage ? prev : current
     );
-    interpretation += `Primary age group is ${primaryAgeGroup.ageRange} (${primaryAgeGroup.percentage}%)`;
+
+    // Find the most negatively aligned age group
+    const leastAlignedAgeGroup = ageGroups.reduce((prev, current) =>
+      prev.percentage < current.percentage ? prev : current
+    );
+
+    if (mostAlignedAgeGroup.percentage > 0.1) {
+      interpretation += `Strongest alignment with ${
+        mostAlignedAgeGroup.ageRange
+      } age group (${Math.round(
+        mostAlignedAgeGroup.percentage * 100
+      )}% above average)`;
+    } else {
+      interpretation += `No strong age group alignment (all groups within 10% of average)`;
+    }
+
+    if (leastAlignedAgeGroup.percentage < -0.1) {
+      interpretation += `, weakest alignment with ${
+        leastAlignedAgeGroup.ageRange
+      } (${Math.abs(
+        Math.round(leastAlignedAgeGroup.percentage * 100)
+      )}% below average)`;
+    }
   }
 
   if (genderGroups.length > 0) {
-    const primaryGender = genderGroups.reduce((prev, current) =>
-      prev.percentage > current.percentage ? prev : current
+    const maleGroup = genderGroups.find(
+      (g) => g.gender.toLowerCase() === "male"
     );
-    if (ageGroups.length > 0) {
-      interpretation += `, with ${primaryGender.gender} customers making up ${primaryGender.percentage}% of your audience`;
-    } else {
-      interpretation += `${primaryGender.gender} customers make up ${primaryGender.percentage}% of your audience`;
+    const femaleGroup = genderGroups.find(
+      (g) => g.gender.toLowerCase() === "female"
+    );
+
+    if (maleGroup && femaleGroup) {
+      const maleAffinity = maleGroup.percentage;
+      const femaleAffinity = femaleGroup.percentage;
+
+      if (Math.abs(maleAffinity - femaleAffinity) > 0.05) {
+        if (femaleAffinity > maleAffinity) {
+          interpretation += `. Females show ${Math.round(
+            femaleAffinity * 100
+          )}% stronger interest than males`;
+        } else {
+          interpretation += `. Males show ${Math.round(
+            maleAffinity * 100
+          )}% stronger interest than females`;
+        }
+      } else {
+        interpretation += `. Similar interest levels between genders`;
+      }
     }
   }
 
@@ -546,7 +616,7 @@ function generateOverallDemographicInterpretation(
   }
 
   interpretation +=
-    ". This demographic data can help optimize your menu descriptions and suggest new items that appeal to these preferences.";
+    ". These affinity scores show which demographic groups are most likely to be interested in your restaurant concept, helping optimize menu descriptions and suggest new items.";
 
   return interpretation;
 }
@@ -562,21 +632,35 @@ function generateSpecialtyDishInterpretation(
   restaurant?: SimilarRestaurant
 ): string {
   const popularityPercent = Math.round(dish.popularity * 100);
-  let interpretation = `${dish.dishName} is popular at ${dish.restaurantCount} similar restaurants with ${popularityPercent}% popularity rating`;
+  const weightPercent = Math.round(dish.weight * 100);
+  let interpretation = `${dish.dishName} is popular at ${dish.restaurantCount} similar restaurants with ${popularityPercent}% popularity rating and ${weightPercent}% preference weight`;
 
   if (restaurant) {
     interpretation += ` (notably at ${restaurant.name} with ${restaurant.businessRating}/5 rating)`;
   }
 
-  if (dish.popularity > 0.8) {
+  // Enhanced interpretation based on both popularity and weight
+  if (dish.popularity > 0.8 && dish.weight > 0.8) {
     interpretation +=
-      ". This is a highly popular dish that could be a great addition to your menu.";
-  } else if (dish.popularity > 0.6) {
+      ". This is a highly popular dish with strong customer preference that could be an excellent addition to your menu.";
+  } else if (dish.popularity > 0.6 && dish.weight > 0.6) {
     interpretation +=
-      ". This dish has good popularity and could work well for your restaurant.";
+      ". This dish has good popularity and strong customer preference - it could work very well for your restaurant.";
+  } else if (dish.popularity > 0.6 || dish.weight > 0.6) {
+    interpretation +=
+      ". This dish shows promise - either through popularity or customer preference - consider if it fits your restaurant's style.";
   } else {
     interpretation +=
-      ". This dish has moderate popularity - consider if it fits your restaurant's style.";
+      ". This dish has moderate popularity and preference - evaluate carefully if it aligns with your restaurant's concept.";
+  }
+
+  // Add weight-specific insights
+  if (dish.weight > 0.9) {
+    interpretation +=
+      " High weight indicates strong customer affinity for this dish.";
+  } else if (dish.weight < 0.3) {
+    interpretation +=
+      " Lower weight suggests this dish may not resonate strongly with customers.";
   }
 
   return interpretation;
@@ -698,6 +782,7 @@ async function handleOptimizationSelection(
       requiredData = {
         selectedDemographics,
         menuItemCount: readiness.menuItemCount,
+        cuisineType: body.cuisineType,
       };
     } else {
       nextEndpoint = "/menu/suggest-new-items";
@@ -722,6 +807,7 @@ async function handleOptimizationSelection(
         selectedSpecialtyDishes,
         selectedDemographics: selectedDemographics || {},
         specialtyDishCount: readiness.specialtyDishCount,
+        cuisineType: body.cuisineType,
       };
     }
 

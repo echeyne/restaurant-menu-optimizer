@@ -200,6 +200,7 @@ export interface QlooTag {
   tag_id: string;
   type: string;
   value: string;
+  weight?: number; // Weight indicating the magnitude of interaction (0-1)
 }
 
 /**
@@ -225,6 +226,9 @@ export interface SimilarRestaurant {
   priceLevel: number;
   specialtyDishes: SpecialtyDish[];
   keywords: KeywordData[];
+  // A percentile value that represents an entity's rank in terms of its signal
+  // compared to all other entities within the same domain
+  popularity: number;
 }
 
 /**
@@ -235,6 +239,8 @@ export interface SpecialtyDish {
   tagId: string; // urn:tag:specialty_dish:place:*
   restaurantCount: number;
   popularity: number;
+  weight: number; // Average weight from all restaurants serving this dish
+  totalWeight: number; // Sum of all weights for this dish across restaurants
 }
 
 /**

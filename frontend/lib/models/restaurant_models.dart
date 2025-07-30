@@ -12,7 +12,7 @@ class Restaurant {
   final String? qlooEntityId;
   final String? address;
   final int? priceLevel;
-  final List<String>? genreTags;
+  final String? cuisine;
   final DateTime createdAt;
   final bool profileSetupComplete;
 
@@ -25,7 +25,7 @@ class Restaurant {
     this.qlooEntityId,
     this.address,
     this.priceLevel,
-    this.genreTags,
+    this.cuisine,
     required this.createdAt,
     required this.profileSetupComplete,
   });
@@ -39,7 +39,7 @@ class Restaurant {
     String? qlooEntityId,
     String? address,
     int? priceLevel,
-    List<String>? genreTags,
+    String? cuisine,
     DateTime? createdAt,
     bool? profileSetupComplete,
   }) {
@@ -52,7 +52,7 @@ class Restaurant {
       qlooEntityId: qlooEntityId ?? this.qlooEntityId,
       address: address ?? this.address,
       priceLevel: priceLevel ?? this.priceLevel,
-      genreTags: genreTags ?? this.genreTags,
+      cuisine: cuisine ?? this.cuisine,
       createdAt: createdAt ?? this.createdAt,
       profileSetupComplete: profileSetupComplete ?? this.profileSetupComplete,
     );
@@ -216,12 +216,16 @@ class SpecialtyDish {
   final String tagId;
   final int restaurantCount;
   final double popularity;
+  final double weight; // Weight indicating customer preference strength
+  final double totalWeight; // Sum of all weights for this dish
 
   SpecialtyDish({
     required this.dishName,
     required this.tagId,
     required this.restaurantCount,
     required this.popularity,
+    required this.weight,
+    required this.totalWeight,
   });
 
   factory SpecialtyDish.fromJson(Map<String, dynamic> json) =>
@@ -412,6 +416,8 @@ class SpecialtyDishDisplay {
   final String tagId;
   final int restaurantCount;
   final double popularity;
+  final double weight; // Weight indicating customer preference strength
+  final double totalWeight; // Sum of all weights for this dish
   final double qlooRating;
   final double? tripAdvisorRating;
   final String? restaurantName;
@@ -422,6 +428,8 @@ class SpecialtyDishDisplay {
     required this.tagId,
     required this.restaurantCount,
     required this.popularity,
+    required this.weight,
+    required this.totalWeight,
     required this.qlooRating,
     this.tripAdvisorRating,
     this.restaurantName,

@@ -165,8 +165,11 @@ class MenuService {
   Future<List<OptimizedMenuItem>> optimizeExistingItems(
     String restaurantId, {
     List<String>? itemIds,
+    SelectedDemographics? selectedDemographics,
+    List<SpecialtyDishDisplay>? selectedSpecialtyDishes,
     String? optimizationStyle,
     String? targetAudience,
+    String? cuisineType,
   }) async {
     try {
       final requestBody = <String, dynamic>{
@@ -177,12 +180,26 @@ class MenuService {
         requestBody['itemIds'] = itemIds;
       }
 
+      if (selectedDemographics != null) {
+        requestBody['selectedDemographics'] = selectedDemographics.toJson();
+      }
+
+      if (selectedSpecialtyDishes != null &&
+          selectedSpecialtyDishes.isNotEmpty) {
+        requestBody['selectedSpecialtyDishes'] =
+            selectedSpecialtyDishes.map((dish) => dish.toJson()).toList();
+      }
+
       if (optimizationStyle != null) {
         requestBody['optimizationStyle'] = optimizationStyle;
       }
 
       if (targetAudience != null) {
         requestBody['targetAudience'] = targetAudience;
+      }
+
+      if (cuisineType != null) {
+        requestBody['cuisineType'] = cuisineType;
       }
 
       final response = await _httpClient.postJson(
@@ -206,7 +223,7 @@ class MenuService {
   Future<List<MenuItemSuggestion>> suggestNewItems(
     String restaurantId, {
     int? maxSuggestions,
-    String? cuisineStyle,
+    String? cuisineType,
     String? priceRange,
     List<String>? excludeCategories,
   }) async {
@@ -219,8 +236,8 @@ class MenuService {
         requestBody['maxSuggestions'] = maxSuggestions;
       }
 
-      if (cuisineStyle != null) {
-        requestBody['cuisineStyle'] = cuisineStyle;
+      if (cuisineType != null) {
+        requestBody['cuisineType'] = cuisineType;
       }
 
       if (priceRange != null) {

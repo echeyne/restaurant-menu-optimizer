@@ -131,6 +131,8 @@ export interface SpecialtyDish {
   tagId: string; // urn:tag:specialty_dish:place:*
   restaurantCount: number;
   popularity: number;
+  weight: number; // Weight indicating customer preference strength
+  totalWeight: number; // Sum of all weights for this dish
 }
 
 export interface KeywordData {
@@ -523,12 +525,17 @@ export class QlooClient {
               dish.tag_id &&
               dish.tag_id.includes("urn:tag:specialty_dish:place")
           )
-          .map((dish: any) => ({
-            dishName: dish.name || "",
-            tagId: dish.tag_id || "",
-            restaurantCount: dish.restaurant_count || 0,
-            popularity: dish.popularity || 0,
-          }));
+          .map((dish: any) => {
+            const weight = dish.weight || 1; // Default to 1 if weight not provided
+            return {
+              dishName: dish.name || "",
+              tagId: dish.tag_id || "",
+              restaurantCount: dish.restaurant_count || 1,
+              popularity: dish.popularity || 1,
+              weight: weight,
+              totalWeight: dish.total_weight || weight, // Use provided total_weight or default to weight
+            };
+          });
 
         return {
           restaurants,

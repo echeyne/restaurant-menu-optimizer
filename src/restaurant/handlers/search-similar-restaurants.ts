@@ -277,16 +277,25 @@ function extractSpecialtyDishes(
       Array.isArray(restaurant.specialtyDishes)
     ) {
       restaurant.specialtyDishes.forEach((dishTag) => {
-        // Create a simple tag ID for the dish
-        const tagId = `urn:tag:specialty_dish:place:${dishTag.name
-          .toLowerCase()
-          .replace(/\s+/g, "_")}`;
+        // Use the actual tag_id from the API response if available, otherwise create one
+        const tagId =
+          dishTag.tag_id ||
+          `urn:tag:specialty_dish:place:${dishTag.name
+            .toLowerCase()
+            .replace(/\s+/g, "_")}`;
+
+        // Get the weight from the API response, default to 1 if not provided
+        const weight = dishTag.weight || 1;
 
         if (specialtyDishMap.has(tagId)) {
-          // Increment count for existing dish
+          // Increment count and add weight for existing dish
           const existingDish = specialtyDishMap.get(tagId)!;
           existingDish.restaurantCount += 1;
           existingDish.popularity += 1;
+          existingDish.totalWeight += weight;
+          // Recalculate average weight
+          existingDish.weight =
+            existingDish.totalWeight / existingDish.restaurantCount;
         } else {
           // Add new specialty dish
           specialtyDishMap.set(tagId, {
@@ -294,16 +303,22 @@ function extractSpecialtyDishes(
             tagId,
             restaurantCount: 1,
             popularity: 1,
+            weight: weight,
+            totalWeight: weight,
           });
         }
       });
     }
   });
 
-  // Convert map to array and sort by popularity
-  return Array.from(specialtyDishMap.values()).sort(
-    (a, b) => b.popularity - a.popularity
-  );
+  // Convert map to array and sort by popularity and weight
+  return Array.from(specialtyDishMap.values()).sort((a, b) => {
+    // Primary sort by popularity, secondary sort by weight
+    if (b.popularity !== a.popularity) {
+      return b.popularity - a.popularity;
+    }
+    return b.weight - a.weight;
+  });
 }
 
 /**
@@ -314,9 +329,6 @@ function extractSpecialtyDishes(
 function formatSimilarRestaurant(
   restaurant: QlooSearchResult
 ): SimilarRestaurant {
-  // Use specialty dishes from the QlooSearchResult
-  const specialtyDishes = restaurant.specialtyDishes || [];
-
   // Create empty keywords array since QlooSearchResult doesn't have keywords
   const keywords: KeywordData[] = [];
 
@@ -328,6 +340,7 @@ function formatSimilarRestaurant(
     priceLevel: restaurant.priceLevel || 0,
     specialtyDishes: extractSpecialtyDishes([restaurant]),
     keywords,
+    popularity: restaurant.popularity,
   };
 }
 

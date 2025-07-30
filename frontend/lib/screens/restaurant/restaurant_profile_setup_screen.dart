@@ -66,9 +66,7 @@ class _RestaurantProfileSetupScreenState
                     address: restaurant.address ??
                         '${restaurant.city}, ${restaurant.state}',
                     priceLevel: restaurant.priceLevel ?? 1,
-                    cuisine: restaurant.genreTags?.isNotEmpty == true
-                        ? restaurant.genreTags!.first
-                        : '',
+                    cuisine: restaurant.cuisine ?? '',
                     popularity: 0.0,
                     businessRating: 0.0,
                     specialtyDishes: [],
@@ -109,9 +107,7 @@ class _RestaurantProfileSetupScreenState
                 address: restaurant.address ??
                     '${restaurant.city}, ${restaurant.state}',
                 priceLevel: restaurant.priceLevel ?? 1,
-                cuisine: restaurant.genreTags?.isNotEmpty == true
-                    ? restaurant.genreTags!.first
-                    : '',
+                cuisine: restaurant.cuisine ?? '',
                 popularity: 0.0,
                 businessRating: 0.0,
                 specialtyDishes: [],

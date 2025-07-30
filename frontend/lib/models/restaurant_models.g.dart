@@ -15,9 +15,7 @@ Restaurant _$RestaurantFromJson(Map<String, dynamic> json) => Restaurant(
       qlooEntityId: json['qlooEntityId'] as String?,
       address: json['address'] as String?,
       priceLevel: (json['priceLevel'] as num?)?.toInt(),
-      genreTags: (json['genreTags'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      cuisine: json['cuisine'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       profileSetupComplete: json['profileSetupComplete'] as bool,
     );
@@ -32,7 +30,7 @@ Map<String, dynamic> _$RestaurantToJson(Restaurant instance) =>
       'qlooEntityId': instance.qlooEntityId,
       'address': instance.address,
       'priceLevel': instance.priceLevel,
-      'genreTags': instance.genreTags,
+      'cuisine': instance.cuisine,
       'createdAt': instance.createdAt.toIso8601String(),
       'profileSetupComplete': instance.profileSetupComplete,
     };
@@ -180,6 +178,8 @@ SpecialtyDish _$SpecialtyDishFromJson(Map<String, dynamic> json) =>
       tagId: json['tagId'] as String,
       restaurantCount: (json['restaurantCount'] as num).toInt(),
       popularity: (json['popularity'] as num).toDouble(),
+      weight: (json['weight'] as num).toDouble(),
+      totalWeight: (json['totalWeight'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$SpecialtyDishToJson(SpecialtyDish instance) =>
@@ -188,6 +188,8 @@ Map<String, dynamic> _$SpecialtyDishToJson(SpecialtyDish instance) =>
       'tagId': instance.tagId,
       'restaurantCount': instance.restaurantCount,
       'popularity': instance.popularity,
+      'weight': instance.weight,
+      'totalWeight': instance.totalWeight,
     };
 
 DemographicsData _$DemographicsDataFromJson(Map<String, dynamic> json) =>
@@ -373,6 +375,8 @@ SpecialtyDishDisplay _$SpecialtyDishDisplayFromJson(
       tagId: json['tagId'] as String,
       restaurantCount: (json['restaurantCount'] as num).toInt(),
       popularity: (json['popularity'] as num).toDouble(),
+      weight: (json['weight'] as num).toDouble(),
+      totalWeight: (json['totalWeight'] as num).toDouble(),
       qlooRating: (json['qlooRating'] as num).toDouble(),
       tripAdvisorRating: (json['tripAdvisorRating'] as num?)?.toDouble(),
       restaurantName: json['restaurantName'] as String?,
@@ -386,6 +390,8 @@ Map<String, dynamic> _$SpecialtyDishDisplayToJson(
       'tagId': instance.tagId,
       'restaurantCount': instance.restaurantCount,
       'popularity': instance.popularity,
+      'weight': instance.weight,
+      'totalWeight': instance.totalWeight,
       'qlooRating': instance.qlooRating,
       'tripAdvisorRating': instance.tripAdvisorRating,
       'restaurantName': instance.restaurantName,

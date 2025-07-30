@@ -41,6 +41,7 @@ interface SelectedSpecialtyDish {
   tagId: string;
   restaurantName: string;
   qlooPopularityRating: number;
+  weight: number; // Weight indicating customer preference strength
   tripAdvisorRating: number;
 }
 
@@ -285,6 +286,8 @@ async function generateMenuItemSuggestions(
           tagId: selected.tagId,
           restaurantCount: 1, // Not relevant for selected dishes
           popularity: selected.qlooPopularityRating,
+          weight: selected.weight,
+          totalWeight: selected.weight, // For selected dishes, totalWeight equals weight
         }))
       : prioritizeSpecialtyDishes(
           similarRestaurantData.specialtyDishes,
@@ -338,7 +341,7 @@ async function generateMenuItemSuggestions(
 }
 
 /**
- * Prioritize specialty dishes based on popularity and restaurant count
+ * Prioritize specialty dishes based on popularity, weight, and restaurant count
  * @param specialtyDishes Array of specialty dishes
  * @param maxDishes Maximum number of dishes to return
  * @returns Prioritized array of specialty dishes
@@ -349,9 +352,12 @@ function prioritizeSpecialtyDishes(
 ): SpecialtyDish[] {
   return specialtyDishes
     .sort((a, b) => {
-      // Sort by popularity first, then by restaurant count
+      // Primary sort by popularity, secondary sort by weight, tertiary sort by restaurant count
       if (b.popularity !== a.popularity) {
         return b.popularity - a.popularity;
+      }
+      if (b.weight !== a.weight) {
+        return b.weight - a.weight;
       }
       return b.restaurantCount - a.restaurantCount;
     })
@@ -552,14 +558,17 @@ function buildSpecialtyDishesContext(
     selectedSpecialtyDishes.forEach((dish, index) => {
       context += `${index + 1}. ${dish.dishName} from ${dish.restaurantName}\n`;
       context += `   - Qloo Popularity Rating: ${dish.qlooPopularityRating}/5\n`;
+      context += `   - Customer Preference Weight: ${dish.weight} (1.0 = highest preference)\n`;
       context += `   - TripAdvisor Rating: ${dish.tripAdvisorRating}/5\n`;
     });
   } else {
-    // Use all specialty dishes with popularity scores
+    // Use all specialty dishes with popularity scores and weights
     specialtyDishes.forEach((dish, index) => {
       context += `${index + 1}. ${dish.dishName} (Popular at ${
         dish.restaurantCount
-      } restaurants, popularity score: ${dish.popularity})\n`;
+      } restaurants, popularity score: ${dish.popularity}, preference weight: ${
+        dish.weight
+      })\n`;
     });
   }
 
