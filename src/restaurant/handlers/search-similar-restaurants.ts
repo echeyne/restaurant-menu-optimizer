@@ -284,15 +284,18 @@ function extractSpecialtyDishes(
             .toLowerCase()
             .replace(/\s+/g, "_")}`;
 
-        // Get the weight from the API response, default to 1 if not provided
-        const weight = dishTag.weight || 1;
+        // Get the weight from the API response, handle NaN values properly
+        let weight = dishTag.weight;
+        if (weight === undefined || weight === null || isNaN(weight)) {
+          weight = 1; // Default to 1 if weight is missing or NaN
+        }
 
         if (specialtyDishMap.has(tagId)) {
           // Increment count and add weight for existing dish
           const existingDish = specialtyDishMap.get(tagId)!;
           existingDish.restaurantCount += 1;
           existingDish.popularity += 1;
-          existingDish.totalWeight += weight;
+          existingDish.totalWeight = (existingDish.totalWeight || 0) + weight;
           // Recalculate average weight
           existingDish.weight =
             existingDish.totalWeight / existingDish.restaurantCount;
@@ -317,7 +320,7 @@ function extractSpecialtyDishes(
     if (b.popularity !== a.popularity) {
       return b.popularity - a.popularity;
     }
-    return b.weight - a.weight;
+    return (b.weight || 0) - (a.weight || 0);
   });
 }
 

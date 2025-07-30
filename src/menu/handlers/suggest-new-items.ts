@@ -356,8 +356,8 @@ function prioritizeSpecialtyDishes(
       if (b.popularity !== a.popularity) {
         return b.popularity - a.popularity;
       }
-      if (b.weight !== a.weight) {
-        return b.weight - a.weight;
+      if ((b.weight || 0) !== (a.weight || 0)) {
+        return (b.weight || 0) - (a.weight || 0);
       }
       return b.restaurantCount - a.restaurantCount;
     })
@@ -567,7 +567,7 @@ function buildSpecialtyDishesContext(
       context += `${index + 1}. ${dish.dishName} (Popular at ${
         dish.restaurantCount
       } restaurants, popularity score: ${dish.popularity}, preference weight: ${
-        dish.weight
+        dish.weight || 0
       })\n`;
     });
   }

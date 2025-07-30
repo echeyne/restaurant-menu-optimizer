@@ -277,6 +277,7 @@ class OptimizationOptionsResponse {
   final DemographicDisplay? demographicInformation;
   final List<SpecialtyDishDisplay> specialtyDishes;
   final OptimizationReadiness readiness;
+  final String? cuisine;
 
   OptimizationOptionsResponse({
     required this.restaurantId,
@@ -284,6 +285,7 @@ class OptimizationOptionsResponse {
     this.demographicInformation,
     required this.specialtyDishes,
     required this.readiness,
+    required this.cuisine,
   });
 
   factory OptimizationOptionsResponse.fromJson(Map<String, dynamic> json) =>

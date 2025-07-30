@@ -42,17 +42,9 @@ export const handler = async (
 
     // Validate request parameters
     if (!restaurantId || !fileKey || !fileType) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Missing required parameters: restaurantId, fileKey, fileType",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required parameters: restaurantId, fileKey, fileType",
+      });
     }
 
     // Update menu file status to processing if fileId is provided
@@ -83,16 +75,9 @@ export const handler = async (
         );
       }
 
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "No text could be extracted from the uploaded file",
-        }),
-      };
+      return createResponse(400, {
+        message: "No text could be extracted from the uploaded file",
+      });
     }
 
     console.log(
@@ -118,34 +103,27 @@ export const handler = async (
       }
 
       // Return the parsed menu items with optimization options available
-      return {
-        statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Menu parsed and saved successfully",
-          menuItems: savedItems,
-          itemCount: savedItems.length,
-          nextStep: "optimization",
-          optimizationOptionsAvailable: true,
-          optimizationOptions: [
-            {
-              id: "optimize-existing",
-              title: "Optimize Existing Items",
-              description:
-                "Enhance dish names and descriptions based on demographic data",
-            },
-            {
-              id: "suggest-new-items",
-              title: "Suggest New Menu Items",
-              description:
-                "Generate new menu item suggestions based on similar restaurants",
-            },
-          ],
-        }),
-      };
+      return createResponse(200, {
+        message: "Menu parsed and saved successfully",
+        menuItems: savedItems,
+        itemCount: savedItems.length,
+        nextStep: "optimization",
+        optimizationOptionsAvailable: true,
+        optimizationOptions: [
+          {
+            id: "optimize-existing",
+            title: "Optimize Existing Items",
+            description:
+              "Enhance dish names and descriptions based on demographic data",
+          },
+          {
+            id: "suggest-new-items",
+            title: "Suggest New Menu Items",
+            description:
+              "Generate new menu item suggestions based on similar restaurants",
+          },
+        ],
+      });
     } catch (error: any) {
       // Update file status to failed if fileId is provided
       if (fileId) {
@@ -162,17 +140,10 @@ export const handler = async (
   } catch (error: any) {
     console.error("Error parsing menu:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error parsing menu",
-        error: error.message,
-      }),
-    };
+    return createResponse(500, {
+      message: "Error parsing menu",
+      error: error.message,
+    });
   }
 };
 

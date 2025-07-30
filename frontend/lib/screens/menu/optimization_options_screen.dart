@@ -112,14 +112,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
         _demographicInfo = response.demographicInformation;
         _specialtyDishes = response.specialtyDishes;
         _readiness = response.readiness;
-
-        // Set default cuisine type from response or restaurant data
-        if (response.cuisine != null && response.cuisine!.isNotEmpty) {
-          _selectedCuisineType = response.cuisine;
-        } else if (restaurantProvider.restaurant?.cuisine != null &&
-            restaurantProvider.restaurant!.cuisine!.isNotEmpty) {
-          _selectedCuisineType = restaurantProvider.restaurant!.cuisine;
-        }
+        _selectedCuisineType = response.cuisine;
       });
     } catch (e) {
       setState(() {
@@ -792,11 +785,10 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            _buildRatingChip(
-                                'Qloo', dish.qlooRating, Colors.blue),
                             const SizedBox(width: 8),
-                            _buildRatingChip(
-                                'Weight', dish.weight, Colors.orange),
+                            if (dish.weight != null)
+                              _buildRatingChip(
+                                  'Weight', dish.weight!, Colors.orange),
                             const SizedBox(width: 8),
                             if (dish.tripAdvisorRating != null)
                               _buildRatingChip('TripAdvisor',

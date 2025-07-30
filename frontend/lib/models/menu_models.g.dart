@@ -195,6 +195,7 @@ OptimizationOptionsResponse _$OptimizationOptionsResponseFromJson(
           .toList(),
       readiness: OptimizationReadiness.fromJson(
           json['readiness'] as Map<String, dynamic>),
+      cuisine: json['cuisine'] as String?,
     );
 
 Map<String, dynamic> _$OptimizationOptionsResponseToJson(
@@ -205,6 +206,7 @@ Map<String, dynamic> _$OptimizationOptionsResponseToJson(
       'demographicInformation': instance.demographicInformation,
       'specialtyDishes': instance.specialtyDishes,
       'readiness': instance.readiness,
+      'cuisine': instance.cuisine,
     };
 
 OptimizationSelectionResponse _$OptimizationSelectionResponseFromJson(

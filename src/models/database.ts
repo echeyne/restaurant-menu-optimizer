@@ -239,8 +239,8 @@ export interface SpecialtyDish {
   tagId: string; // urn:tag:specialty_dish:place:*
   restaurantCount: number;
   popularity: number;
-  weight: number; // Average weight from all restaurants serving this dish
-  totalWeight: number; // Sum of all weights for this dish across restaurants
+  weight?: number; // Average weight from all restaurants serving this dish (optional)
+  totalWeight?: number; // Sum of all weights for this dish across restaurants (optional)
 }
 
 /**

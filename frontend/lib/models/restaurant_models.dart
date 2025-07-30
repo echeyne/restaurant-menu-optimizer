@@ -416,9 +416,10 @@ class SpecialtyDishDisplay {
   final String tagId;
   final int restaurantCount;
   final double popularity;
-  final double weight; // Weight indicating customer preference strength
-  final double totalWeight; // Sum of all weights for this dish
-  final double qlooRating;
+  final double?
+      weight; // Weight indicating customer preference strength (nullable to handle NaN)
+  final double?
+      totalWeight; // Sum of all weights for this dish (nullable to handle NaN)
   final double? tripAdvisorRating;
   final String? restaurantName;
   final String interpretation;
@@ -428,16 +429,40 @@ class SpecialtyDishDisplay {
     required this.tagId,
     required this.restaurantCount,
     required this.popularity,
-    required this.weight,
-    required this.totalWeight,
-    required this.qlooRating,
+    this.weight,
+    this.totalWeight,
     this.tripAdvisorRating,
     this.restaurantName,
     required this.interpretation,
   });
 
-  factory SpecialtyDishDisplay.fromJson(Map<String, dynamic> json) =>
-      _$SpecialtyDishDisplayFromJson(json);
+  factory SpecialtyDishDisplay.fromJson(Map<String, dynamic> json) {
+    // Handle NaN values in weight and totalWeight fields
+    double? parseWeight(dynamic value) {
+      if (value == null || value.toString().toLowerCase() == 'nan') {
+        return null;
+      }
+      if (value is num) {
+        return value.toDouble();
+      }
+      return double.tryParse(value.toString());
+    }
+
+    return SpecialtyDishDisplay(
+      dishName: json['dishName'] as String,
+      tagId: json['tagId'] as String,
+      restaurantCount: json['restaurantCount'] as int,
+      popularity: (json['popularity'] as num).toDouble(),
+      weight: parseWeight(json['weight']),
+      totalWeight: parseWeight(json['totalWeight']),
+      tripAdvisorRating: json['tripAdvisorRating'] != null
+          ? (json['tripAdvisorRating'] as num).toDouble()
+          : null,
+      restaurantName: json['restaurantName'] as String?,
+      interpretation: json['interpretation'] as String,
+    );
+  }
+
   Map<String, dynamic> toJson() => _$SpecialtyDishDisplayToJson(this);
 }
 

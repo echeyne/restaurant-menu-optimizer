@@ -95,7 +95,6 @@ interface SpecialtyDishDisplay {
   popularity: number;
   weight: number; // Average weight from all restaurants
   totalWeight: number; // Sum of all weights
-  qlooRating: number;
   tripAdvisorRating?: number;
   restaurantName?: string;
   interpretation: string;
@@ -440,9 +439,8 @@ async function getSpecialtyDishesWithRatings(
           tagId: dish.tagId,
           restaurantCount: dish.restaurantCount,
           popularity: dish.popularity,
-          weight: dish.weight, // Assuming weight is part of the SpecialtyDish object
-          totalWeight: dish.totalWeight, // Assuming totalWeight is part of the SpecialtyDish object
-          qlooRating: dish.popularity * 5, // Convert popularity to 5-star rating
+          weight: dish.weight || 0, // Handle undefined weight
+          totalWeight: dish.totalWeight || 0, // Handle undefined totalWeight
           tripAdvisorRating: restaurantWithDish?.businessRating,
           restaurantName: restaurantWithDish?.name,
           interpretation: generateSpecialtyDishInterpretation(
@@ -458,7 +456,7 @@ async function getSpecialtyDishesWithRatings(
       if (b.popularity !== a.popularity) {
         return b.popularity - a.popularity;
       }
-      return b.weight - a.weight;
+      return (b.weight || 0) - (a.weight || 0);
     });
   } catch (error) {
     console.error("Error getting specialty dishes with ratings:", error);
@@ -632,7 +630,7 @@ function generateSpecialtyDishInterpretation(
   restaurant?: SimilarRestaurant
 ): string {
   const popularityPercent = Math.round(dish.popularity * 100);
-  const weightPercent = Math.round(dish.weight * 100);
+  const weightPercent = Math.round((dish.weight || 0) * 100);
   let interpretation = `${dish.dishName} is popular at ${dish.restaurantCount} similar restaurants with ${popularityPercent}% popularity rating and ${weightPercent}% preference weight`;
 
   if (restaurant) {
@@ -640,13 +638,14 @@ function generateSpecialtyDishInterpretation(
   }
 
   // Enhanced interpretation based on both popularity and weight
-  if (dish.popularity > 0.8 && dish.weight > 0.8) {
+  const weight = dish.weight || 0;
+  if (dish.popularity > 0.8 && weight > 0.8) {
     interpretation +=
       ". This is a highly popular dish with strong customer preference that could be an excellent addition to your menu.";
-  } else if (dish.popularity > 0.6 && dish.weight > 0.6) {
+  } else if (dish.popularity > 0.6 && weight > 0.6) {
     interpretation +=
       ". This dish has good popularity and strong customer preference - it could work very well for your restaurant.";
-  } else if (dish.popularity > 0.6 || dish.weight > 0.6) {
+  } else if (dish.popularity > 0.6 || weight > 0.6) {
     interpretation +=
       ". This dish shows promise - either through popularity or customer preference - consider if it fits your restaurant's style.";
   } else {
@@ -655,10 +654,10 @@ function generateSpecialtyDishInterpretation(
   }
 
   // Add weight-specific insights
-  if (dish.weight > 0.9) {
+  if (weight > 0.9) {
     interpretation +=
       " High weight indicates strong customer affinity for this dish.";
-  } else if (dish.weight < 0.3) {
+  } else if (weight < 0.3) {
     interpretation +=
       " Lower weight suggests this dish may not resonate strongly with customers.";
   }
