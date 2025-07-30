@@ -203,12 +203,8 @@ export class LLMClient {
       case LLMProvider.ANTHROPIC:
         return {
           model: this.config.model,
-          messages: [
-            ...(request.systemPrompt
-              ? [{ role: "system", content: request.systemPrompt }]
-              : []),
-            { role: "user", content: request.prompt },
-          ],
+          system: request.systemPrompt || undefined,
+          messages: [{ role: "user", content: request.prompt }],
           max_tokens: request.maxTokens || 1000,
           temperature: request.temperature || 0.7,
           top_p: request.topP || 1,

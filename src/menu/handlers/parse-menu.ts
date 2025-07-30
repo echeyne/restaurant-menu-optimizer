@@ -84,6 +84,8 @@ export const handler = async (
       `Successfully extracted ${extractedText.length} characters of text`
     );
 
+    console.log(extractedText);
+
     try {
       // Parse the extracted text into menu items using LLM
       const menuItems = await parseMenuWithLLM(extractedText, restaurantId);

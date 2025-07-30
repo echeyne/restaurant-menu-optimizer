@@ -38,7 +38,7 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
         title: 'Menu Optimizer',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         builder: (context, child) => ResponsiveBreakpoints.builder(
           child: child!,
           breakpoints: [
