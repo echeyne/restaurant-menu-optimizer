@@ -1808,6 +1808,12 @@ resources:
           CorsRules:
             - AllowedHeaders:
                 - "*"
+                - "Content-Type"
+                - "X-Amz-Date"
+                - "Authorization"
+                - "X-Api-Key"
+                - "X-Amz-Security-Token"
+                - "X-Amz-User-Agent"
               AllowedMethods:
                 - GET
                 - PUT
@@ -1817,8 +1823,14 @@ resources:
               AllowedOrigins:
                 - "http://localhost:*"
                 - "http://*.amazonaws.com"
+                - "http://*.s3-website-*.amazonaws.com"
+                - "https://*.s3-website-*.amazonaws.com"
+                - "http://restaurantmenuoptimizerfrontenddev.s3-website-us-east-1.amazonaws.com"
+                - "https://restaurantmenuoptimizerfrontenddev.s3-website-us-east-1.amazonaws.com"
               ExposedHeaders:
                 - ETag
+                - "Content-Length"
+                - "Content-Type"
               MaxAge: 3000
     frontendwebsitebucket:
       Type: AWS::S3::Bucket
