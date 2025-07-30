@@ -1048,6 +1048,18 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
+      - http:
+          path: menu/optimization-options
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
             allowCredentials: true
           request:
             parameters:
@@ -1636,6 +1648,22 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: restaurantmenufiles${self:provider.stage}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              AllowedOrigins:
+                - "http://localhost:*"
+                - "https://*.amazonaws.com"
+              ExposedHeaders:
+                - ETag
+              MaxAge: 3000
     frontendwebsitebucket:
       Type: AWS::S3::Bucket
       Properties:
