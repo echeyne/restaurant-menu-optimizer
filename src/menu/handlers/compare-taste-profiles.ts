@@ -10,6 +10,7 @@ import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { TasteProfileVisualizationService } from "../../services/taste-profile-visualization-service";
 import { TasteProfileVisualizationRepository } from "../../repositories/taste-profile-visualization-repository";
 import { createResponse } from "../../models/api";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 
 /**
  * Request body interface for taste profile comparison
@@ -27,6 +28,14 @@ export const handler = async (
     // Handle OPTIONS request for CORS
     if (event.httpMethod === "OPTIONS") {
       return createResponse(200, {});
+    }
+
+    // Validate user authentication
+    const userId = await getUserIdFromToken(event);
+    if (!userId) {
+      return createResponse(401, {
+        message: "Unauthorized",
+      });
     }
 
     // Parse request body

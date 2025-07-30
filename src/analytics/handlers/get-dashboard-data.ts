@@ -10,6 +10,7 @@ import {
 } from "aws-lambda";
 import { createResponse } from "../../models/api";
 import { AnalyticsService } from "../../services/analytics-service";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 
 const analyticsService = new AnalyticsService();
 
@@ -28,6 +29,14 @@ export const handler = async (
   });
 
   try {
+    // Validate user authentication
+    const userId = await getUserIdFromToken(event);
+    if (!userId) {
+      return createResponse(401, {
+        message: "Unauthorized",
+      });
+    }
+
     // Extract parameters
     const restaurantId = event.queryStringParameters?.restaurantId;
     const timeframe = event.queryStringParameters?.timeframe;

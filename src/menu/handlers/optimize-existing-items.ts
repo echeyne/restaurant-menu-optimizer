@@ -14,6 +14,7 @@ import {
   OptimizedMenuItem,
 } from "../../models/database";
 import { createResponse } from "../../models/api";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 
 /**
  * Interface for optimization request
@@ -49,6 +50,14 @@ export const handler = async (
     // Handle OPTIONS request for CORS
     if (event.httpMethod === "OPTIONS") {
       return createResponse(200, {});
+    }
+
+    // Validate user authentication
+    const userId = await getUserIdFromToken(event);
+    if (!userId) {
+      return createResponse(401, {
+        message: "Unauthorized",
+      });
     }
 
     // Parse request body

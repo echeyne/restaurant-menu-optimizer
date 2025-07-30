@@ -10,6 +10,7 @@ import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { DemographicsDataRepository } from "../../repositories/demographics-data-repository";
 import { SimilarRestaurantDataRepository } from "../../repositories/similar-restaurant-data-repository";
 import { createResponse } from "../../models/api";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 
 /**
  * Interface for optimization option
@@ -46,6 +47,14 @@ export const handler = async (
     // Handle OPTIONS request for CORS
     if (event.httpMethod === "OPTIONS") {
       return createResponse(200, {});
+    }
+
+    // Validate user authentication
+    const userId = await getUserIdFromToken(event);
+    if (!userId) {
+      return createResponse(401, {
+        message: "Unauthorized",
+      });
     }
 
     const restaurantId = event.queryStringParameters?.restaurantId;

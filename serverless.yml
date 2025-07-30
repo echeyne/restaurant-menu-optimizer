@@ -523,7 +523,6 @@ functions:
                       type: string
                     fileSize:
                       type: number
-          authorizer: aws_iam
     environment:
       MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
       STAGE: ${self:provider.stage}
@@ -575,7 +574,6 @@ functions:
                       type: string
                     fileId:
                       type: string
-          authorizer: aws_iam
     environment:
       MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
       STAGE: ${self:provider.stage}
@@ -644,7 +642,6 @@ functions:
                   oneOf:
                     - required: ["itemId"]
                     - required: ["restaurantId"]
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1054,7 +1051,6 @@ functions:
             parameters:
               querystrings:
                 restaurantId: true
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1099,7 +1095,6 @@ functions:
                       enum: ["casual", "upscale", "trendy", "traditional"]
                     targetAudience:
                       type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1156,7 +1151,6 @@ functions:
                       type: array
                       items:
                         type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1196,7 +1190,6 @@ functions:
               querystrings:
                 restaurantId: true
                 type: true
-          authorizer: aws_iam
       - http:
           path: menu/review-optimizations
           method: post
@@ -1233,7 +1226,6 @@ functions:
                       enum: ["approved", "rejected"]
                     feedback:
                       type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1282,7 +1274,6 @@ functions:
                   oneOf:
                     - required: ["itemId"]
                     - required: ["restaurantId"]
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -1330,7 +1321,6 @@ functions:
                       type: string
                     restaurantId:
                       type: string
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1524,7 +1514,6 @@ functions:
                 timeframe: false
                 page: false
                 limit: false
-          authorizer: aws_iam
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:

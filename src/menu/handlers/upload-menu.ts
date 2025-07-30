@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import { createResponse } from "../../models/api";
 import { MenuFileRepository } from "../../repositories/menu-file-repository";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 
 // Allowed file types for menu uploads
 const ALLOWED_FILE_TYPES = [
@@ -61,6 +62,14 @@ export const handler = async (
       return createResponse(200, {});
     }
 
+    // Validate user authentication
+    const userId = await getUserIdFromToken(event);
+    if (!userId) {
+      return createResponse(401, {
+        message: "Unauthorized",
+      });
+    }
+
     // Parse request body
     const body = JSON.parse(event.body || "{}");
     const { restaurantId, fileName, fileType, fileSize } = body;
@@ -73,11 +82,19 @@ export const handler = async (
       });
     }
 
-    // Check if restaurant profile setup is complete
+    // Check if restaurant exists and user owns it
     const restaurant = await restaurantRepository.getById(restaurantId);
     if (!restaurant) {
       return createResponse(404, {
         message: "Restaurant not found",
+      });
+    }
+
+    // Verify that the authenticated user owns this restaurant
+    if (restaurant.ownerId !== userId) {
+      return createResponse(403, {
+        message:
+          "Access denied: You don't have permission to upload menus for this restaurant",
       });
     }
 
