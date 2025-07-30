@@ -4,18 +4,22 @@
 
 import { handler } from "./suggest-new-items";
 import { SimilarRestaurantDataRepository } from "../../repositories/similar-restaurant-data-repository";
+import { DemographicsDataRepository } from "../../repositories/demographics-data-repository";
 import { MenuItemRepository } from "../../repositories/menu-item-repository";
 import { RestaurantRepository } from "../../repositories/restaurant-repository";
 import { SuggestionRepository } from "../../repositories/suggestion-repository";
 import { LLMService } from "../../services/llm-service";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
 // Mock repositories and services
 jest.mock("../../repositories/similar-restaurant-data-repository");
+jest.mock("../../repositories/demographics-data-repository");
 jest.mock("../../repositories/menu-item-repository");
 jest.mock("../../repositories/restaurant-repository");
 jest.mock("../../repositories/suggestion-repository");
 jest.mock("../../services/llm-service");
+jest.mock("../../utils/auth-utils");
 
 describe("suggest-new-items handler", () => {
   // Mock data
@@ -41,6 +45,8 @@ describe("suggest-new-items handler", () => {
         entityId: "similar-1",
         address: "123 Test St",
         businessRating: 4.5,
+        tripAdvisorRating: 4.2,
+        qlooPopularityRating: 4.3,
         priceLevel: 2,
         specialtyDishes: ["Pasta Carbonara", "Tiramisu"],
         keywords: [{ name: "Italian", count: 5 }],
@@ -61,6 +67,49 @@ describe("suggest-new-items handler", () => {
       },
     ],
     minRatingFilter: 4,
+    retrievedAt: "2023-01-01T00:00:00.000Z",
+  };
+
+  const mockDemographicsData = {
+    restaurantId: "restaurant-123",
+    qlooEntityId: "qloo-123",
+    ageGroups: [
+      {
+        ageRange: "25-34",
+        percentage: 35,
+        preferences: ["healthy options", "craft cocktails"],
+      },
+      {
+        ageRange: "35-44",
+        percentage: 30,
+        preferences: ["wine pairings", "premium ingredients"],
+      },
+    ],
+    genders: [
+      {
+        gender: "female",
+        percentage: 55,
+        preferences: ["vegetarian options", "lighter portions"],
+      },
+      {
+        gender: "male",
+        percentage: 45,
+        preferences: ["hearty portions", "meat dishes"],
+      },
+    ],
+    interests: ["food photography", "local ingredients", "authentic cuisine"],
+    diningPatterns: [
+      {
+        pattern: "dinner",
+        frequency: 60,
+        timeOfDay: ["18:00", "19:00", "20:00"],
+      },
+      {
+        pattern: "lunch",
+        frequency: 40,
+        timeOfDay: ["12:00", "13:00"],
+      },
+    ],
     retrievedAt: "2023-01-01T00:00:00.000Z",
   };
 
@@ -148,6 +197,9 @@ describe("suggest-new-items handler", () => {
     SimilarRestaurantDataRepository.prototype.getById = jest
       .fn()
       .mockResolvedValue(mockSimilarRestaurantData);
+    DemographicsDataRepository.prototype.getById = jest
+      .fn()
+      .mockResolvedValue(mockDemographicsData);
     MenuItemRepository.prototype.getActiveByRestaurantId = jest
       .fn()
       .mockResolvedValue(mockMenuItems);
@@ -159,6 +211,9 @@ describe("suggest-new-items handler", () => {
     LLMService.prototype.complete = jest
       .fn()
       .mockResolvedValue(mockLLMResponse);
+
+    // Setup auth mock
+    (getUserIdFromToken as jest.Mock).mockResolvedValue("user-123");
   });
 
   it("should return 400 if request body is missing", async () => {
@@ -215,6 +270,23 @@ describe("suggest-new-items handler", () => {
     );
   });
 
+  it("should return 400 if demographics data is not found", async () => {
+    DemographicsDataRepository.prototype.getById = jest
+      .fn()
+      .mockResolvedValue(null);
+
+    const event = {
+      body: JSON.stringify({ restaurantId: "restaurant-123" }),
+    } as unknown as APIGatewayProxyEvent;
+
+    const response = await handler(event);
+
+    expect(response.statusCode).toBe(400);
+    expect(JSON.parse(response.body).message).toBe(
+      "Demographics data not found. Please complete restaurant profile setup first."
+    );
+  });
+
   it("should successfully generate and save menu item suggestions", async () => {
     const event = {
       body: JSON.stringify({
@@ -244,7 +316,7 @@ describe("suggest-new-items handler", () => {
     expect(llmCallArgs.prompt).toContain("Test Restaurant");
     expect(llmCallArgs.prompt).toContain("Pasta Carbonara");
     expect(llmCallArgs.prompt).toContain("Tiramisu");
-    expect(llmCallArgs.prompt).toContain("Spaghetti Bolognese");
+    expect(llmCallArgs.prompt).toContain("spaghetti bolognese");
     expect(llmCallArgs.prompt).toContain("authentic");
     expect(llmCallArgs.prompt).toContain("moderate");
 
@@ -298,6 +370,162 @@ describe("suggest-new-items handler", () => {
     // Verify excludeCategories was included in the prompt
     const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
       .calls[0][0];
+    expect(llmCallArgs.prompt).toContain("CATEGORIES TO EXCLUDE: dessert");
+  });
+
+  it("should use selected demographics when provided", async () => {
+    const event = {
+      body: JSON.stringify({
+        restaurantId: "restaurant-123",
+        selectedDemographics: {
+          selectedAgeGroups: ["25-34"],
+          selectedGenderGroups: ["female"],
+          selectedInterests: ["healthy options"],
+        },
+      }),
+    } as unknown as APIGatewayProxyEvent;
+
+    await handler(event);
+
+    // Verify selected demographics were included in the prompt
+    const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
+      .calls[0][0];
+    expect(llmCallArgs.prompt).toContain("25-34: 35% of customers");
+    expect(llmCallArgs.prompt).toContain("female: 55% of customers");
+    expect(llmCallArgs.prompt).toContain("healthy options");
+    // Should not contain unselected demographics
+    expect(llmCallArgs.prompt).not.toContain("35-44");
+    expect(llmCallArgs.prompt).not.toContain("- male:");
+  });
+
+  it("should use selected specialty dishes when provided", async () => {
+    const selectedSpecialtyDishes = [
+      {
+        dishName: "Pasta Carbonara",
+        tagId: "urn:tag:specialty_dish:place:pasta-carbonara",
+        restaurantName: "Similar Restaurant 1",
+        qlooPopularityRating: 4.3,
+        tripAdvisorRating: 4.2,
+      },
+    ];
+
+    const event = {
+      body: JSON.stringify({
+        restaurantId: "restaurant-123",
+        selectedSpecialtyDishes,
+      }),
+    } as unknown as APIGatewayProxyEvent;
+
+    await handler(event);
+
+    // Verify selected specialty dishes were included in the prompt with ratings
+    const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
+      .calls[0][0];
+    expect(llmCallArgs.prompt).toContain(
+      "Pasta Carbonara from Similar Restaurant 1"
+    );
+    expect(llmCallArgs.prompt).toContain("Qloo Popularity Rating: 4.3/5");
+    expect(llmCallArgs.prompt).toContain("TripAdvisor Rating: 4.2/5");
+  });
+
+  it("should include specific dish requests when provided", async () => {
+    const event = {
+      body: JSON.stringify({
+        restaurantId: "restaurant-123",
+        specificDishRequests: ["Gluten-free pasta", "Vegan dessert"],
+      }),
+    } as unknown as APIGatewayProxyEvent;
+
+    await handler(event);
+
+    // Verify specific dish requests were included in the prompt
+    const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
+      .calls[0][0];
+    expect(llmCallArgs.prompt).toContain("SPECIFIC DISH REQUESTS FROM USER:");
+    expect(llmCallArgs.prompt).toContain("1. Gluten-free pasta");
+    expect(llmCallArgs.prompt).toContain("2. Vegan dessert");
+  });
+
+  it("should use custom cuisine type when provided", async () => {
+    const event = {
+      body: JSON.stringify({
+        restaurantId: "restaurant-123",
+        cuisineType: "modern fusion",
+      }),
+    } as unknown as APIGatewayProxyEvent;
+
+    await handler(event);
+
+    // Verify custom cuisine type was used instead of restaurant default
+    const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
+      .calls[0][0];
+    expect(llmCallArgs.prompt).toContain("Cuisine Type: modern fusion");
+    expect(llmCallArgs.prompt).not.toContain("Cuisine Type: italian");
+  });
+
+  it("should include demographics context in the prompt", async () => {
+    const event = {
+      body: JSON.stringify({
+        restaurantId: "restaurant-123",
+      }),
+    } as unknown as APIGatewayProxyEvent;
+
+    await handler(event);
+
+    // Verify demographics context was included
+    const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
+      .calls[0][0];
+    expect(llmCallArgs.prompt).toContain("CUSTOMER DEMOGRAPHICS:");
+    expect(llmCallArgs.prompt).toContain("Age Groups:");
+    expect(llmCallArgs.prompt).toContain("Gender Distribution:");
+    expect(llmCallArgs.prompt).toContain("Customer Interests:");
+    expect(llmCallArgs.prompt).toContain("Dining Patterns:");
+  });
+
+  it("should handle all new parameters together", async () => {
+    const event = {
+      body: JSON.stringify({
+        restaurantId: "restaurant-123",
+        maxSuggestions: 3,
+        cuisineType: "modern italian",
+        selectedDemographics: {
+          selectedAgeGroups: ["25-34", "35-44"],
+          selectedGenderGroups: ["female"],
+          selectedInterests: ["authentic cuisine"],
+        },
+        selectedSpecialtyDishes: [
+          {
+            dishName: "Pasta Carbonara",
+            tagId: "urn:tag:specialty_dish:place:pasta-carbonara",
+            restaurantName: "Similar Restaurant 1",
+            qlooPopularityRating: 4.3,
+            tripAdvisorRating: 4.2,
+          },
+        ],
+        specificDishRequests: ["Truffle pasta"],
+        excludeCategories: ["dessert"],
+      }),
+    } as unknown as APIGatewayProxyEvent;
+
+    await handler(event);
+
+    const llmCallArgs = (LLMService.prototype.complete as jest.Mock).mock
+      .calls[0][0];
+
+    // Verify all parameters were included
+    expect(llmCallArgs.prompt).toContain(
+      "Generate 3 unique menu item suggestions"
+    );
+    expect(llmCallArgs.prompt).toContain("Cuisine Type: modern italian");
+    expect(llmCallArgs.prompt).toContain("25-34: 35% of customers");
+    expect(llmCallArgs.prompt).toContain("35-44: 30% of customers");
+    expect(llmCallArgs.prompt).toContain("female: 55% of customers");
+    expect(llmCallArgs.prompt).toContain("authentic cuisine");
+    expect(llmCallArgs.prompt).toContain(
+      "Pasta Carbonara from Similar Restaurant 1"
+    );
+    expect(llmCallArgs.prompt).toContain("SPECIFIC DISH REQUESTS FROM USER:");
+    expect(llmCallArgs.prompt).toContain("1. Truffle pasta");
     expect(llmCallArgs.prompt).toContain("CATEGORIES TO EXCLUDE: dessert");
   });
 });

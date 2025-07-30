@@ -18,6 +18,11 @@ jest.mock("../../repositories/menu-item-repository");
 jest.mock("../../repositories/demographics-data-repository");
 jest.mock("../../repositories/similar-restaurant-data-repository");
 
+// Mock the auth utils
+jest.mock("../../utils/auth-utils", () => ({
+  getUserIdFromToken: jest.fn().mockResolvedValue("test-user-id"),
+}));
+
 describe("optimization-options handler", () => {
   let mockMenuItemRepository: jest.Mocked<MenuItemRepository>;
   let mockDemographicsRepository: jest.Mocked<DemographicsDataRepository>;
@@ -83,6 +88,13 @@ describe("optimization-options handler", () => {
             preferences: ["healthy", "organic"],
           },
         ],
+        genders: [
+          {
+            gender: "female",
+            percentage: 60,
+            preferences: ["healthy", "organic"],
+          },
+        ],
         interests: ["food", "dining"],
         diningPatterns: [
           {
@@ -97,7 +109,24 @@ describe("optimization-options handler", () => {
       const similarRestaurantData: SimilarRestaurantData = {
         restaurantId,
         qlooEntityId: "qloo-entity-123",
-        similarRestaurants: [],
+        similarRestaurants: [
+          {
+            name: "Test Restaurant",
+            entityId: "test-entity-123",
+            address: "123 Test St",
+            businessRating: 4.5,
+            priceLevel: 2,
+            specialtyDishes: [
+              {
+                dishName: "Specialty Pasta",
+                tagId: "urn:tag:specialty_dish:place:pasta",
+                restaurantCount: 5,
+                popularity: 0.8,
+              },
+            ],
+            keywords: [],
+          },
+        ],
         specialtyDishes: [
           {
             dishName: "Specialty Pasta",
@@ -123,6 +152,7 @@ describe("optimization-options handler", () => {
       );
 
       const event = {
+        httpMethod: "GET",
         queryStringParameters: {
           restaurantId,
         },
@@ -157,6 +187,17 @@ describe("optimization-options handler", () => {
       expect(body.readiness.menuItemCount).toBe(1);
       expect(body.readiness.specialtyDishCount).toBe(2);
       expect(body.readiness.hasAllRequiredData).toBe(true);
+
+      // Check demographic information is included
+      expect(body.demographicInformation).toBeDefined();
+      expect(body.demographicInformation.ageGroups).toHaveLength(1);
+      expect(body.demographicInformation.genderGroups).toHaveLength(1);
+      expect(body.demographicInformation.interpretation).toBeDefined();
+
+      // Check specialty dishes are included
+      expect(body.specialtyDishes).toBeDefined();
+      expect(body.specialtyDishes).toHaveLength(2);
+      expect(body.specialtyDishes[0].interpretation).toBeDefined();
     });
   });
 
@@ -164,6 +205,7 @@ describe("optimization-options handler", () => {
     it("should return 400 if restaurantId is not provided", async () => {
       // Arrange
       const event = {
+        httpMethod: "GET",
         queryStringParameters: null,
       } as unknown as APIGatewayProxyEvent;
 
@@ -187,6 +229,7 @@ describe("optimization-options handler", () => {
         restaurantId,
         qlooEntityId: "qloo-entity-123",
         ageGroups: [],
+        genders: [],
         interests: [],
         diningPatterns: [],
         retrievedAt: "2023-01-01T00:00:00Z",
@@ -201,6 +244,7 @@ describe("optimization-options handler", () => {
       });
 
       const event = {
+        httpMethod: "GET",
         queryStringParameters: {
           restaurantId,
         },
@@ -217,6 +261,255 @@ describe("optimization-options handler", () => {
       );
       expect(optimizeExistingOption.available).toBe(false);
       expect(optimizeExistingOption.reason).toContain("No menu items found");
+    });
+  });
+
+  describe("optimization selection handling", () => {
+    it("should handle optimize-existing selection with valid demographics", async () => {
+      // Arrange
+      const restaurantId = "test-restaurant-id";
+      const selectedDemographics = {
+        selectedAgeGroups: ["25-34"],
+        selectedGenderGroups: ["female"],
+      };
+
+      const menuItems: MenuItem[] = [
+        {
+          itemId: "item-1",
+          restaurantId,
+          name: "Test Item",
+          description: "Test description",
+          price: 12.99,
+          category: "Appetizers",
+          ingredients: ["ingredient1"],
+          dietaryTags: ["vegetarian"],
+          isActive: true,
+          isAiGenerated: false,
+          createdAt: "2023-01-01T00:00:00Z",
+          updatedAt: "2023-01-01T00:00:00Z",
+        },
+      ];
+
+      const demographicsData: DemographicsData = {
+        restaurantId,
+        qlooEntityId: "qloo-entity-123",
+        ageGroups: [
+          {
+            ageRange: "25-34",
+            percentage: 40,
+            preferences: ["healthy", "organic"],
+          },
+        ],
+        genders: [
+          {
+            gender: "female",
+            percentage: 60,
+            preferences: ["healthy", "organic"],
+          },
+        ],
+        interests: ["food", "dining"],
+        diningPatterns: [],
+        retrievedAt: "2023-01-01T00:00:00Z",
+      };
+
+      mockMenuItemRepository.list.mockResolvedValue(menuItems);
+      mockDemographicsRepository.getById.mockResolvedValue(demographicsData);
+      mockSimilarRestaurantRepository.getById.mockResolvedValue({
+        restaurantId,
+        qlooEntityId: "qloo-entity-123",
+        similarRestaurants: [],
+        specialtyDishes: [],
+        minRatingFilter: 4.0,
+        retrievedAt: "2023-01-01T00:00:00Z",
+      });
+
+      const event = {
+        httpMethod: "POST",
+        body: JSON.stringify({
+          restaurantId,
+          selectedOption: "optimize-existing",
+          selectedDemographics,
+        }),
+      } as unknown as APIGatewayProxyEvent;
+
+      // Act
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      // Assert
+      expect(result.statusCode).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.selectedOption).toBe("optimize-existing");
+      expect(body.nextEndpoint).toBe("/menu/optimize-existing-items");
+      expect(body.nextAction).toBe("optimize_existing_items");
+      expect(body.requiredData.selectedDemographics).toEqual(
+        selectedDemographics
+      );
+    });
+
+    it("should handle suggest-new-items selection with valid specialty dishes", async () => {
+      // Arrange
+      const restaurantId = "test-restaurant-id";
+      const selectedSpecialtyDishes = [
+        {
+          dishName: "Specialty Pasta",
+          tagId: "urn:tag:specialty_dish:place:pasta",
+          popularity: 0.8,
+        },
+      ];
+
+      const similarRestaurantData: SimilarRestaurantData = {
+        restaurantId,
+        qlooEntityId: "qloo-entity-123",
+        similarRestaurants: [],
+        specialtyDishes: [
+          {
+            dishName: "Specialty Pasta",
+            tagId: "urn:tag:specialty_dish:place:pasta",
+            restaurantCount: 5,
+            popularity: 0.8,
+          },
+        ],
+        minRatingFilter: 4.0,
+        retrievedAt: "2023-01-01T00:00:00Z",
+      };
+
+      mockMenuItemRepository.list.mockResolvedValue([]);
+      mockDemographicsRepository.getById.mockResolvedValue(null);
+      mockSimilarRestaurantRepository.getById.mockResolvedValue(
+        similarRestaurantData
+      );
+
+      const event = {
+        httpMethod: "POST",
+        body: JSON.stringify({
+          restaurantId,
+          selectedOption: "suggest-new-items",
+          selectedSpecialtyDishes,
+        }),
+      } as unknown as APIGatewayProxyEvent;
+
+      // Act
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      // Assert
+      expect(result.statusCode).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.selectedOption).toBe("suggest-new-items");
+      expect(body.nextEndpoint).toBe("/menu/suggest-new-items");
+      expect(body.nextAction).toBe("suggest_new_items");
+      expect(body.requiredData.selectedSpecialtyDishes).toEqual(
+        selectedSpecialtyDishes
+      );
+    });
+
+    it("should return 400 for invalid selectedOption", async () => {
+      // Arrange
+      const event = {
+        httpMethod: "POST",
+        body: JSON.stringify({
+          restaurantId: "test-restaurant-id",
+          selectedOption: "invalid-option",
+        }),
+      } as unknown as APIGatewayProxyEvent;
+
+      // Act
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      // Assert
+      expect(result.statusCode).toBe(400);
+      expect(body.message).toContain("Invalid selectedOption");
+    });
+
+    it("should return 400 when optimize-existing is selected without demographics", async () => {
+      // Arrange
+      const restaurantId = "test-restaurant-id";
+
+      mockMenuItemRepository.list.mockResolvedValue([
+        {
+          itemId: "item-1",
+          restaurantId,
+          name: "Test Item",
+          description: "Test description",
+          price: 12.99,
+          category: "Appetizers",
+          ingredients: ["ingredient1"],
+          dietaryTags: ["vegetarian"],
+          isActive: true,
+          isAiGenerated: false,
+          createdAt: "2023-01-01T00:00:00Z",
+          updatedAt: "2023-01-01T00:00:00Z",
+        },
+      ]);
+      mockDemographicsRepository.getById.mockResolvedValue({
+        restaurantId,
+        qlooEntityId: "qloo-entity-123",
+        ageGroups: [],
+        genders: [],
+        interests: [],
+        diningPatterns: [],
+        retrievedAt: "2023-01-01T00:00:00Z",
+      });
+
+      const event = {
+        httpMethod: "POST",
+        body: JSON.stringify({
+          restaurantId,
+          selectedOption: "optimize-existing",
+          // Missing selectedDemographics
+        }),
+      } as unknown as APIGatewayProxyEvent;
+
+      // Act
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      // Assert
+      expect(result.statusCode).toBe(400);
+      expect(body.message).toContain("Selected demographics are required");
+    });
+
+    it("should return 400 when suggest-new-items is selected without specialty dishes", async () => {
+      // Arrange
+      const restaurantId = "test-restaurant-id";
+
+      // Mock the repositories to ensure readiness check passes
+      mockMenuItemRepository.list.mockResolvedValue([]);
+      mockDemographicsRepository.getById.mockResolvedValue(null);
+      mockSimilarRestaurantRepository.getById.mockResolvedValue({
+        restaurantId,
+        qlooEntityId: "qloo-entity-123",
+        similarRestaurants: [],
+        specialtyDishes: [
+          {
+            dishName: "Specialty Pasta",
+            tagId: "urn:tag:specialty_dish:place:pasta",
+            restaurantCount: 5,
+            popularity: 0.8,
+          },
+        ],
+        minRatingFilter: 4.0,
+        retrievedAt: "2023-01-01T00:00:00Z",
+      });
+
+      const event = {
+        httpMethod: "POST",
+        body: JSON.stringify({
+          restaurantId,
+          selectedOption: "suggest-new-items",
+          // Missing selectedSpecialtyDishes
+        }),
+      } as unknown as APIGatewayProxyEvent;
+
+      // Act
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      // Assert
+      expect(result.statusCode).toBe(400);
+      expect(body.message).toContain("Selected specialty dishes are required");
     });
   });
 });

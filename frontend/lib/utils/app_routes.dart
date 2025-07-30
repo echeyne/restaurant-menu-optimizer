@@ -6,6 +6,8 @@ class AppRoutes {
   static const String menuManagement = '/menu-management';
   static const String dashboard = '/dashboard';
   static const String menuOptimization = '/menu-optimization';
+  static const String optimizationOptions = '/optimization-options';
+  static const String optimizationReview = '/optimization-review';
   static const String tasteProfile = '/taste-profile';
   static const String analytics = '/analytics';
 }

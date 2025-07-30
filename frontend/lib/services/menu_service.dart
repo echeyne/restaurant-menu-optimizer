@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'http_client.dart';
 import '../models/menu_models.dart';
+import '../models/restaurant_models.dart';
 
 class MenuService {
   final HttpClient _httpClient = HttpClient();
@@ -161,16 +161,34 @@ class MenuService {
   }
 
   Future<List<OptimizedMenuItem>> optimizeExistingItems(
-      String restaurantId) async {
+      String restaurantId, {
+      List<String>? itemIds,
+      String? optimizationStyle,
+      String? targetAudience,
+    }) async {
     try {
-      final response =
-          await _httpClient.postJson('/menu/optimize-existing-items', {
+      final requestBody = <String, dynamic>{
         'restaurantId': restaurantId,
-      });
+      };
+      
+      if (itemIds != null && itemIds.isNotEmpty) {
+        requestBody['itemIds'] = itemIds;
+      }
+      
+      if (optimizationStyle != null) {
+        requestBody['optimizationStyle'] = optimizationStyle;
+      }
+      
+      if (targetAudience != null) {
+        requestBody['targetAudience'] = targetAudience;
+      }
+
+      final response = await _httpClient.postJson('/menu/optimize-existing-items', requestBody);
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => OptimizedMenuItem.fromJson(json)).toList();
+        final responseData = jsonDecode(response.body);
+        final List<dynamic> optimizedItems = responseData['optimizedItems'] ?? [];
+        return optimizedItems.map((json) => OptimizedMenuItem.fromJson(json)).toList();
       } else {
         throw Exception('Failed to optimize existing items: ${response.body}');
       }
@@ -179,15 +197,40 @@ class MenuService {
     }
   }
 
-  Future<List<MenuItemSuggestion>> suggestNewItems(String restaurantId) async {
+  Future<List<MenuItemSuggestion>> suggestNewItems(
+      String restaurantId, {
+      int? maxSuggestions,
+      String? cuisineStyle,
+      String? priceRange,
+      List<String>? excludeCategories,
+    }) async {
     try {
-      final response = await _httpClient.postJson('/menu/suggest-new-items', {
+      final requestBody = <String, dynamic>{
         'restaurantId': restaurantId,
-      });
+      };
+      
+      if (maxSuggestions != null) {
+        requestBody['maxSuggestions'] = maxSuggestions;
+      }
+      
+      if (cuisineStyle != null) {
+        requestBody['cuisineStyle'] = cuisineStyle;
+      }
+      
+      if (priceRange != null) {
+        requestBody['priceRange'] = priceRange;
+      }
+      
+      if (excludeCategories != null && excludeCategories.isNotEmpty) {
+        requestBody['excludeCategories'] = excludeCategories;
+      }
+
+      final response = await _httpClient.postJson('/menu/suggest-new-items', requestBody);
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => MenuItemSuggestion.fromJson(json)).toList();
+        final responseData = jsonDecode(response.body);
+        final List<dynamic> suggestions = responseData['suggestions'] ?? [];
+        return suggestions.map((json) => MenuItemSuggestion.fromJson(json)).toList();
       } else {
         throw Exception('Failed to suggest new items: ${response.body}');
       }
@@ -196,13 +239,26 @@ class MenuService {
     }
   }
 
-  Future<void> reviewOptimization(String itemId, bool approved) async {
+  Future<void> reviewOptimization(
+    String restaurantId,
+    String type, // "existing_items" or "new_items"
+    String itemId,
+    String status, // "approved" or "rejected"
+    {String? feedback}
+  ) async {
     try {
-      final response =
-          await _httpClient.postJson('/menu/review-optimizations', {
+      final requestBody = <String, dynamic>{
+        'restaurantId': restaurantId,
+        'type': type,
         'itemId': itemId,
-        'approved': approved,
-      });
+        'status': status,
+      };
+      
+      if (feedback != null && feedback.isNotEmpty) {
+        requestBody['feedback'] = feedback;
+      }
+
+      final response = await _httpClient.postJson('/menu/review-optimizations', requestBody);
 
       if (response.statusCode != 200) {
         throw Exception('Failed to review optimization: ${response.body}');
@@ -237,6 +293,76 @@ class MenuService {
       }
     } catch (e) {
       throw Exception('Error getting menu item: $e');
+    }
+  }
+
+  Future<OptimizationReviewResponse> getOptimizationResults(
+    String restaurantId,
+    String type, // "existing_items" or "new_items"
+  ) async {
+    try {
+      final response = await _httpClient.get(
+        '/menu/review-optimizations?restaurantId=$restaurantId&type=$type'
+      );
+
+      if (response.statusCode == 200) {
+        return OptimizationReviewResponse.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to get optimization results: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error getting optimization results: $e');
+    }
+  }
+
+  Future<OptimizationOptionsResponse> getOptimizationOptions(String restaurantId) async {
+    try {
+      final response = await _httpClient.get('/menu/optimization-options?restaurantId=$restaurantId');
+
+      if (response.statusCode == 200) {
+        return OptimizationOptionsResponse.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to get optimization options: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error getting optimization options: $e');
+    }
+  }
+
+  Future<OptimizationSelectionResponse> submitOptimizationSelection({
+    required String restaurantId,
+    required String selectedOption,
+    SelectedDemographics? selectedDemographics,
+    List<SpecialtyDishDisplay>? selectedSpecialtyDishes,
+    String? cuisineType,
+  }) async {
+    try {
+      final requestBody = <String, dynamic>{
+        'restaurantId': restaurantId,
+        'selectedOption': selectedOption,
+      };
+
+      if (selectedDemographics != null) {
+        requestBody['selectedDemographics'] = selectedDemographics.toJson();
+      }
+
+      if (selectedSpecialtyDishes != null) {
+        requestBody['selectedSpecialtyDishes'] = selectedSpecialtyDishes.map((dish) => dish.toJson()).toList();
+      }
+
+      if (cuisineType != null) {
+        requestBody['cuisineType'] = cuisineType;
+      }
+
+      final response = await _httpClient.postJson('/menu/optimization-options', requestBody);
+
+      if (response.statusCode == 200) {
+        return OptimizationSelectionResponse.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to submit optimization selection: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error submitting optimization selection: $e');
     }
   }
 }

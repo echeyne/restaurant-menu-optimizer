@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'restaurant_models.dart';
 
 part 'menu_models.g.dart';
 
@@ -210,21 +211,7 @@ class UploadResponse {
   Map<String, dynamic> toJson() => _$UploadResponseToJson(this);
 }
 
-@JsonSerializable()
-class OptimizationOption {
-  final String id;
-  final String title;
-  final String description;
-  
-  OptimizationOption({
-    required this.id,
-    required this.title,
-    required this.description,
-  });
-  
-  factory OptimizationOption.fromJson(Map<String, dynamic> json) => _$OptimizationOptionFromJson(json);
-  Map<String, dynamic> toJson() => _$OptimizationOptionToJson(this);
-}
+
 
 @JsonSerializable()
 class ParseMenuResponse {
@@ -246,4 +233,72 @@ class ParseMenuResponse {
   
   factory ParseMenuResponse.fromJson(Map<String, dynamic> json) => _$ParseMenuResponseFromJson(json);
   Map<String, dynamic> toJson() => _$ParseMenuResponseToJson(this);
+}
+
+@JsonSerializable()
+class OptimizationReviewResponse {
+  final String restaurantId;
+  final String type;
+  final List<dynamic> pendingItems; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final List<dynamic> approvedItems; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final List<dynamic> rejectedItems; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final dynamic updatedItem; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final String? message;
+  
+  OptimizationReviewResponse({
+    required this.restaurantId,
+    required this.type,
+    required this.pendingItems,
+    required this.approvedItems,
+    required this.rejectedItems,
+    this.updatedItem,
+    this.message,
+  });
+  
+  factory OptimizationReviewResponse.fromJson(Map<String, dynamic> json) => _$OptimizationReviewResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$OptimizationReviewResponseToJson(this);
+}
+
+@JsonSerializable()
+class OptimizationOptionsResponse {
+  final String restaurantId;
+  final List<OptimizationOption> optimizationOptions;
+  final DemographicDisplay? demographicInformation;
+  final List<SpecialtyDishDisplay> specialtyDishes;
+  final OptimizationReadiness readiness;
+  
+  OptimizationOptionsResponse({
+    required this.restaurantId,
+    required this.optimizationOptions,
+    this.demographicInformation,
+    required this.specialtyDishes,
+    required this.readiness,
+  });
+  
+  factory OptimizationOptionsResponse.fromJson(Map<String, dynamic> json) => _$OptimizationOptionsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$OptimizationOptionsResponseToJson(this);
+}
+
+@JsonSerializable()
+class OptimizationSelectionResponse {
+  final bool success;
+  final String restaurantId;
+  final String selectedOption;
+  final String nextEndpoint;
+  final String nextAction;
+  final Map<String, dynamic> requiredData;
+  final String message;
+  
+  OptimizationSelectionResponse({
+    required this.success,
+    required this.restaurantId,
+    required this.selectedOption,
+    required this.nextEndpoint,
+    required this.nextAction,
+    required this.requiredData,
+    required this.message,
+  });
+  
+  factory OptimizationSelectionResponse.fromJson(Map<String, dynamic> json) => _$OptimizationSelectionResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$OptimizationSelectionResponseToJson(this);
 }

@@ -263,3 +263,169 @@ Map<String, dynamic> _$DiningPatternToJson(DiningPattern instance) =>
       'frequency': instance.frequency,
       'timeOfDay': instance.timeOfDay,
     };
+
+OptimizationOption _$OptimizationOptionFromJson(Map<String, dynamic> json) =>
+    OptimizationOption(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      requirements: (json['requirements'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      available: json['available'] as bool,
+      reason: json['reason'] as String?,
+    );
+
+Map<String, dynamic> _$OptimizationOptionToJson(OptimizationOption instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'title': instance.title,
+      'description': instance.description,
+      'requirements': instance.requirements,
+      'available': instance.available,
+      'reason': instance.reason,
+    };
+
+DemographicDisplay _$DemographicDisplayFromJson(Map<String, dynamic> json) =>
+    DemographicDisplay(
+      ageGroups: (json['ageGroups'] as List<dynamic>)
+          .map((e) => AgeGroupDisplay.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      genderGroups: (json['genderGroups'] as List<dynamic>)
+          .map((e) => GenderGroupDisplay.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      interests:
+          (json['interests'] as List<dynamic>).map((e) => e as String).toList(),
+      diningPatterns: (json['diningPatterns'] as List<dynamic>)
+          .map((e) => DiningPatternDisplay.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      interpretation: json['interpretation'] as String,
+    );
+
+Map<String, dynamic> _$DemographicDisplayToJson(DemographicDisplay instance) =>
+    <String, dynamic>{
+      'ageGroups': instance.ageGroups,
+      'genderGroups': instance.genderGroups,
+      'interests': instance.interests,
+      'diningPatterns': instance.diningPatterns,
+      'interpretation': instance.interpretation,
+    };
+
+AgeGroupDisplay _$AgeGroupDisplayFromJson(Map<String, dynamic> json) =>
+    AgeGroupDisplay(
+      ageRange: json['ageRange'] as String,
+      percentage: (json['percentage'] as num).toDouble(),
+      preferences: (json['preferences'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      interpretation: json['interpretation'] as String,
+    );
+
+Map<String, dynamic> _$AgeGroupDisplayToJson(AgeGroupDisplay instance) =>
+    <String, dynamic>{
+      'ageRange': instance.ageRange,
+      'percentage': instance.percentage,
+      'preferences': instance.preferences,
+      'interpretation': instance.interpretation,
+    };
+
+GenderGroupDisplay _$GenderGroupDisplayFromJson(Map<String, dynamic> json) =>
+    GenderGroupDisplay(
+      gender: json['gender'] as String,
+      percentage: (json['percentage'] as num).toDouble(),
+      preferences: (json['preferences'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      interpretation: json['interpretation'] as String,
+    );
+
+Map<String, dynamic> _$GenderGroupDisplayToJson(GenderGroupDisplay instance) =>
+    <String, dynamic>{
+      'gender': instance.gender,
+      'percentage': instance.percentage,
+      'preferences': instance.preferences,
+      'interpretation': instance.interpretation,
+    };
+
+DiningPatternDisplay _$DiningPatternDisplayFromJson(
+        Map<String, dynamic> json) =>
+    DiningPatternDisplay(
+      pattern: json['pattern'] as String,
+      frequency: (json['frequency'] as num).toDouble(),
+      timeOfDay:
+          (json['timeOfDay'] as List<dynamic>).map((e) => e as String).toList(),
+      interpretation: json['interpretation'] as String,
+    );
+
+Map<String, dynamic> _$DiningPatternDisplayToJson(
+        DiningPatternDisplay instance) =>
+    <String, dynamic>{
+      'pattern': instance.pattern,
+      'frequency': instance.frequency,
+      'timeOfDay': instance.timeOfDay,
+      'interpretation': instance.interpretation,
+    };
+
+SpecialtyDishDisplay _$SpecialtyDishDisplayFromJson(
+        Map<String, dynamic> json) =>
+    SpecialtyDishDisplay(
+      dishName: json['dishName'] as String,
+      tagId: json['tagId'] as String,
+      restaurantCount: (json['restaurantCount'] as num).toInt(),
+      popularity: (json['popularity'] as num).toDouble(),
+      qlooRating: (json['qlooRating'] as num).toDouble(),
+      tripAdvisorRating: (json['tripAdvisorRating'] as num?)?.toDouble(),
+      restaurantName: json['restaurantName'] as String?,
+      interpretation: json['interpretation'] as String,
+    );
+
+Map<String, dynamic> _$SpecialtyDishDisplayToJson(
+        SpecialtyDishDisplay instance) =>
+    <String, dynamic>{
+      'dishName': instance.dishName,
+      'tagId': instance.tagId,
+      'restaurantCount': instance.restaurantCount,
+      'popularity': instance.popularity,
+      'qlooRating': instance.qlooRating,
+      'tripAdvisorRating': instance.tripAdvisorRating,
+      'restaurantName': instance.restaurantName,
+      'interpretation': instance.interpretation,
+    };
+
+OptimizationReadiness _$OptimizationReadinessFromJson(
+        Map<String, dynamic> json) =>
+    OptimizationReadiness(
+      menuItemCount: (json['menuItemCount'] as num).toInt(),
+      specialtyDishCount: (json['specialtyDishCount'] as num).toInt(),
+      hasAllRequiredData: json['hasAllRequiredData'] as bool,
+    );
+
+Map<String, dynamic> _$OptimizationReadinessToJson(
+        OptimizationReadiness instance) =>
+    <String, dynamic>{
+      'menuItemCount': instance.menuItemCount,
+      'specialtyDishCount': instance.specialtyDishCount,
+      'hasAllRequiredData': instance.hasAllRequiredData,
+    };
+
+SelectedDemographics _$SelectedDemographicsFromJson(
+        Map<String, dynamic> json) =>
+    SelectedDemographics(
+      selectedAgeGroups: (json['selectedAgeGroups'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      selectedGenderGroups: (json['selectedGenderGroups'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      selectedInterests: (json['selectedInterests'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+    );
+
+Map<String, dynamic> _$SelectedDemographicsToJson(
+        SelectedDemographics instance) =>
+    <String, dynamic>{
+      'selectedAgeGroups': instance.selectedAgeGroups,
+      'selectedGenderGroups': instance.selectedGenderGroups,
+      'selectedInterests': instance.selectedInterests,
+    };

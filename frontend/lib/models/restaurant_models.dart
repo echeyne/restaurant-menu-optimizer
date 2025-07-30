@@ -304,3 +304,165 @@ class DiningPattern {
       _$DiningPatternFromJson(json);
   Map<String, dynamic> toJson() => _$DiningPatternToJson(this);
 }
+
+@JsonSerializable()
+class OptimizationOption {
+  final String id;
+  final String title;
+  final String description;
+  final List<String> requirements;
+  final bool available;
+  final String? reason;
+
+  OptimizationOption({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.requirements,
+    required this.available,
+    this.reason,
+  });
+
+  factory OptimizationOption.fromJson(Map<String, dynamic> json) =>
+      _$OptimizationOptionFromJson(json);
+  Map<String, dynamic> toJson() => _$OptimizationOptionToJson(this);
+}
+
+@JsonSerializable()
+class DemographicDisplay {
+  final List<AgeGroupDisplay> ageGroups;
+  final List<GenderGroupDisplay> genderGroups;
+  final List<String> interests;
+  final List<DiningPatternDisplay> diningPatterns;
+  final String interpretation;
+
+  DemographicDisplay({
+    required this.ageGroups,
+    required this.genderGroups,
+    required this.interests,
+    required this.diningPatterns,
+    required this.interpretation,
+  });
+
+  factory DemographicDisplay.fromJson(Map<String, dynamic> json) =>
+      _$DemographicDisplayFromJson(json);
+  Map<String, dynamic> toJson() => _$DemographicDisplayToJson(this);
+}
+
+@JsonSerializable()
+class AgeGroupDisplay {
+  final String ageRange;
+  final double percentage;
+  final List<String> preferences;
+  final String interpretation;
+
+  AgeGroupDisplay({
+    required this.ageRange,
+    required this.percentage,
+    required this.preferences,
+    required this.interpretation,
+  });
+
+  factory AgeGroupDisplay.fromJson(Map<String, dynamic> json) =>
+      _$AgeGroupDisplayFromJson(json);
+  Map<String, dynamic> toJson() => _$AgeGroupDisplayToJson(this);
+}
+
+@JsonSerializable()
+class GenderGroupDisplay {
+  final String gender;
+  final double percentage;
+  final List<String> preferences;
+  final String interpretation;
+
+  GenderGroupDisplay({
+    required this.gender,
+    required this.percentage,
+    required this.preferences,
+    required this.interpretation,
+  });
+
+  factory GenderGroupDisplay.fromJson(Map<String, dynamic> json) =>
+      _$GenderGroupDisplayFromJson(json);
+  Map<String, dynamic> toJson() => _$GenderGroupDisplayToJson(this);
+}
+
+@JsonSerializable()
+class DiningPatternDisplay {
+  final String pattern;
+  final double frequency;
+  final List<String> timeOfDay;
+  final String interpretation;
+
+  DiningPatternDisplay({
+    required this.pattern,
+    required this.frequency,
+    required this.timeOfDay,
+    required this.interpretation,
+  });
+
+  factory DiningPatternDisplay.fromJson(Map<String, dynamic> json) =>
+      _$DiningPatternDisplayFromJson(json);
+  Map<String, dynamic> toJson() => _$DiningPatternDisplayToJson(this);
+}
+
+@JsonSerializable()
+class SpecialtyDishDisplay {
+  final String dishName;
+  final String tagId;
+  final int restaurantCount;
+  final double popularity;
+  final double qlooRating;
+  final double? tripAdvisorRating;
+  final String? restaurantName;
+  final String interpretation;
+
+  SpecialtyDishDisplay({
+    required this.dishName,
+    required this.tagId,
+    required this.restaurantCount,
+    required this.popularity,
+    required this.qlooRating,
+    this.tripAdvisorRating,
+    this.restaurantName,
+    required this.interpretation,
+  });
+
+  factory SpecialtyDishDisplay.fromJson(Map<String, dynamic> json) =>
+      _$SpecialtyDishDisplayFromJson(json);
+  Map<String, dynamic> toJson() => _$SpecialtyDishDisplayToJson(this);
+}
+
+@JsonSerializable()
+class OptimizationReadiness {
+  final int menuItemCount;
+  final int specialtyDishCount;
+  final bool hasAllRequiredData;
+
+  OptimizationReadiness({
+    required this.menuItemCount,
+    required this.specialtyDishCount,
+    required this.hasAllRequiredData,
+  });
+
+  factory OptimizationReadiness.fromJson(Map<String, dynamic> json) =>
+      _$OptimizationReadinessFromJson(json);
+  Map<String, dynamic> toJson() => _$OptimizationReadinessToJson(this);
+}
+
+@JsonSerializable()
+class SelectedDemographics {
+  final List<String> selectedAgeGroups;
+  final List<String> selectedGenderGroups;
+  final List<String> selectedInterests;
+
+  SelectedDemographics({
+    required this.selectedAgeGroups,
+    required this.selectedGenderGroups,
+    required this.selectedInterests,
+  });
+
+  factory SelectedDemographics.fromJson(Map<String, dynamic> json) =>
+      _$SelectedDemographicsFromJson(json);
+  Map<String, dynamic> toJson() => _$SelectedDemographicsToJson(this);
+}

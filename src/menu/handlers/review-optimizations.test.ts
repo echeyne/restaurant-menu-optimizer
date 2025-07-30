@@ -7,11 +7,21 @@ import {
   MenuItemSuggestion,
   MenuItem,
 } from "../../models/database";
+import { getUserIdFromToken } from "../../utils/auth-utils";
 
 // Mock repositories
 jest.mock("../../repositories/optimized-menu-items-repository");
 jest.mock("../../repositories/suggestion-repository");
 jest.mock("../../repositories/menu-item-repository");
+
+// Mock auth utils
+jest.mock("../../utils/auth-utils", () => ({
+  getUserIdFromToken: jest.fn(),
+}));
+
+const mockGetUserIdFromToken = getUserIdFromToken as jest.MockedFunction<
+  typeof getUserIdFromToken
+>;
 
 describe("Review Optimizations Handler", () => {
   let mockOptimizedItemsRepo: jest.Mocked<OptimizedMenuItemsRepository>;
@@ -40,6 +50,9 @@ describe("Review Optimizations Handler", () => {
     (MenuItemRepository as jest.Mock).mockImplementation(
       () => mockMenuItemRepo
     );
+
+    // Mock authentication to return a valid user ID
+    mockGetUserIdFromToken.mockResolvedValue("user123");
   });
 
   describe("GET request", () => {

@@ -121,12 +121,22 @@ class MenuProvider extends ChangeNotifier {
     }
   }
   
-  Future<bool> optimizeExistingItems(String restaurantId) async {
+  Future<bool> optimizeExistingItems(
+    String restaurantId, {
+    List<String>? itemIds,
+    String? optimizationStyle,
+    String? targetAudience,
+  }) async {
     _setLoading(true);
     _setError(null);
     
     try {
-      _optimizedItems = await _menuService.optimizeExistingItems(restaurantId);
+      _optimizedItems = await _menuService.optimizeExistingItems(
+        restaurantId,
+        itemIds: itemIds,
+        optimizationStyle: optimizationStyle,
+        targetAudience: targetAudience,
+      );
       notifyListeners();
       return true;
     } catch (e) {
@@ -137,12 +147,24 @@ class MenuProvider extends ChangeNotifier {
     }
   }
   
-  Future<bool> suggestNewItems(String restaurantId) async {
+  Future<bool> suggestNewItems(
+    String restaurantId, {
+    int? maxSuggestions,
+    String? cuisineStyle,
+    String? priceRange,
+    List<String>? excludeCategories,
+  }) async {
     _setLoading(true);
     _setError(null);
     
     try {
-      _suggestions = await _menuService.suggestNewItems(restaurantId);
+      _suggestions = await _menuService.suggestNewItems(
+        restaurantId,
+        maxSuggestions: maxSuggestions,
+        cuisineStyle: cuisineStyle,
+        priceRange: priceRange,
+        excludeCategories: excludeCategories,
+      );
       notifyListeners();
       return true;
     } catch (e) {
@@ -153,19 +175,42 @@ class MenuProvider extends ChangeNotifier {
     }
   }
   
-  Future<bool> approveOptimization(String itemId, bool approved) async {
+  Future<bool> approveOptimization(
+    String restaurantId,
+    String type, // "existing_items" or "new_items"
+    String itemId,
+    bool approved,
+    {String? feedback}
+  ) async {
     _setLoading(true);
     _setError(null);
     
     try {
-      await _menuService.reviewOptimization(itemId, approved);
-      final index = _optimizedItems.indexWhere((item) => item.itemId == itemId);
-      if (index != -1) {
-        _optimizedItems[index] = _optimizedItems[index].copyWith(
-          status: approved ? 'approved' : 'rejected',
-        );
-        notifyListeners();
+      await _menuService.reviewOptimization(
+        restaurantId,
+        type,
+        itemId,
+        approved ? 'approved' : 'rejected',
+        feedback: feedback,
+      );
+      
+      if (type == 'existing_items') {
+        final index = _optimizedItems.indexWhere((item) => item.itemId == itemId);
+        if (index != -1) {
+          _optimizedItems[index] = _optimizedItems[index].copyWith(
+            status: approved ? 'approved' : 'rejected',
+          );
+        }
+      } else if (type == 'new_items') {
+        final index = _suggestions.indexWhere((item) => item.suggestionId == itemId);
+        if (index != -1) {
+          _suggestions[index] = _suggestions[index].copyWith(
+            status: approved ? 'approved' : 'rejected',
+          );
+        }
       }
+      
+      notifyListeners();
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -207,6 +252,64 @@ class MenuProvider extends ChangeNotifier {
     }
   }
   
+  Future<bool> fetchOptimizationResults(
+    String restaurantId,
+    String type, // "existing_items" or "new_items"
+  ) async {
+    _setLoading(true);
+    _setError(null);
+    
+    try {
+      final response = await _menuService.getOptimizationResults(restaurantId, type);
+      
+      if (type == 'existing_items') {
+        _optimizedItems.clear();
+        // Convert dynamic items to OptimizedMenuItem
+        for (final item in response.pendingItems) {
+          if (item is Map<String, dynamic>) {
+            _optimizedItems.add(OptimizedMenuItem.fromJson(item));
+          }
+        }
+        for (final item in response.approvedItems) {
+          if (item is Map<String, dynamic>) {
+            _optimizedItems.add(OptimizedMenuItem.fromJson(item));
+          }
+        }
+        for (final item in response.rejectedItems) {
+          if (item is Map<String, dynamic>) {
+            _optimizedItems.add(OptimizedMenuItem.fromJson(item));
+          }
+        }
+      } else if (type == 'new_items') {
+        _suggestions.clear();
+        // Convert dynamic items to MenuItemSuggestion
+        for (final item in response.pendingItems) {
+          if (item is Map<String, dynamic>) {
+            _suggestions.add(MenuItemSuggestion.fromJson(item));
+          }
+        }
+        for (final item in response.approvedItems) {
+          if (item is Map<String, dynamic>) {
+            _suggestions.add(MenuItemSuggestion.fromJson(item));
+          }
+        }
+        for (final item in response.rejectedItems) {
+          if (item is Map<String, dynamic>) {
+            _suggestions.add(MenuItemSuggestion.fromJson(item));
+          }
+        }
+      }
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   void clearError() {
     _setError(null);
   }

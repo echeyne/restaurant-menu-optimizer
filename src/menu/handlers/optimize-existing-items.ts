@@ -17,11 +17,33 @@ import { createResponse } from "../../models/api";
 import { getUserIdFromToken } from "../../utils/auth-utils";
 
 /**
+ * Interface for selected demographics for optimization
+ */
+interface SelectedDemographics {
+  selectedAgeGroups: string[];
+  selectedGenders: string[];
+  selectedInterests: string[];
+}
+
+/**
+ * Interface for selected specialty dish
+ */
+interface SelectedSpecialtyDish {
+  dishName: string;
+  tagId: string;
+  restaurantName: string;
+  popularity: number;
+  businessRating: number;
+}
+
+/**
  * Interface for optimization request
  */
 interface OptimizeExistingItemsRequest {
   restaurantId: string;
   itemIds?: string[]; // Optional: specific items to optimize, if not provided, optimize all active items
+  selectedDemographics: SelectedDemographics; // Required: user-selected demographic groups
+  selectedSpecialtyDishes?: SelectedSpecialtyDish[]; // Optional: highly rated specialty dishes from similar restaurants
   optimizationStyle?: "casual" | "upscale" | "trendy" | "traditional";
   targetAudience?: string; // Optional: specific target audience override
 }
@@ -86,6 +108,42 @@ export const handler = async (
         },
         body: JSON.stringify({
           message: "Missing required field: restaurantId",
+        }),
+      };
+    }
+
+    if (!request.selectedDemographics) {
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          message: "Missing required field: selectedDemographics",
+        }),
+      };
+    }
+
+    // Validate that at least one demographic group is selected
+    const hasSelectedDemographics =
+      (request.selectedDemographics.selectedAgeGroups &&
+        request.selectedDemographics.selectedAgeGroups.length > 0) ||
+      (request.selectedDemographics.selectedGenders &&
+        request.selectedDemographics.selectedGenders.length > 0) ||
+      (request.selectedDemographics.selectedInterests &&
+        request.selectedDemographics.selectedInterests.length > 0);
+
+    if (!hasSelectedDemographics) {
+      return {
+        statusCode: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          message:
+            "At least one demographic group must be selected for optimization",
         }),
       };
     }
@@ -160,6 +218,8 @@ export const handler = async (
         const optimizedItem = await optimizeMenuItem(
           menuItem,
           demographicsData,
+          request.selectedDemographics,
+          request.selectedSpecialtyDishes || [],
           llmService,
           request.optimizationStyle,
           request.targetAudience
@@ -217,6 +277,8 @@ export const handler = async (
  * Optimize a single menu item using LLM and demographics data
  * @param menuItem Menu item to optimize
  * @param demographicsData Demographics data for the restaurant
+ * @param selectedDemographics User-selected demographic groups
+ * @param selectedSpecialtyDishes Highly rated specialty dishes from similar restaurants
  * @param llmService LLM service instance
  * @param optimizationStyle Style of optimization
  * @param targetAudience Target audience override
@@ -225,17 +287,23 @@ export const handler = async (
 async function optimizeMenuItem(
   menuItem: MenuItem,
   demographicsData: DemographicsData,
+  selectedDemographics: SelectedDemographics,
+  selectedSpecialtyDishes: SelectedSpecialtyDish[],
   llmService: LLMService,
   optimizationStyle?: string,
   targetAudience?: string
 ): Promise<OptimizedMenuItem> {
-  // Build demographic insights for the prompt
-  const demographicInsights = buildDemographicInsights(demographicsData);
+  // Build demographic insights for the prompt using selected demographics
+  const demographicInsights = buildSelectedDemographicInsights(
+    demographicsData,
+    selectedDemographics
+  );
 
-  // Create optimization prompt
+  // Create optimization prompt with selected demographics and specialty dishes
   const prompt = createOptimizationPrompt(
     menuItem,
     demographicInsights,
+    selectedSpecialtyDishes,
     optimizationStyle,
     targetAudience
   );
@@ -270,39 +338,92 @@ async function optimizeMenuItem(
 }
 
 /**
- * Build demographic insights string from demographics data
+ * Build demographic insights string from selected demographics data
  * @param demographicsData Demographics data
+ * @param selectedDemographics User-selected demographic groups
  * @returns Array of demographic insights
  */
-function buildDemographicInsights(
-  demographicsData: DemographicsData
+function buildSelectedDemographicInsights(
+  demographicsData: DemographicsData,
+  selectedDemographics: SelectedDemographics
 ): string[] {
   const insights: string[] = [];
 
-  // Age group insights
-  if (demographicsData.ageGroups && demographicsData.ageGroups.length > 0) {
-    const primaryAgeGroup = demographicsData.ageGroups.sort(
-      (a, b) => b.percentage - a.percentage
-    )[0];
-    insights.push(
-      `Primary age group: ${primaryAgeGroup.ageRange} (${primaryAgeGroup.percentage}%)`
-    );
+  // Selected age group insights
+  if (
+    selectedDemographics.selectedAgeGroups &&
+    selectedDemographics.selectedAgeGroups.length > 0
+  ) {
+    const selectedAgeGroupData =
+      demographicsData.ageGroups?.filter((ageGroup) =>
+        selectedDemographics.selectedAgeGroups.includes(ageGroup.ageRange)
+      ) || [];
 
-    if (primaryAgeGroup.preferences && primaryAgeGroup.preferences.length > 0) {
-      insights.push(
-        `Age group preferences: ${primaryAgeGroup.preferences.join(", ")}`
+    if (selectedAgeGroupData.length > 0) {
+      const ageGroupNames = selectedAgeGroupData.map(
+        (ag) => `${ag.ageRange} (${ag.percentage}%)`
       );
+      insights.push(`Target age groups: ${ageGroupNames.join(", ")}`);
+
+      // Collect all preferences from selected age groups
+      const allPreferences = selectedAgeGroupData.flatMap(
+        (ag) => ag.preferences || []
+      );
+      const uniquePreferences = allPreferences.filter(
+        (value, index, self) => self.indexOf(value) === index
+      );
+      if (uniquePreferences.length > 0) {
+        insights.push(`Age group preferences: ${uniquePreferences.join(", ")}`);
+      }
     }
   }
 
-  // Interest insights
-  if (demographicsData.interests && demographicsData.interests.length > 0) {
-    insights.push(
-      `Customer interests: ${demographicsData.interests.slice(0, 5).join(", ")}`
-    );
+  // Selected gender insights
+  if (
+    selectedDemographics.selectedGenders &&
+    selectedDemographics.selectedGenders.length > 0
+  ) {
+    const selectedGenderData =
+      demographicsData.genders?.filter((gender) =>
+        selectedDemographics.selectedGenders.includes(gender.gender)
+      ) || [];
+
+    if (selectedGenderData.length > 0) {
+      const genderNames = selectedGenderData.map(
+        (g) => `${g.gender} (${g.percentage}%)`
+      );
+      insights.push(`Target genders: ${genderNames.join(", ")}`);
+
+      // Collect all preferences from selected genders
+      const allPreferences = selectedGenderData.flatMap(
+        (g) => g.preferences || []
+      );
+      const uniquePreferences = allPreferences.filter(
+        (value, index, self) => self.indexOf(value) === index
+      );
+      if (uniquePreferences.length > 0) {
+        insights.push(`Gender preferences: ${uniquePreferences.join(", ")}`);
+      }
+    }
   }
 
-  // Dining pattern insights
+  // Selected interest insights
+  if (
+    selectedDemographics.selectedInterests &&
+    selectedDemographics.selectedInterests.length > 0
+  ) {
+    const availableInterests = demographicsData.interests || [];
+    const validSelectedInterests =
+      selectedDemographics.selectedInterests.filter((interest) =>
+        availableInterests.includes(interest)
+      );
+
+    if (validSelectedInterests.length > 0) {
+      insights.push(`Target interests: ${validSelectedInterests.join(", ")}`);
+    }
+  }
+
+  // Include dining pattern insights if available (not user-selectable but provides context)
   if (
     demographicsData.diningPatterns &&
     demographicsData.diningPatterns.length > 0
@@ -326,6 +447,7 @@ function buildDemographicInsights(
  * Create optimization prompt for LLM
  * @param menuItem Menu item to optimize
  * @param demographicInsights Demographic insights
+ * @param selectedSpecialtyDishes Highly rated specialty dishes from similar restaurants
  * @param optimizationStyle Style of optimization
  * @param targetAudience Target audience
  * @returns Optimization prompt
@@ -333,6 +455,7 @@ function buildDemographicInsights(
 function createOptimizationPrompt(
   menuItem: MenuItem,
   demographicInsights: string[],
+  selectedSpecialtyDishes: SelectedSpecialtyDish[],
   optimizationStyle?: string,
   targetAudience?: string
 ): string {
@@ -340,13 +463,26 @@ function createOptimizationPrompt(
   const audience =
     targetAudience || "the restaurant's primary customer demographic";
 
-  return `You are a professional menu consultant helping to optimize menu item names and descriptions based on customer demographics.
+  // Build specialty dishes context if available
+  let specialtyDishesContext = "";
+  if (selectedSpecialtyDishes && selectedSpecialtyDishes.length > 0) {
+    const dishDescriptions = selectedSpecialtyDishes.map(
+      (dish) =>
+        `- "${dish.dishName}" from ${dish.restaurantName} (Popularity: ${dish.popularity}, Rating: ${dish.businessRating})`
+    );
+    specialtyDishesContext = `\n\nHIGHLY RATED SPECIALTY DISHES FROM SIMILAR RESTAURANTS:
+${dishDescriptions.join("\n")}
+
+Use these popular dishes as inspiration for naming and description techniques that resonate with customers in this market. Consider what makes these dishes appealing and incorporate similar language patterns, descriptive techniques, or presentation styles that could enhance the menu item being optimized.`;
+  }
+
+  return `You are a professional menu consultant helping to optimize menu item names and descriptions based on customer demographics and successful dishes from similar restaurants.
 
 MENU ITEM TO OPTIMIZE:
 Name: "${menuItem.name}"
 Description: "${menuItem.description}"
 Category: ${menuItem.category}
-Price: $${menuItem.price}
+Price: ${menuItem.price}
 ${
   menuItem.ingredients.length > 0
     ? `Ingredients: ${menuItem.ingredients.join(", ")}`
@@ -359,7 +495,7 @@ ${
 }
 
 CUSTOMER DEMOGRAPHICS:
-${demographicInsights.join("\n")}
+${demographicInsights.join("\n")}${specialtyDishesContext}
 
 OPTIMIZATION REQUIREMENTS:
 - Style: ${style}
@@ -368,16 +504,17 @@ OPTIMIZATION REQUIREMENTS:
 - Make the name and description more appealing to the target demographic
 - Use language and terminology that resonates with the customer base
 - Highlight aspects that would appeal to their interests and preferences
+- Draw inspiration from successful dishes in similar restaurants for naming and description techniques
 - Maintain authenticity while enhancing appeal
 
 Please provide your optimization in the following JSON format:
 {
   "optimizedName": "Enhanced dish name that appeals to the target demographic",
   "optimizedDescription": "Enhanced description that highlights appealing aspects for the target audience",
-  "reason": "Brief explanation of why these changes appeal to the demographic"
+  "reason": "Brief explanation of why these changes appeal to the demographic and how they draw inspiration from successful similar dishes"
 }
 
-Focus on making the menu item more appealing while staying true to the original dish.`;
+Focus on making the menu item more appealing while staying true to the original dish and incorporating successful techniques from similar restaurants.`;
 }
 
 /**
