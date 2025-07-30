@@ -148,6 +148,13 @@ export const handler = async (
       signatureVersion: "v4",
     });
 
+    // Debug logging
+    console.log("Environment variables:", {
+      MENU_FILES_BUCKET: process.env.MENU_FILES_BUCKET,
+      REGION: process.env.REGION,
+    });
+    console.log("Generated file key:", fileKey);
+
     // Generate pre-signed URL for direct upload
     const presignedUrl = await s3.getSignedUrlPromise("putObject", {
       Bucket: process.env.MENU_FILES_BUCKET || "",

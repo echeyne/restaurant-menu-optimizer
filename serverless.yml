@@ -245,7 +245,7 @@ custom:
     port: 4569
     directory: /tmp
     buckets:
-      - name: ${self:custom.menuFilesBucket}
+      - name: restaurantmenufiles${self:provider.stage}
 
 functions:
   PreSignUp:
@@ -525,7 +525,7 @@ functions:
                       type: number
     environment:
       MENU_FILES_BUCKET: 
-        Ref: menufilesbucket
+        Fn::GetAtt: [menufilesbucket, BucketName]
       STAGE: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -577,7 +577,7 @@ functions:
                       type: string
     environment:
       MENU_FILES_BUCKET: 
-        Ref: menufilesbucket
+        Fn::GetAtt: [menufilesbucket, BucketName]
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
       LLM_MODEL: ${self:provider.environment.LLM_MODEL}
@@ -1584,11 +1584,11 @@ resources:
     menufilesbucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-files-${self:provider.stage}-${sls:instanceId}
+        BucketName: restaurant-menu-files-${self:provider.stage}
     frontendwebsitebucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: restaurant-menu-optimizer-frontend-${self:provider.stage}-${sls:instanceId}
+        BucketName: restaurantmenuoptimizerfrontend${self:provider.stage}
         WebsiteConfiguration:
           IndexDocument: index.html
           ErrorDocument: index.html
@@ -1736,7 +1736,7 @@ resources:
       Description: "ID of the Cognito User Pool Client"
     MenuFilesBucketName:
       Value:
-        Ref: menufilesbucket
+        Fn::GetAtt: [menufilesbucket, BucketName]
       Description: "Name of the S3 bucket for menu files"
     FrontendBucketName:
       Value:
