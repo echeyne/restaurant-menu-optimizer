@@ -524,7 +524,7 @@ functions:
                     fileSize:
                       type: number
     environment:
-      MENU_FILES_BUCKET: 
+      MENU_FILES_BUCKET:
         Fn::GetAtt: [menufilesbucket, BucketName]
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -576,7 +576,7 @@ functions:
                     fileId:
                       type: string
     environment:
-      MENU_FILES_BUCKET: 
+      MENU_FILES_BUCKET:
         Fn::GetAtt: [menufilesbucket, BucketName]
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1410,6 +1410,36 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
+            allowCredentials: true
+          request:
+            parameters:
+              paths:
+                itemId: true
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price:
+                      type: number
+                    category:
+                      type: string
+                    ingredients:
+                      type: array
+                      items:
+                        type: string
+                    dietaryTags:
+                      type: array
+                      items:
+                        type: string
+                    isActive:
+                      type: boolean
+                    isAiGenerated:
+                      type: boolean
       - http:
           path: menu/update-menu-item
           method: post
@@ -1429,13 +1459,32 @@ functions:
                 schema:
                   type: object
                   required:
-                    - itemId
-                    - updates
+                    - name
+                    - restaurantId
+                    - price
                   properties:
-                    itemId:
+                    name:
                       type: string
-                    updates:
-                      type: object
+                    description:
+                      type: string
+                    price:
+                      type: number
+                    category:
+                      type: string
+                    restaurantId:
+                      type: string
+                    ingredients:
+                      type: array
+                      items:
+                        type: string
+                    dietaryTags:
+                      type: array
+                      items:
+                        type: string
+                    isActive:
+                      type: boolean
+                    isAiGenerated:
+                      type: boolean
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:

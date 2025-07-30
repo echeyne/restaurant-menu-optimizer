@@ -101,8 +101,15 @@ class MenuService {
 
   Future<MenuItem> updateMenuItem(String itemId, MenuItem updates) async {
     try {
+      // Create a copy of the updates without protected fields
+      final Map<String, dynamic> updateData = Map.from(updates.toJson());
+      updateData.remove('itemId');
+      updateData.remove('restaurantId');
+      updateData.remove('createdAt');
+      updateData.remove('updatedAt');
+
       final response = await _httpClient.putJson(
-          '/menu/update-menu-item/$itemId', updates.toJson());
+          '/menu/update-menu-item/$itemId', updateData);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
