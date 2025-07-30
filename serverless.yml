@@ -1782,8 +1782,7 @@ resources:
         Ref: userpoolclient
       Description: "ID of the Cognito User Pool Client"
     MenuFilesBucketName:
-      Value:
-        Fn::GetAtt: [menufilesbucket, BucketName]
+      Value: restaurantmenufiles${self:provider.stage}
       Description: "Name of the S3 bucket for menu files"
     FrontendBucketName:
       Value:
