@@ -16,7 +16,7 @@ provider:
     USER_POOL_ID: ${self:custom.userPoolId}
     CLIENT_ID: ${self:custom.clientId}
     MENU_FILES_BUCKET: ${self:custom.menuFilesBucket}
-    QLOO_API_KEY: ${env.QLOO_API_KEY, ''}
+    QLOO_API_KEY: ${env:QLOO_API_KEY, ''}
   apiGateway:
     shouldStartNameWithService: true
     apiKeys: []
@@ -524,7 +524,8 @@ functions:
                     fileSize:
                       type: number
     environment:
-      MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
+      MENU_FILES_BUCKET: 
+        Ref: menufilesbucket
       STAGE: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -575,7 +576,8 @@ functions:
                     fileId:
                       type: string
     environment:
-      MENU_FILES_BUCKET: ${self:provider.environment.MENU_FILES_BUCKET}
+      MENU_FILES_BUCKET: 
+        Ref: menufilesbucket
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
       LLM_MODEL: ${self:provider.environment.LLM_MODEL}
