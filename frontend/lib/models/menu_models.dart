@@ -19,7 +19,7 @@ class MenuItem {
   final List<String>? llmGeneratedTags;
   final bool isActive;
   final bool isAiGenerated;
-  
+
   MenuItem({
     required this.itemId,
     required this.restaurantId,
@@ -36,7 +36,7 @@ class MenuItem {
     required this.isActive,
     required this.isAiGenerated,
   });
-  
+
   MenuItem copyWith({
     String? itemId,
     String? restaurantId,
@@ -70,8 +70,9 @@ class MenuItem {
       isAiGenerated: isAiGenerated ?? this.isAiGenerated,
     );
   }
-  
-  factory MenuItem.fromJson(Map<String, dynamic> json) => _$MenuItemFromJson(json);
+
+  factory MenuItem.fromJson(Map<String, dynamic> json) =>
+      _$MenuItemFromJson(json);
   Map<String, dynamic> toJson() => _$MenuItemToJson(this);
 }
 
@@ -86,7 +87,7 @@ class OptimizedMenuItem {
   final List<String> demographicInsights;
   final String status;
   final DateTime createdAt;
-  
+
   OptimizedMenuItem({
     required this.itemId,
     required this.originalName,
@@ -98,7 +99,7 @@ class OptimizedMenuItem {
     required this.status,
     required this.createdAt,
   });
-  
+
   OptimizedMenuItem copyWith({
     String? itemId,
     String? originalName,
@@ -122,8 +123,9 @@ class OptimizedMenuItem {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-  
-  factory OptimizedMenuItem.fromJson(Map<String, dynamic> json) => _$OptimizedMenuItemFromJson(json);
+
+  factory OptimizedMenuItem.fromJson(Map<String, dynamic> json) =>
+      _$OptimizedMenuItemFromJson(json);
   Map<String, dynamic> toJson() => _$OptimizedMenuItemToJson(this);
 }
 
@@ -142,7 +144,7 @@ class MenuItemSuggestion {
   final Map<String, dynamic>? qlooTasteProfile;
   final String status;
   final DateTime createdAt;
-  
+
   MenuItemSuggestion({
     required this.suggestionId,
     required this.restaurantId,
@@ -158,7 +160,7 @@ class MenuItemSuggestion {
     required this.status,
     required this.createdAt,
   });
-  
+
   MenuItemSuggestion copyWith({
     String? suggestionId,
     String? restaurantId,
@@ -190,28 +192,32 @@ class MenuItemSuggestion {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-  
-  factory MenuItemSuggestion.fromJson(Map<String, dynamic> json) => _$MenuItemSuggestionFromJson(json);
+
+  factory MenuItemSuggestion.fromJson(Map<String, dynamic> json) =>
+      _$MenuItemSuggestionFromJson(json);
   Map<String, dynamic> toJson() => _$MenuItemSuggestionToJson(this);
 }
 
 @JsonSerializable()
 class UploadResponse {
-  final String uploadId;
+  final String fileId;
+  final String fileKey;
+  final String fileType;
   final String status;
   final String? message;
-  
+
   UploadResponse({
-    required this.uploadId,
+    required this.fileId,
     required this.status,
+    required this.fileKey,
+    required this.fileType,
     this.message,
   });
-  
-  factory UploadResponse.fromJson(Map<String, dynamic> json) => _$UploadResponseFromJson(json);
+
+  factory UploadResponse.fromJson(Map<String, dynamic> json) =>
+      _$UploadResponseFromJson(json);
   Map<String, dynamic> toJson() => _$UploadResponseToJson(this);
 }
-
-
 
 @JsonSerializable()
 class ParseMenuResponse {
@@ -221,7 +227,7 @@ class ParseMenuResponse {
   final String nextStep;
   final bool optimizationOptionsAvailable;
   final List<OptimizationOption> optimizationOptions;
-  
+
   ParseMenuResponse({
     required this.message,
     required this.menuItems,
@@ -230,8 +236,9 @@ class ParseMenuResponse {
     required this.optimizationOptionsAvailable,
     required this.optimizationOptions,
   });
-  
-  factory ParseMenuResponse.fromJson(Map<String, dynamic> json) => _$ParseMenuResponseFromJson(json);
+
+  factory ParseMenuResponse.fromJson(Map<String, dynamic> json) =>
+      _$ParseMenuResponseFromJson(json);
   Map<String, dynamic> toJson() => _$ParseMenuResponseToJson(this);
 }
 
@@ -239,12 +246,15 @@ class ParseMenuResponse {
 class OptimizationReviewResponse {
   final String restaurantId;
   final String type;
-  final List<dynamic> pendingItems; // Can be OptimizedMenuItem or MenuItemSuggestion
-  final List<dynamic> approvedItems; // Can be OptimizedMenuItem or MenuItemSuggestion
-  final List<dynamic> rejectedItems; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final List<dynamic>
+      pendingItems; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final List<dynamic>
+      approvedItems; // Can be OptimizedMenuItem or MenuItemSuggestion
+  final List<dynamic>
+      rejectedItems; // Can be OptimizedMenuItem or MenuItemSuggestion
   final dynamic updatedItem; // Can be OptimizedMenuItem or MenuItemSuggestion
   final String? message;
-  
+
   OptimizationReviewResponse({
     required this.restaurantId,
     required this.type,
@@ -254,8 +264,9 @@ class OptimizationReviewResponse {
     this.updatedItem,
     this.message,
   });
-  
-  factory OptimizationReviewResponse.fromJson(Map<String, dynamic> json) => _$OptimizationReviewResponseFromJson(json);
+
+  factory OptimizationReviewResponse.fromJson(Map<String, dynamic> json) =>
+      _$OptimizationReviewResponseFromJson(json);
   Map<String, dynamic> toJson() => _$OptimizationReviewResponseToJson(this);
 }
 
@@ -266,7 +277,7 @@ class OptimizationOptionsResponse {
   final DemographicDisplay? demographicInformation;
   final List<SpecialtyDishDisplay> specialtyDishes;
   final OptimizationReadiness readiness;
-  
+
   OptimizationOptionsResponse({
     required this.restaurantId,
     required this.optimizationOptions,
@@ -274,8 +285,9 @@ class OptimizationOptionsResponse {
     required this.specialtyDishes,
     required this.readiness,
   });
-  
-  factory OptimizationOptionsResponse.fromJson(Map<String, dynamic> json) => _$OptimizationOptionsResponseFromJson(json);
+
+  factory OptimizationOptionsResponse.fromJson(Map<String, dynamic> json) =>
+      _$OptimizationOptionsResponseFromJson(json);
   Map<String, dynamic> toJson() => _$OptimizationOptionsResponseToJson(this);
 }
 
@@ -288,7 +300,7 @@ class OptimizationSelectionResponse {
   final String nextAction;
   final Map<String, dynamic> requiredData;
   final String message;
-  
+
   OptimizationSelectionResponse({
     required this.success,
     required this.restaurantId,
@@ -298,7 +310,8 @@ class OptimizationSelectionResponse {
     required this.requiredData,
     required this.message,
   });
-  
-  factory OptimizationSelectionResponse.fromJson(Map<String, dynamic> json) => _$OptimizationSelectionResponseFromJson(json);
+
+  factory OptimizationSelectionResponse.fromJson(Map<String, dynamic> json) =>
+      _$OptimizationSelectionResponseFromJson(json);
   Map<String, dynamic> toJson() => _$OptimizationSelectionResponseToJson(this);
 }

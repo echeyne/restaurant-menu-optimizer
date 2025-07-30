@@ -114,14 +114,18 @@ Map<String, dynamic> _$MenuItemSuggestionToJson(MenuItemSuggestion instance) =>
 
 UploadResponse _$UploadResponseFromJson(Map<String, dynamic> json) =>
     UploadResponse(
-      uploadId: json['uploadId'] as String,
+      fileId: json['fileId'] as String,
       status: json['status'] as String,
+      fileKey: json['fileKey'] as String,
+      fileType: json['fileType'] as String,
       message: json['message'] as String?,
     );
 
 Map<String, dynamic> _$UploadResponseToJson(UploadResponse instance) =>
     <String, dynamic>{
-      'uploadId': instance.uploadId,
+      'fileId': instance.fileId,
+      'fileKey': instance.fileKey,
+      'fileType': instance.fileType,
       'status': instance.status,
       'message': instance.message,
     };

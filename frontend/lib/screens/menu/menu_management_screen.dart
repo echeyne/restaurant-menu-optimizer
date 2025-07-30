@@ -75,21 +75,33 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'csv', 'xls', 'xlsx'],
+        allowedExtensions: [
+          'pdf',
+          'doc',
+          'docx',
+          'txt',
+          'jpg',
+          'jpeg',
+          'png',
+          'csv',
+          'xls',
+          'xlsx'
+        ],
         allowMultiple: false,
         withData: true, // Ensure we get file bytes for web compatibility
       );
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
-        
+
         // Validate file size (10MB limit)
         const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
         if (file.size > maxFileSize) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('File size exceeds 10MB limit. Please choose a smaller file.'),
+                content: Text(
+                    'File size exceeds 10MB limit. Please choose a smaller file.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -127,13 +139,14 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
         if (uploadResponse != null && uploadResponse.status == 'success') {
           setState(() {
             _isParsingMenu = true;
-            _uploadedFileId = uploadResponse.uploadId;
+            _uploadedFileId = uploadResponse.fileId;
           });
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Menu uploaded successfully! Parsing can take a few minutes. Please check back later.'),
+                content: Text(
+                    'Menu uploaded successfully! Parsing can take a few minutes. Please check back later.'),
                 backgroundColor: Colors.green,
                 duration: Duration(seconds: 5),
               ),
@@ -143,7 +156,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Upload failed: ${menuProvider.error ?? 'Unknown error'}'),
+                content: Text(
+                    'Upload failed: ${menuProvider.error ?? 'Unknown error'}'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -343,9 +357,10 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                   ),
                 ),
               ],
-              
+
               Padding(
-                padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
+                padding:
+                    const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
                 child: Row(
                   children: [
                     ElevatedButton.icon(
@@ -361,12 +376,11 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                           _isGridView = !_isGridView;
                         });
                       },
-                      label: Text(_isGridView
-                          ? 'List View'
-                          : 'Grid View'),
+                      label: Text(_isGridView ? 'List View' : 'Grid View'),
                     ),
                     const Spacer(),
-                    if (!_isParsingMenu && menuProvider.menuItems.isNotEmpty) ...[
+                    if (!_isParsingMenu &&
+                        menuProvider.menuItems.isNotEmpty) ...[
                       IconButton(
                         onPressed: _refreshMenuItems,
                         icon: const Icon(Icons.refresh),
@@ -374,7 +388,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
-                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.optimizationOptions),
+                        onPressed: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.optimizationOptions),
                         icon: const Icon(Icons.auto_awesome),
                         label: const Text('Optimize Menu'),
                         style: ElevatedButton.styleFrom(

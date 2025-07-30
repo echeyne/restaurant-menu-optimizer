@@ -48,8 +48,10 @@ class MenuService {
 
       // Step 3: Return success response
       return UploadResponse(
-        uploadId: fileId,
+        fileId: fileId,
         status: 'success',
+        fileKey: fileKey,
+        fileType: _getMimeType(menuFile.extension ?? ''),
         message: 'File uploaded successfully',
       );
     } catch (e) {
@@ -161,34 +163,38 @@ class MenuService {
   }
 
   Future<List<OptimizedMenuItem>> optimizeExistingItems(
-      String restaurantId, {
-      List<String>? itemIds,
-      String? optimizationStyle,
-      String? targetAudience,
-    }) async {
+    String restaurantId, {
+    List<String>? itemIds,
+    String? optimizationStyle,
+    String? targetAudience,
+  }) async {
     try {
       final requestBody = <String, dynamic>{
         'restaurantId': restaurantId,
       };
-      
+
       if (itemIds != null && itemIds.isNotEmpty) {
         requestBody['itemIds'] = itemIds;
       }
-      
+
       if (optimizationStyle != null) {
         requestBody['optimizationStyle'] = optimizationStyle;
       }
-      
+
       if (targetAudience != null) {
         requestBody['targetAudience'] = targetAudience;
       }
 
-      final response = await _httpClient.postJson('/menu/optimize-existing-items', requestBody);
+      final response = await _httpClient.postJson(
+          '/menu/optimize-existing-items', requestBody);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final List<dynamic> optimizedItems = responseData['optimizedItems'] ?? [];
-        return optimizedItems.map((json) => OptimizedMenuItem.fromJson(json)).toList();
+        final List<dynamic> optimizedItems =
+            responseData['optimizedItems'] ?? [];
+        return optimizedItems
+            .map((json) => OptimizedMenuItem.fromJson(json))
+            .toList();
       } else {
         throw Exception('Failed to optimize existing items: ${response.body}');
       }
@@ -198,39 +204,42 @@ class MenuService {
   }
 
   Future<List<MenuItemSuggestion>> suggestNewItems(
-      String restaurantId, {
-      int? maxSuggestions,
-      String? cuisineStyle,
-      String? priceRange,
-      List<String>? excludeCategories,
-    }) async {
+    String restaurantId, {
+    int? maxSuggestions,
+    String? cuisineStyle,
+    String? priceRange,
+    List<String>? excludeCategories,
+  }) async {
     try {
       final requestBody = <String, dynamic>{
         'restaurantId': restaurantId,
       };
-      
+
       if (maxSuggestions != null) {
         requestBody['maxSuggestions'] = maxSuggestions;
       }
-      
+
       if (cuisineStyle != null) {
         requestBody['cuisineStyle'] = cuisineStyle;
       }
-      
+
       if (priceRange != null) {
         requestBody['priceRange'] = priceRange;
       }
-      
+
       if (excludeCategories != null && excludeCategories.isNotEmpty) {
         requestBody['excludeCategories'] = excludeCategories;
       }
 
-      final response = await _httpClient.postJson('/menu/suggest-new-items', requestBody);
+      final response =
+          await _httpClient.postJson('/menu/suggest-new-items', requestBody);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final List<dynamic> suggestions = responseData['suggestions'] ?? [];
-        return suggestions.map((json) => MenuItemSuggestion.fromJson(json)).toList();
+        return suggestions
+            .map((json) => MenuItemSuggestion.fromJson(json))
+            .toList();
       } else {
         throw Exception('Failed to suggest new items: ${response.body}');
       }
@@ -240,12 +249,11 @@ class MenuService {
   }
 
   Future<void> reviewOptimization(
-    String restaurantId,
-    String type, // "existing_items" or "new_items"
-    String itemId,
-    String status, // "approved" or "rejected"
-    {String? feedback}
-  ) async {
+      String restaurantId,
+      String type, // "existing_items" or "new_items"
+      String itemId,
+      String status, // "approved" or "rejected"
+      {String? feedback}) async {
     try {
       final requestBody = <String, dynamic>{
         'restaurantId': restaurantId,
@@ -253,12 +261,13 @@ class MenuService {
         'itemId': itemId,
         'status': status,
       };
-      
+
       if (feedback != null && feedback.isNotEmpty) {
         requestBody['feedback'] = feedback;
       }
 
-      final response = await _httpClient.postJson('/menu/review-optimizations', requestBody);
+      final response =
+          await _httpClient.postJson('/menu/review-optimizations', requestBody);
 
       if (response.statusCode != 200) {
         throw Exception('Failed to review optimization: ${response.body}');
@@ -302,8 +311,7 @@ class MenuService {
   ) async {
     try {
       final response = await _httpClient.get(
-        '/menu/review-optimizations?restaurantId=$restaurantId&type=$type'
-      );
+          '/menu/review-optimizations?restaurantId=$restaurantId&type=$type');
 
       if (response.statusCode == 200) {
         return OptimizationReviewResponse.fromJson(jsonDecode(response.body));
@@ -315,9 +323,11 @@ class MenuService {
     }
   }
 
-  Future<OptimizationOptionsResponse> getOptimizationOptions(String restaurantId) async {
+  Future<OptimizationOptionsResponse> getOptimizationOptions(
+      String restaurantId) async {
     try {
-      final response = await _httpClient.get('/menu/optimization-options?restaurantId=$restaurantId');
+      final response = await _httpClient
+          .get('/menu/optimization-options?restaurantId=$restaurantId');
 
       if (response.statusCode == 200) {
         return OptimizationOptionsResponse.fromJson(jsonDecode(response.body));
@@ -347,19 +357,23 @@ class MenuService {
       }
 
       if (selectedSpecialtyDishes != null) {
-        requestBody['selectedSpecialtyDishes'] = selectedSpecialtyDishes.map((dish) => dish.toJson()).toList();
+        requestBody['selectedSpecialtyDishes'] =
+            selectedSpecialtyDishes.map((dish) => dish.toJson()).toList();
       }
 
       if (cuisineType != null) {
         requestBody['cuisineType'] = cuisineType;
       }
 
-      final response = await _httpClient.postJson('/menu/optimization-options', requestBody);
+      final response =
+          await _httpClient.postJson('/menu/optimization-options', requestBody);
 
       if (response.statusCode == 200) {
-        return OptimizationSelectionResponse.fromJson(jsonDecode(response.body));
+        return OptimizationSelectionResponse.fromJson(
+            jsonDecode(response.body));
       } else {
-        throw Exception('Failed to submit optimization selection: ${response.body}');
+        throw Exception(
+            'Failed to submit optimization selection: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error submitting optimization selection: $e');

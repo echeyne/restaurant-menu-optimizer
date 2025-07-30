@@ -523,6 +523,19 @@ functions:
                       type: string
                     fileSize:
                       type: number
+      - http:
+          path: menu/upload-menu
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       MENU_FILES_BUCKET: restaurantmenufiles${self:provider.stage}
       STAGE: ${self:provider.stage}
@@ -576,6 +589,19 @@ functions:
                       type: string
                     fileId:
                       type: string
+      - http:
+          path: menu/parse
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       MENU_FILES_BUCKET: restaurantmenufiles${self:provider.stage}
       STAGE: ${self:provider.stage}
@@ -644,6 +670,19 @@ functions:
                   oneOf:
                     - required: ["itemId"]
                     - required: ["restaurantId"]
+      - http:
+          path: menu/enhance-descriptions
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1023,6 +1062,19 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
+      - http:
+          path: restaurant/complete-setup
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1065,6 +1117,19 @@ functions:
             parameters:
               querystrings:
                 restaurantId: true
+      - http:
+          path: menu/optimization-options
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1109,6 +1174,19 @@ functions:
                       enum: ["casual", "upscale", "trendy", "traditional"]
                     targetAudience:
                       type: string
+      - http:
+          path: menu/optimize-existing-items
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1165,6 +1243,19 @@ functions:
                       type: array
                       items:
                         type: string
+      - http:
+          path: menu/suggest-new-items
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
@@ -1240,6 +1331,19 @@ functions:
                       enum: ["approved", "rejected"]
                     feedback:
                       type: string
+      - http:
+          path: menu/review-optimizations
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1288,6 +1392,19 @@ functions:
                   oneOf:
                     - required: ["itemId"]
                     - required: ["restaurantId"]
+      - http:
+          path: menu/analyze-taste-profile
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
       QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
@@ -1335,6 +1452,19 @@ functions:
                       type: string
                     restaurantId:
                       type: string
+      - http:
+          path: menu/compare-taste-profiles
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1497,6 +1627,32 @@ functions:
                       type: boolean
                     isAiGenerated:
                       type: boolean
+      - http:
+          path: menu/update-menu-item/{itemId}
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+      - http:
+          path: menu/update-menu-item
+          method: options
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
     environment:
       STAGE: ${self:provider.stage}
     iamRoleStatements:
@@ -1660,7 +1816,7 @@ resources:
                 - HEAD
               AllowedOrigins:
                 - "http://localhost:*"
-                - "https://*.amazonaws.com"
+                - "http://*.amazonaws.com"
               ExposedHeaders:
                 - ETag
               MaxAge: 3000
