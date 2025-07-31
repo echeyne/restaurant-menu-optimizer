@@ -301,6 +301,9 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                 onPressed: _goBackToRestaurantSetup,
                 icon: const Icon(Icons.settings),
                 label: const Text('Restaurant Setup'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                ),
               ),
             ],
           ),
@@ -577,27 +580,27 @@ class MenuItemCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        leading: item.imageUrl != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  item.imageUrl!,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.restaurant, size: 60),
-                ),
-              )
-            : Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.restaurant, color: Colors.grey),
-              ),
+        // leading: item.imageUrl != null
+        //     ? ClipRRect(
+        //         borderRadius: BorderRadius.circular(8),
+        //         child: Image.network(
+        //           item.imageUrl!,
+        //           width: 60,
+        //           height: 60,
+        //           fit: BoxFit.cover,
+        //           errorBuilder: (context, error, stackTrace) =>
+        //               const Icon(Icons.restaurant, size: 60),
+        //         ),
+        //       )
+        //     : Container(
+        //         width: 60,
+        //         height: 60,
+        //         decoration: BoxDecoration(
+        //           color: Colors.grey[200],
+        //           borderRadius: BorderRadius.circular(8),
+        //         ),
+        //         child: const Icon(Icons.restaurant, color: Colors.grey),
+        //       ),
         title: Text(
           item.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -690,33 +693,29 @@ class MenuItemGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                child: item.imageUrl != null
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12)),
-                        child: Image.network(
-                          item.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.restaurant,
-                                  size: 40, color: Colors.grey),
-                        ),
-                      )
-                    : const Icon(Icons.restaurant,
-                        size: 40, color: Colors.grey),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
               ),
+              child: item.imageUrl != null
+                  ? ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(12)),
+                      child: Image.network(
+                        item.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.restaurant,
+                                size: 40, color: Colors.grey),
+                      ),
+                    )
+                  : const Icon(Icons.restaurant, size: 40, color: Colors.grey),
             ),
             Expanded(
-              flex: 2,
+              flex: 1,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(

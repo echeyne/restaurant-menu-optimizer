@@ -22,6 +22,16 @@ provider:
     apiKeys: []
     binaryMediaTypes:
       - "multipart/form-data"
+    cors:
+      origin: "*"
+      headers:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowCredentials: true
 
 plugins:
   - serverless-dotenv-plugin
@@ -557,6 +567,7 @@ functions:
 
   ParseMenu:
     handler: src/menu/handlers/parse-menu.handler
+    timeout: 300
     events:
       - http:
           path: menu/parse
@@ -1087,6 +1098,7 @@ functions:
 
   OptimizationOptions:
     handler: src/menu/handlers/optimization-options.handler
+    timeout: 300
     events:
       - http:
           path: menu/optimization-options

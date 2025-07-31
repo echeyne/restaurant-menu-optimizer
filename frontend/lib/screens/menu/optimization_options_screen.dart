@@ -47,7 +47,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
       builder: (context, menuProvider, restaurantProvider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('LLM Menu Optimization'),
+            title: const Text('Menu Optimization'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.of(context)
@@ -581,7 +581,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                     _selectedAgeGroups.contains(ageGroup.ageRange);
                 return FilterChip(
                   label: Text(
-                      '${ageGroup.ageRange} (${ageGroup.percentage.toStringAsFixed(1)}%)'),
+                      '${ageGroup.ageRange} (${(ageGroup.percentage * 100).toStringAsFixed(1)}%)'),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -618,7 +618,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                     _selectedGenderGroups.contains(genderGroup.gender);
                 return FilterChip(
                   label: Text(
-                      '${genderGroup.gender} (${genderGroup.percentage.toStringAsFixed(1)}%)'),
+                      '${genderGroup.gender} (${(genderGroup.percentage * 100).toStringAsFixed(1)}%)'),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -720,13 +720,21 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
               Icon(Icons.restaurant_menu, color: Colors.purple[700]),
               const SizedBox(width: 8),
               Text(
-                'Select Popular Dishes from Similar Restaurants',
+                'Select Popular Dishes or Inspirations from Similar Restaurants',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.purple[800],
                     ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Weight is a measure of how much customers prefer this dish compared to other dishes at similar restaurants',
+            style: TextStyle(
+              color: Colors.orange,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -785,15 +793,10 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const SizedBox(width: 8),
                             if (dish.weight != null)
                               _buildRatingChip(
                                   'Weight', dish.weight!, Colors.orange),
                             const SizedBox(width: 8),
-                            if (dish.tripAdvisorRating != null)
-                              _buildRatingChip('TripAdvisor',
-                                  dish.tripAdvisorRating!, Colors.green),
-                            const Spacer(),
                             Text(
                               '${dish.restaurantCount} restaurants',
                               style: TextStyle(

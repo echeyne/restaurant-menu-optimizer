@@ -204,7 +204,7 @@ async function handleGetOptimizationOptions(
         id: "optimize-existing",
         title: "Optimize Existing Menu Items",
         description:
-          "Enhance your current dish names and descriptions using demographic insights to better appeal to your target customers.",
+          "Enhance your current dish names and descriptions using demographic insights and AI to better appeal to your target customers.",
         requirements: [
           "Menu items uploaded and saved",
           "Demographics data collected from Qloo",
@@ -220,7 +220,7 @@ async function handleGetOptimizationOptions(
         id: "suggest-new-items",
         title: "Suggest New Menu Items",
         description:
-          "Generate new menu item suggestions based on popular specialty dishes from similar restaurants in your area.",
+          "Generate new menu item suggestions using AI based on popular specialty dishes from similar restaurants in your area.",
         requirements: [
           "Similar restaurant data collected from Qloo",
           "Specialty dish data available",
@@ -629,9 +629,8 @@ function generateSpecialtyDishInterpretation(
   dish: SpecialtyDish,
   restaurant?: SimilarRestaurant
 ): string {
-  const popularityPercent = Math.round(dish.popularity * 100);
   const weightPercent = Math.round((dish.weight || 0) * 100);
-  let interpretation = `${dish.dishName} is popular at ${dish.restaurantCount} similar restaurants with ${popularityPercent}% popularity rating and ${weightPercent}% preference weight`;
+  let interpretation = `${dish.dishName} is popular at ${dish.restaurantCount} similar restaurants with a ${weightPercent}% preference weight`;
 
   if (restaurant) {
     interpretation += ` (notably at ${restaurant.name} with ${restaurant.businessRating}/5 rating)`;
@@ -683,31 +682,17 @@ async function handleOptimizationSelection(
 
     // Validate required fields
     if (!restaurantId || !selectedOption) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required fields: restaurantId and selectedOption",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required fields: restaurantId and selectedOption",
+      });
     }
 
     // Validate selected option
     if (!["optimize-existing", "suggest-new-items"].includes(selectedOption)) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Invalid selectedOption. Must be 'optimize-existing' or 'suggest-new-items'",
-        }),
-      };
+      return createResponse(400, {
+        message:
+          "Invalid selectedOption. Must be 'optimize-existing' or 'suggest-new-items'",
+      });
     }
 
     // Check if the selected option is available
@@ -715,18 +700,11 @@ async function handleOptimizationSelection(
 
     if (selectedOption === "optimize-existing") {
       if (!readiness.hasMenuItems || !readiness.hasDemographicsData) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message:
-              "Cannot optimize existing items: missing menu items or demographics data",
-            readiness,
-          }),
-        };
+        return createResponse(400, {
+          message:
+            "Cannot optimize existing items: missing menu items or demographics data",
+          readiness,
+        });
       }
     }
 
@@ -735,18 +713,11 @@ async function handleOptimizationSelection(
         !readiness.hasSimilarRestaurantData ||
         readiness.specialtyDishCount === 0
       ) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message:
-              "Cannot suggest new items: missing similar restaurant data or specialty dishes",
-            readiness,
-          }),
-        };
+        return createResponse(400, {
+          message:
+            "Cannot suggest new items: missing similar restaurant data or specialty dishes",
+          readiness,
+        });
       }
     }
 
@@ -765,17 +736,10 @@ async function handleOptimizationSelection(
         (!selectedDemographics.selectedAgeGroups?.length &&
           !selectedDemographics.selectedGenderGroups?.length)
       ) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message:
-              "Selected demographics are required for optimizing existing items",
-          }),
-        };
+        return createResponse(400, {
+          message:
+            "Selected demographics are required for optimizing existing items",
+        });
       }
 
       requiredData = {
@@ -789,17 +753,10 @@ async function handleOptimizationSelection(
 
       // Validate selected specialty dishes for suggestions
       if (!selectedSpecialtyDishes?.length) {
-        return {
-          statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify({
-            message:
-              "Selected specialty dishes are required for suggesting new items",
-          }),
-        };
+        return createResponse(400, {
+          message:
+            "Selected specialty dishes are required for suggesting new items",
+        });
       }
 
       requiredData = {
@@ -811,26 +768,19 @@ async function handleOptimizationSelection(
     }
 
     // Return routing information for the frontend
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        success: true,
-        restaurantId,
-        selectedOption,
-        nextEndpoint,
-        nextAction,
-        requiredData,
-        message: `Ready to proceed with ${
-          selectedOption === "optimize-existing"
-            ? "optimizing existing menu items"
-            : "suggesting new menu items"
-        }`,
-      }),
-    };
+    return createResponse(200, {
+      success: true,
+      restaurantId,
+      selectedOption,
+      nextEndpoint,
+      nextAction,
+      requiredData,
+      message: `Ready to proceed with ${
+        selectedOption === "optimize-existing"
+          ? "optimizing existing menu items"
+          : "suggesting new menu items"
+      }`,
+    });
   } catch (error: any) {
     console.error("Error handling optimization selection:", error);
 
