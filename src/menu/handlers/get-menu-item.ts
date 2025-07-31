@@ -20,21 +20,14 @@ export const handler = async (
       return createResponse(200, {});
     }
 
-    // Get item ID from path parameters
-    const itemId = event.pathParameters?.itemId;
+    // Get item ID from query parameters
+    const itemId = event.queryStringParameters?.itemId;
 
     // Validate item ID
     if (!itemId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required parameter: itemId",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required parameter: itemId",
+      });
     }
 
     // Get menu item from repository
@@ -43,42 +36,21 @@ export const handler = async (
 
     // Check if menu item exists
     if (!menuItem) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Menu item with ID ${itemId} not found`,
-        }),
-      };
+      return createResponse(404, {
+        message: `Menu item with ID ${itemId} not found`,
+      });
     }
 
     // Return menu item
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        menuItem,
-      }),
-    };
+    return createResponse(200, {
+      menuItem,
+    });
   } catch (error: any) {
     console.error("Error getting menu item:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error getting menu item",
-        error: error.message || String(error),
-      }),
-    };
+    return createResponse(500, {
+      message: "Error getting menu item",
+      error: error.message || String(error),
+    });
   }
 };

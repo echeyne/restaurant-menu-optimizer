@@ -21,21 +21,14 @@ export const handler = async (
       return createResponse(200, {});
     }
 
-    // Get item ID from path parameters
-    const itemId = event.pathParameters?.itemId;
+    // Get item ID from query parameters
+    const itemId = event.queryStringParameters?.itemId;
 
     // Validate item ID
     if (!itemId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required parameter: itemId",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required parameter: itemId",
+      });
     }
 
     // Get menu item repository
@@ -44,46 +37,25 @@ export const handler = async (
     // Check if menu item exists
     const existingItem = await menuItemRepository.getById(itemId);
     if (!existingItem) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: `Menu item with ID ${itemId} not found`,
-        }),
-      };
+      return createResponse(404, {
+        message: `Menu item with ID ${itemId} not found`,
+      });
     }
 
     // Delete menu item
     await menuItemRepository.delete(itemId);
 
     // Return success response
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Menu item deleted successfully",
-        itemId,
-      }),
-    };
+    return createResponse(200, {
+      message: "Menu item deleted successfully",
+      itemId,
+    });
   } catch (error: any) {
     console.error("Error deleting menu item:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error deleting menu item",
-        error: error.message || String(error),
-      }),
-    };
+    return createResponse(500, {
+      message: "Error deleting menu item",
+      error: error.message || String(error),
+    });
   }
 };

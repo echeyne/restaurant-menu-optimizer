@@ -324,54 +324,6 @@ functions:
           - cognito-idp:SignUp
         Resource: "*"
 
-  RegisterRestaurant:
-    handler: src/auth/handlers/register-restaurant.handler
-    events:
-      - http:
-          path: auth/register
-          method: post
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            schemas:
-              application/json:
-                schema:
-                  type: object
-                  required:
-                    - email
-                    - password
-                  properties:
-                    email:
-                      type: string
-                      format: email
-                    password:
-                      type: string
-                      minLength: 8
-    environment:
-      USER_POOL_ID: ${self:provider.environment.USER_POOL_ID}
-      CLIENT_ID: ${self:provider.environment.CLIENT_ID}
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - cognito-idp:SignUp
-          - cognito-idp:AdminConfirmSignUp
-          - cognito-idp:InitiateAuth
-          - cognito-idp:GetUser
-        Resource: "*"
-      - Effect: Allow
-        Action:
-          - dynamodb:Scan
-        Resource: "*"
-
   Login:
     handler: src/auth/handlers/login.handler
     events:
@@ -1328,126 +1280,127 @@ functions:
           - dynamodb:Query
         Resource: "*"
 
-  AnalyzeTasteProfile:
-    handler: src/menu/handlers/analyze-taste-profile.handler
-    events:
-      - http:
-          path: menu/analyze-taste-profile
-          method: post
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            schemas:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    itemId:
-                      type: string
-                    restaurantId:
-                      type: string
-                    includeIngredients:
-                      type: boolean
-                    includeDietaryTags:
-                      type: boolean
-                    batchSize:
-                      type: number
-                      minimum: 1
-                      maximum: 25
-                  oneOf:
-                    - required: ["itemId"]
-                    - required: ["restaurantId"]
-      - http:
-          path: menu/analyze-taste-profile
-          method: options
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-    environment:
-      STAGE: ${self:provider.stage}
-      QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:UpdateItem
-          - dynamodb:Query
-          - dynamodb:PutItem
-        Resource: "*"
-      - Effect: Allow
-        Action:
-          - ssm:GetParameter
-        Resource: "*"
+  # Add back in once dashboard and analytics are fully implemented
+  # AnalyzeTasteProfile:
+  #   handler: src/menu/handlers/analyze-taste-profile.handler
+  #   events:
+  #     - http:
+  #         path: menu/analyze-taste-profile
+  #         method: post
+  #         cors:
+  #           origin: "*"
+  #           headers:
+  #             - Content-Type
+  #             - X-Amz-Date
+  #             - Authorization
+  #             - X-Api-Key
+  #             - X-Amz-Security-Token
+  #             - X-Amz-User-Agent
+  #           allowCredentials: true
+  #         request:
+  #           schemas:
+  #             application/json:
+  #               schema:
+  #                 type: object
+  #                 properties:
+  #                   itemId:
+  #                     type: string
+  #                   restaurantId:
+  #                     type: string
+  #                   includeIngredients:
+  #                     type: boolean
+  #                   includeDietaryTags:
+  #                     type: boolean
+  #                   batchSize:
+  #                     type: number
+  #                     minimum: 1
+  #                     maximum: 25
+  #                 oneOf:
+  #                   - required: ["itemId"]
+  #                   - required: ["restaurantId"]
+  #     - http:
+  #         path: menu/analyze-taste-profile
+  #         method: options
+  #         cors:
+  #           origin: "*"
+  #           headers:
+  #             - Content-Type
+  #             - X-Amz-Date
+  #             - Authorization
+  #             - X-Api-Key
+  #             - X-Amz-Security-Token
+  #             - X-Amz-User-Agent
+  #           allowCredentials: true
+  #   environment:
+  #     STAGE: ${self:provider.stage}
+  #     QLOO_API_URL: ${env:QLOO_API_URL, 'https://hackathon.api.qloo.com'}
+  #   iamRoleStatements:
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:GetItem
+  #         - dynamodb:UpdateItem
+  #         - dynamodb:Query
+  #         - dynamodb:PutItem
+  #       Resource: "*"
+  #     - Effect: Allow
+  #       Action:
+  #         - ssm:GetParameter
+  #       Resource: "*"
 
-  CompareTasteProfiles:
-    handler: src/menu/handlers/compare-taste-profiles.handler
-    events:
-      - http:
-          path: menu/compare-taste-profiles
-          method: post
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-          request:
-            schemas:
-              application/json:
-                schema:
-                  type: object
-                  required:
-                    - item1Id
-                    - item2Id
-                  properties:
-                    item1Id:
-                      type: string
-                    item2Id:
-                      type: string
-                    restaurantId:
-                      type: string
-      - http:
-          path: menu/compare-taste-profiles
-          method: options
-          cors:
-            origin: "*"
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-    environment:
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:UpdateItem
-          - dynamodb:Query
-          - dynamodb:PutItem
-        Resource: "*"
+  # CompareTasteProfiles:
+  #   handler: src/menu/handlers/compare-taste-profiles.handler
+  #   events:
+  #     - http:
+  #         path: menu/compare-taste-profiles
+  #         method: post
+  #         cors:
+  #           origin: "*"
+  #           headers:
+  #             - Content-Type
+  #             - X-Amz-Date
+  #             - Authorization
+  #             - X-Api-Key
+  #             - X-Amz-Security-Token
+  #             - X-Amz-User-Agent
+  #           allowCredentials: true
+  #         request:
+  #           schemas:
+  #             application/json:
+  #               schema:
+  #                 type: object
+  #                 required:
+  #                   - item1Id
+  #                   - item2Id
+  #                 properties:
+  #                   item1Id:
+  #                     type: string
+  #                   item2Id:
+  #                     type: string
+  #                   restaurantId:
+  #                     type: string
+  #     - http:
+  #         path: menu/compare-taste-profiles
+  #         method: options
+  #         cors:
+  #           origin: "*"
+  #           headers:
+  #             - Content-Type
+  #             - X-Amz-Date
+  #             - Authorization
+  #             - X-Api-Key
+  #             - X-Amz-Security-Token
+  #             - X-Amz-User-Agent
+  #           allowCredentials: true
+  #   environment:
+  #     STAGE: ${self:provider.stage}
+  #   iamRoleStatements:
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:GetItem
+  #         - dynamodb:UpdateItem
+  #         - dynamodb:Query
+  #         - dynamodb:PutItem
+  #       Resource: "*"
 
   GetMenuItems:
     handler: src/menu/handlers/get-menu-items.handler
@@ -1666,24 +1619,25 @@ functions:
           - dynamodb:GetItem
         Resource: "*"
 
-  ScheduledAnalyticsUpdate:
-    handler: src/analytics/handlers/scheduled-analytics-update.handler
-    events:
-      - schedule:
-          rate: rate(1 hour)
-          enabled: true
-          description: "Update analytics data for all restaurants every hour"
-    environment:
-      STAGE: ${self:provider.stage}
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-          - dynamodb:Query
-          - dynamodb:Scan
-        Resource: "*"
+  # re-enable once dashboard and analytics are fully implemented
+  # ScheduledAnalyticsUpdate:
+  #   handler: src/analytics/handlers/scheduled-analytics-update.handler
+  #   events:
+  #     - schedule:
+  #         rate: rate(1 hours)
+  #         enabled: true
+  #         description: "Update analytics data for all restaurants every hour"
+  #   environment:
+  #     STAGE: ${self:provider.stage}
+  #   iamRoleStatements:
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:GetItem
+  #         - dynamodb:PutItem
+  #         - dynamodb:UpdateItem
+  #         - dynamodb:Query
+  #         - dynamodb:Scan
+  #       Resource: "*"
 
   GetDashboardData:
     handler: src/analytics/handlers/get-dashboard-data.handler

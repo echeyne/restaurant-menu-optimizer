@@ -592,13 +592,32 @@ class MenuItemDetailScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
-        child: ElevatedButton.icon(
-          onPressed: () => _editMenuItem(context),
-          icon: const Icon(Icons.edit),
-          label: const Text('Edit Menu Item'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _editMenuItem(context),
+                icon: const Icon(Icons.edit),
+                label: const Text('Edit'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _deleteMenuItem(context),
+                icon: const Icon(Icons.delete),
+                label: const Text('Delete'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
