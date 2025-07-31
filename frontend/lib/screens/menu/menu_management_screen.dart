@@ -72,30 +72,6 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
         menuProvider.getMenuItems(restaurantId),
         menuProvider.refreshOptimizationResults(restaurantId),
       ]);
-
-      // Show notification if optimization results were just loaded
-      if (menuProvider.optimizationResultsJustLoaded && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              menuProvider.hasPendingOptimizations
-                  ? 'Optimization is still in progress. Check back later for results.'
-                  : 'Optimization results are ready!',
-            ),
-            backgroundColor: menuProvider.hasPendingOptimizations
-                ? Colors.orange[600]
-                : Colors.green[600],
-            action: SnackBarAction(
-              label: 'View',
-              textColor: Colors.white,
-              onPressed: () => Navigator.of(context).pushNamed(
-                AppRoutes.optimizationReview,
-                arguments: menuProvider.optimizationType,
-              ),
-            ),
-          ),
-        );
-      }
     }
   }
 
