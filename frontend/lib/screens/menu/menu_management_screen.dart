@@ -19,11 +19,10 @@ class MenuManagementScreen extends StatefulWidget {
 
 class _MenuManagementScreenState extends State<MenuManagementScreen>
     with RestaurantLoaderMixin {
-  bool _isGridView = false;
   String _selectedCategory = 'All';
+  String _selectedStatus = 'Active'; // Add status filter
   final TextEditingController _searchController = TextEditingController();
   bool _isParsingMenu = false;
-  String? _uploadedFileId;
 
   @override
   void initState() {
@@ -179,7 +178,6 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
         if (uploadResponse != null && uploadResponse.status == 'success') {
           setState(() {
             _isParsingMenu = true;
-            _uploadedFileId = uploadResponse.fileId;
           });
 
           if (mounted) {
@@ -265,6 +263,14 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
   List<MenuItem> _getFilteredItems(List<MenuItem> items) {
     List<MenuItem> filtered = items;
 
+    // Filter by status (Active/Inactive)
+    if (_selectedStatus == 'Active') {
+      filtered = filtered.where((item) => item.isActive).toList();
+    } else if (_selectedStatus == 'Inactive') {
+      filtered = filtered.where((item) => !item.isActive).toList();
+    }
+    // If _selectedStatus is 'All', no status filtering is applied
+
     // Filter by category
     if (_selectedCategory != 'All') {
       filtered =
@@ -287,6 +293,10 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
   Set<String> _getCategories(List<MenuItem> items) {
     final categories = items.map((item) => item.category).toSet();
     return {'All', ...categories};
+  }
+
+  Set<String> _getStatusOptions() {
+    return {'All', 'Active', 'Inactive'};
   }
 
   @override
@@ -331,6 +341,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
 
         final filteredItems = _getFilteredItems(menuProvider.menuItems);
         final categories = _getCategories(menuProvider.menuItems);
+        final statusOptions = _getStatusOptions();
 
         return Scaffold(
           appBar: AppBar(
@@ -410,16 +421,6 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                       icon: const Icon(Icons.upload_file),
                       onPressed: _isParsingMenu ? null : _uploadMenu,
                       label: Text('Upload Menu'),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-                      onPressed: () {
-                        setState(() {
-                          _isGridView = !_isGridView;
-                        });
-                      },
-                      label: Text(_isGridView ? 'List View' : 'Grid View'),
                     ),
                     const Spacer(),
                     if (!_isParsingMenu) ...[
@@ -508,6 +509,31 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                         },
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    // Status filter
+                    SizedBox(
+                      height: 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: statusOptions.length,
+                        itemBuilder: (context, index) {
+                          final status = statusOptions.elementAt(index);
+                          final isSelected = status == _selectedStatus;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(status),
+                              selected: isSelected,
+                              onSelected: (_) {
+                                setState(() {
+                                  _selectedStatus = status;
+                                });
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -576,9 +602,17 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                                   ],
                                 ),
                               )
-                            : _isGridView
-                                ? _buildGridView(filteredItems)
-                                : _buildListView(filteredItems),
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: filteredItems.length,
+                                itemBuilder: (context, index) {
+                                  final item = filteredItems[index];
+                                  return MenuItemCard(
+                                    item: item,
+                                    onTap: () => _showMenuItemDetail(item),
+                                  );
+                                },
+                              ),
               ),
             ],
           ),
@@ -588,40 +622,6 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                   child: const Icon(Icons.add),
                 )
               : null,
-        );
-      },
-    );
-  }
-
-  Widget _buildListView(List<MenuItem> items) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return MenuItemCard(
-          item: item,
-          onTap: () => _showMenuItemDetail(item),
-        );
-      },
-    );
-  }
-
-  Widget _buildGridView(List<MenuItem> items) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return MenuItemGridCard(
-          item: item,
-          onTap: () => _showMenuItemDetail(item),
         );
       },
     );
@@ -693,6 +693,26 @@ class MenuItemCard extends StatelessWidget {
                     item.category,
                     style: TextStyle(
                       color: Theme.of(context).primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: item.isActive
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    item.isActive ? 'Active' : 'Inactive',
+                    style: TextStyle(
+                      color:
+                          item.isActive ? Colors.green[700] : Colors.red[700],
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -828,6 +848,27 @@ class MenuItemGridCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: item.isActive
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        item.isActive ? 'Active' : 'Inactive',
+                        style: TextStyle(
+                          color: item.isActive
+                              ? Colors.green[700]
+                              : Colors.red[700],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                     if (item.isAiGenerated) ...[
                       const SizedBox(height: 4),

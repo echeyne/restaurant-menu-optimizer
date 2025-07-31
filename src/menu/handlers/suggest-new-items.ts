@@ -399,6 +399,7 @@ REQUIREMENTS:
 - If specific dish requests are provided, prioritize creating variations of those dishes
 - Avoid duplicating existing menu items
 - Create appealing names and descriptions that would attract the target demographics
+- Keep the description concise and to the point
 - Provide realistic price estimates based on the restaurant's price level
 - Include suggested ingredients and dietary tags where appropriate
 - Ensure suggestions are feasible for the restaurant to prepare

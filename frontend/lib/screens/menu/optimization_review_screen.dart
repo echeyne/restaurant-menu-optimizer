@@ -807,45 +807,6 @@ class _OptimizationReviewScreenState extends State<OptimizationReviewScreen>
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Optimization Review'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context)
-              .pushReplacementNamed(AppRoutes.optimizationOptions),
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No optimization results found',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Please go back and try the optimization again.',
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context)
-                  .pushReplacementNamed(AppRoutes.optimizationOptions),
-              child: const Text('Back to Options'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   String _getItemId(dynamic item) {
     if (item is OptimizedMenuItem) {
       return item.itemId;

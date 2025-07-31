@@ -369,7 +369,10 @@ function buildSelectedDemographicInsights(
 
     if (selectedAgeGroupData.length > 0) {
       const ageGroupNames = selectedAgeGroupData.map(
-        (ag) => `${ag.ageRange} (${(ag.percentage * 100).toFixed(1)}%)`
+        (ag) =>
+          `${ag.ageRange} (current affinity ${(ag.percentage * 100).toFixed(
+            1
+          )}%)`
       );
       insights.push(`Target age groups: ${ageGroupNames.join(", ")}`);
 
@@ -514,6 +517,7 @@ OPTIMIZATION REQUIREMENTS:
 - Cuisine Context: ${cuisine}
 - Keep the essence and accuracy of the original dish
 - Make the name and description more appealing to the target demographic
+- Keep the description concise and to the point
 - Use language and terminology that resonates with the customer base
 - Highlight aspects that would appeal to their interests and preferences
 - Draw inspiration from successful dishes in similar restaurants for naming and description techniques
