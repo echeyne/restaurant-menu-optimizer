@@ -97,6 +97,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 32),
                       TextFormField(
+                        autofillHints: const [
+                          AutofillHints.email,
+                          AutofillHints.username
+                        ],
                         controller: _emailController,
                         decoration: const InputDecoration(
                           labelText: 'Email',
@@ -116,6 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
+                        autofillHints: const [AutofillHints.password],
                         controller: _passwordController,
                         decoration: InputDecoration(
                           labelText: 'Password',

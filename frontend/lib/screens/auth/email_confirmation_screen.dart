@@ -6,14 +6,15 @@ import '../../utils/app_routes.dart';
 
 class EmailConfirmationScreen extends StatefulWidget {
   final String email;
-  
+
   const EmailConfirmationScreen({
     super.key,
     required this.email,
   });
 
   @override
-  State<EmailConfirmationScreen> createState() => _EmailConfirmationScreenState();
+  State<EmailConfirmationScreen> createState() =>
+      _EmailConfirmationScreenState();
 }
 
 class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
@@ -36,7 +37,14 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
       );
 
       if (success && mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.restaurantSetup);
+        // Show success message and redirect to login
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email confirmed successfully! You can now sign in.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
     }
   }
@@ -71,7 +79,7 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+            Navigator.of(context).pop();
           },
         ),
       ),
@@ -119,8 +127,8 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
                       Text(
                         widget.email,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
@@ -150,30 +158,34 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
                       const SizedBox(height: 24),
                       Consumer<AuthProvider>(
                         builder: (context, authProvider, child) {
-                          if (authProvider.error != null) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Text(
-                                authProvider.error!,
-                                style: TextStyle(color: Theme.of(context).colorScheme.error),
-                                textAlign: TextAlign.center,
+                          return Column(
+                            children: [
+                              if (authProvider.error != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Text(
+                                    authProvider.error!,
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .error),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ElevatedButton(
+                                onPressed: authProvider.isLoading
+                                    ? null
+                                    : _handleConfirmCode,
+                                child: authProvider.isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : const Text('Confirm Email'),
                               ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                      Consumer<AuthProvider>(
-                        builder: (context, authProvider, child) {
-                          return ElevatedButton(
-                            onPressed: authProvider.isLoading ? null : _handleConfirmCode,
-                            child: authProvider.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Text('Confirm Email'),
+                            ],
                           );
                         },
                       ),
@@ -184,14 +196,15 @@ class _EmailConfirmationScreenState extends State<EmailConfirmationScreen> {
                             ? const SizedBox(
                                 height: 16,
                                 width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('Resend Code'),
                       ),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+                          Navigator.of(context).pop();
                         },
                         child: const Text('Back to Sign In'),
                       ),

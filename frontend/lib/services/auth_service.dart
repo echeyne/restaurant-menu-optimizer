@@ -65,7 +65,7 @@ class AuthService {
     // Registration successful, confirmation email sent
   }
 
-  Future<AuthResponse> confirmEmail(String email, String code) async {
+  Future<void> confirmEmail(String email, String code) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/confirm-registration'),
       headers: {'Content-Type': 'application/json'},
@@ -76,9 +76,13 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
-      await _saveTokens(authResponse);
-      return authResponse;
+      final responseBody = jsonDecode(response.body);
+      if (responseBody['success'] == true) {
+        // Email confirmation successful
+        return;
+      } else {
+        throw Exception(responseBody['message'] ?? 'Email confirmation failed');
+      }
     } else {
       throw Exception('Email confirmation failed: ${response.body}');
     }

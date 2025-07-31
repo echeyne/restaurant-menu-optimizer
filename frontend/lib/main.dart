@@ -60,7 +60,9 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
               break;
             case AppRoutes.emailConfirmation:
               final email = settings.arguments as String;
-              page = EmailConfirmationScreen(email: email);
+              page = EmailConfirmationScreen(
+                email: email,
+              );
               break;
             case AppRoutes.restaurantSetup:
               page = const RestaurantProfileSetupScreen();

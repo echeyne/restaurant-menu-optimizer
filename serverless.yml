@@ -1180,6 +1180,7 @@ functions:
 
   OptimizeExistingItems:
     handler: src/menu/handlers/optimize-existing-items.handler
+    timeout: 300
     events:
       - http:
           path: menu/optimize-existing-items
@@ -1245,6 +1246,7 @@ functions:
 
   SuggestNewItems:
     handler: src/menu/handlers/suggest-new-items.handler
+    timeout: 300
     events:
       - http:
           path: menu/suggest-new-items
@@ -1981,6 +1983,26 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: itemId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: restaurantId-index
+            KeySchema:
+              - AttributeName: restaurantId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+    suggestionstable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.stage}-suggestions
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: suggestionId
+            AttributeType: S
+          - AttributeName: restaurantId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: suggestionId
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: restaurantId-index

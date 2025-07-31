@@ -17,9 +17,6 @@ import {
   Restaurant,
   MenuItemSuggestion,
   SpecialtyDish,
-  SimilarRestaurant,
-  AgeGroupData,
-  GenderData,
 } from "../../models/database";
 import { createResponse } from "../../models/api";
 import { getUserIdFromToken } from "../../utils/auth-utils";
@@ -95,32 +92,18 @@ export const handler = async (
 
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Request body is required",
-        }),
-      };
+      return createResponse(400, {
+        message: "Request body is required",
+      });
     }
 
     const request: SuggestNewItemsRequest = JSON.parse(event.body);
 
     // Validate required fields
     if (!request.restaurantId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required field: restaurantId",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required field: restaurantId",
+      });
     }
 
     // Initialize repositories and services
@@ -129,21 +112,13 @@ export const handler = async (
     const menuItemRepository = new MenuItemRepository();
     const restaurantRepository = new RestaurantRepository();
     const suggestionRepository = new SuggestionRepository();
-    const llmService = new LLMService();
 
     // Get restaurant profile
     const restaurant = await restaurantRepository.getById(request.restaurantId);
     if (!restaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Restaurant not found",
-        }),
-      };
+      return createResponse(404, {
+        message: "Restaurant not found",
+      });
     }
 
     // Get similar restaurant data
@@ -151,17 +126,10 @@ export const handler = async (
       request.restaurantId
     );
     if (!similarRestaurantData) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Similar restaurant data not found. Please complete restaurant profile setup first.",
-        }),
-      };
+      return createResponse(400, {
+        message:
+          "Similar restaurant data not found. Please complete restaurant profile setup first.",
+      });
     }
 
     // Get demographics data
@@ -169,17 +137,10 @@ export const handler = async (
       request.restaurantId
     );
     if (!demographicsData) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Demographics data not found. Please complete restaurant profile setup first.",
-        }),
-      };
+      return createResponse(400, {
+        message:
+          "Demographics data not found. Please complete restaurant profile setup first.",
+      });
     }
 
     // Get existing menu items to avoid duplicates
@@ -194,7 +155,6 @@ export const handler = async (
       similarRestaurantData,
       demographicsData,
       existingMenuItems,
-      llmService,
       {
         maxSuggestions,
         cuisineType: request.cuisineType,
@@ -226,28 +186,14 @@ export const handler = async (
       ],
     };
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify(response),
-    };
+    return createResponse(200, response);
   } catch (error: any) {
     console.error("Error suggesting new menu items:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error suggesting new menu items",
-        error: error.message || String(error),
-      }),
-    };
+    return createResponse(500, {
+      message: "Error suggesting new menu items",
+      error: error.message || String(error),
+    });
   }
 };
 
@@ -257,7 +203,6 @@ export const handler = async (
  * @param similarRestaurantData Similar restaurant data with specialty dishes
  * @param demographicsData Demographics data for the restaurant
  * @param existingMenuItems Existing menu items to avoid duplicates
- * @param llmService LLM service instance
  * @param options Generation options
  * @returns Array of menu item suggestions
  */
@@ -266,7 +211,6 @@ async function generateMenuItemSuggestions(
   similarRestaurantData: SimilarRestaurantData,
   demographicsData: DemographicsData,
   existingMenuItems: MenuItem[],
-  llmService: LLMService,
   options: {
     maxSuggestions: number;
     cuisineType?: string;
@@ -298,6 +242,9 @@ async function generateMenuItemSuggestions(
   const existingDishNames = existingMenuItems.map((item) =>
     item.name.toLowerCase()
   );
+
+  // Initialize LLM service
+  const llmService = new LLMService();
 
   // Create LLM prompt for generating suggestions
   const prompt = createSuggestionPrompt(
