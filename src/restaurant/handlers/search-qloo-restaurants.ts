@@ -147,21 +147,53 @@ export const handler = async (
 
     console.log("Qloo API response:", JSON.stringify(response.data, null, 2));
 
+    // Check if response has the expected structure
+    if (!response.data.results || !Array.isArray(response.data.results)) {
+      console.error("Unexpected Qloo API response structure:", response.data);
+      return {
+        statusCode: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Methods": "POST,OPTIONS",
+        },
+        body: JSON.stringify({
+          success: false,
+          message: "Unexpected response structure from Qloo API",
+          data: response.data,
+        }),
+      };
+    }
+
     // Extract and format results (limit to 10 as per requirements)
-    const restaurants = response.data.results?.slice(0, 10) || [];
+    const restaurants = response.data.results.slice(0, 10);
 
     const formattedRestaurants: QlooSearchResult[] = restaurants.map(
-      (restaurant: any) => ({
-        name: restaurant.name || "",
-        entityId: restaurant.entity_id || restaurant.id || "",
-        description: restaurant.properties.description,
-        address: restaurant.properties?.address || "",
-        priceLevel: restaurant.properties?.price_level || 0,
-        cuisine: extractCuisineFromTags(restaurant.tags || []),
-        popularity: restaurant.popularity,
-        specialtyDishes: restaurant.properties?.specialty_dishes || [],
-        businessRating: restaurant.properties?.business_rating || 0,
-      })
+      (restaurant: any, index: number) => {
+        console.log(
+          `Processing restaurant ${index + 1}:`,
+          JSON.stringify(restaurant, null, 2)
+        );
+
+        const formatted = {
+          name: restaurant.name || "",
+          entityId: restaurant.entity_id || restaurant.id || "",
+          description: restaurant.properties?.description || "",
+          address: restaurant.properties?.address || "",
+          priceLevel: restaurant.properties?.price_level || 0,
+          cuisine: extractCuisineFromTags(restaurant.tags || []),
+          popularity: restaurant.popularity || 0,
+          specialtyDishes: restaurant.properties?.specialty_dishes || [],
+          businessRating: restaurant.properties?.business_rating || 0,
+        };
+
+        console.log(
+          `Formatted restaurant ${index + 1}:`,
+          JSON.stringify(formatted, null, 2)
+        );
+        return formatted;
+      }
     );
 
     const locationText = geocodeResult

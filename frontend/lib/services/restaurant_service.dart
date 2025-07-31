@@ -56,6 +56,13 @@ class RestaurantService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        // Check if the response indicates success
+        if (data['success'] == false) {
+          throw Exception(
+              'Search failed: ${data['message'] ?? 'Unknown error'}');
+        }
+
         final List<dynamic> results = data['restaurants'] ?? [];
         return results.map((json) => QlooSearchResult.fromJson(json)).toList();
       } else {

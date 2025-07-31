@@ -119,8 +119,28 @@ class QlooSearchResult {
     required this.specialtyDishes,
   });
 
-  factory QlooSearchResult.fromJson(Map<String, dynamic> json) =>
-      _$QlooSearchResultFromJson(json);
+  factory QlooSearchResult.fromJson(Map<String, dynamic> json) {
+    try {
+      return _$QlooSearchResultFromJson(json);
+    } catch (e) {
+      // Handle potential null values in numeric fields
+      return QlooSearchResult(
+        name: json['name'] as String? ?? '',
+        entityId: json['entityId'] as String? ?? '',
+        address: json['address'] as String? ?? '',
+        priceLevel: (json['priceLevel'] as num?)?.toInt() ?? 0,
+        cuisine: json['cuisine'] as String?,
+        popularity: (json['popularity'] as num?)?.toDouble() ?? 0.0,
+        description: json['description'] as String?,
+        businessRating: (json['businessRating'] as num?)?.toDouble() ?? 0.0,
+        specialtyDishes: (json['specialtyDishes'] as List<dynamic>?)
+                ?.map((e) =>
+                    SpecialtyDishInfo.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [],
+      );
+    }
+  }
   Map<String, dynamic> toJson() => _$QlooSearchResultToJson(this);
 }
 
@@ -138,8 +158,19 @@ class SpecialtyDishInfo {
     required this.weight,
   });
 
-  factory SpecialtyDishInfo.fromJson(Map<String, dynamic> json) =>
-      _$SpecialtyDishInfoFromJson(json);
+  factory SpecialtyDishInfo.fromJson(Map<String, dynamic> json) {
+    try {
+      return _$SpecialtyDishInfoFromJson(json);
+    } catch (e) {
+      // Handle potential null values in numeric fields
+      return SpecialtyDishInfo(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        type: json['type'] as String? ?? '',
+        weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
+      );
+    }
+  }
   Map<String, dynamic> toJson() => _$SpecialtyDishInfoToJson(this);
 }
 
