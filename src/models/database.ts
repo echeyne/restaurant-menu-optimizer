@@ -76,8 +76,11 @@ export interface MenuItem {
   restaurantId: string; // GSI
   name: string;
   description: string;
+  enhancedName?: string; // LLM-generated enhanced name
   enhancedDescription?: string; // LLM-generated description
+  enhancedNameStatus?: "pending" | "approved" | "rejected"; // Status of the enhanced name
   enhancedDescriptionStatus?: "pending" | "approved" | "rejected"; // Status of the enhanced description
+  enhancedNameHistory?: EnhancedNameVersion[]; // History of enhanced names
   enhancedDescriptionHistory?: EnhancedDescriptionVersion[]; // History of enhanced descriptions
   price: number;
   category: string;
@@ -90,6 +93,17 @@ export interface MenuItem {
   isAiGenerated: boolean; // Flag for AI-generated menu items
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * EnhancedNameVersion for tracking history of enhanced names
+ */
+export interface EnhancedNameVersion {
+  name: string;
+  createdAt: string;
+  enhancementStyle?: string;
+  targetAudience?: string;
+  llmProvider?: string;
 }
 
 /**

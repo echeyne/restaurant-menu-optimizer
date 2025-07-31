@@ -74,9 +74,21 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
               page = const OptimizationOptionsScreen();
               break;
             case AppRoutes.optimizationReview:
-              final optimizationType = settings.arguments as String;
-              page =
-                  OptimizationReviewScreen(optimizationType: optimizationType);
+              final args = settings.arguments;
+              if (args is Map<String, dynamic>) {
+                page = OptimizationReviewScreen(
+                  optimizationType: args['optimizationType'] as String,
+                  isLoading: args['isLoading'] as bool? ?? false,
+                  optimizationData:
+                      args['optimizationData'] as Map<String, dynamic>?,
+                );
+              } else if (args is String) {
+                // Handle legacy string argument format
+                page = OptimizationReviewScreen(optimizationType: args);
+              } else {
+                page = const OptimizationReviewScreen(
+                    optimizationType: 'optimize-existing');
+              }
               break;
             case AppRoutes.dashboard:
               page = const DashboardScreen();

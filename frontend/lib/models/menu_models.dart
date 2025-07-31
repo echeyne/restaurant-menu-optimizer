@@ -9,6 +9,7 @@ class MenuItem {
   final String restaurantId;
   final String name;
   final String description;
+  final String? enhancedName;
   final String? enhancedDescription;
   final double price;
   final String category;
@@ -25,6 +26,7 @@ class MenuItem {
     required this.restaurantId,
     required this.name,
     required this.description,
+    this.enhancedName,
     this.enhancedDescription,
     required this.price,
     required this.category,
@@ -42,6 +44,7 @@ class MenuItem {
     String? restaurantId,
     String? name,
     String? description,
+    String? enhancedName,
     String? enhancedDescription,
     double? price,
     String? category,
@@ -58,6 +61,7 @@ class MenuItem {
       restaurantId: restaurantId ?? this.restaurantId,
       name: name ?? this.name,
       description: description ?? this.description,
+      enhancedName: enhancedName ?? this.enhancedName,
       enhancedDescription: enhancedDescription ?? this.enhancedDescription,
       price: price ?? this.price,
       category: category ?? this.category,

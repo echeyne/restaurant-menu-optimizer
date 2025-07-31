@@ -22,6 +22,7 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _enhancedNameController = TextEditingController();
   final _enhancedDescriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _categoryController = TextEditingController();
@@ -77,6 +78,7 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
     final item = widget.item!;
     _nameController.text = item.name;
     _descriptionController.text = item.description;
+    _enhancedNameController.text = item.enhancedName ?? '';
     _enhancedDescriptionController.text = item.enhancedDescription ?? '';
     _priceController.text = item.price.toString();
     _categoryController.text = item.category;
@@ -92,6 +94,7 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _enhancedNameController.dispose();
     _enhancedDescriptionController.dispose();
     _priceController.dispose();
     _categoryController.dispose();
@@ -232,6 +235,9 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
       restaurantId: widget.restaurantId,
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
+      enhancedName: _enhancedNameController.text.trim().isEmpty
+          ? null
+          : _enhancedNameController.text.trim(),
       enhancedDescription: _enhancedDescriptionController.text.trim().isEmpty
           ? null
           : _enhancedDescriptionController.text.trim(),
@@ -346,6 +352,19 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
                               }
                               return null;
                             },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _enhancedNameController,
+                            decoration: InputDecoration(
+                              labelText: 'Enhanced Name',
+                              hintText: 'AI-enhanced name (optional)',
+                              prefixIcon: const Icon(Icons.auto_awesome),
+                              border: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.blue[300]!),
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(

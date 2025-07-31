@@ -11,12 +11,38 @@ class MenuProvider extends ChangeNotifier {
   List<MenuItemSuggestion> _suggestions = [];
   bool _isLoading = false;
   String? _error;
+  bool _hadOptimizationResults = false;
 
   List<MenuItem> get menuItems => _menuItems;
   List<OptimizedMenuItem> get optimizedItems => _optimizedItems;
   List<MenuItemSuggestion> get suggestions => _suggestions;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  /// Check if any optimization results are available
+  bool get hasOptimizationResults =>
+      _optimizedItems.isNotEmpty || _suggestions.isNotEmpty;
+
+  /// Check if optimization results were just loaded (for notifications)
+  bool get optimizationResultsJustLoaded {
+    final hasResults = hasOptimizationResults;
+    final justLoaded = hasResults && !_hadOptimizationResults;
+    _hadOptimizationResults = hasResults;
+    return justLoaded;
+  }
+
+  /// Get the type of optimization results available
+  String? get optimizationType {
+    if (_optimizedItems.isNotEmpty) return 'optimize-existing';
+    if (_suggestions.isNotEmpty) return 'suggest-new-items';
+    return null;
+  }
+
+  /// Check if there are any pending optimizations (in progress)
+  bool get hasPendingOptimizations {
+    return _optimizedItems.any((item) => item.status == 'pending') ||
+        _suggestions.any((item) => item.status == 'pending');
+  }
 
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -96,6 +122,10 @@ class MenuProvider extends ChangeNotifier {
 
     try {
       _menuItems = await _menuService.getMenuItems(restaurantId);
+
+      // Also try to load any existing optimization results
+      await _loadOptimizationResultsIfAvailable(restaurantId);
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -226,6 +256,16 @@ class MenuProvider extends ChangeNotifier {
     }
   }
 
+  /// Remove processed items after a delay
+  void removeProcessedItem(String type, String itemId) {
+    if (type == 'existing_items') {
+      _optimizedItems.removeWhere((item) => item.itemId == itemId);
+    } else if (type == 'new_items') {
+      _suggestions.removeWhere((item) => item.suggestionId == itemId);
+    }
+    notifyListeners();
+  }
+
   Future<bool> deleteMenuItem(String itemId) async {
     _setLoading(true);
     _setError(null);
@@ -319,5 +359,54 @@ class MenuProvider extends ChangeNotifier {
 
   void clearError() {
     _setError(null);
+  }
+
+  /// Clear all optimization results
+  void clearOptimizationResults() {
+    _optimizedItems.clear();
+    _suggestions.clear();
+    notifyListeners();
+  }
+
+  /// Try to load optimization results if they exist
+  Future<void> _loadOptimizationResultsIfAvailable(String restaurantId) async {
+    try {
+      // Try to load existing items optimization results
+      await fetchOptimizationResults(restaurantId, 'existing_items');
+    } catch (e) {
+      // If no existing items results, try new items suggestions
+      try {
+        await fetchOptimizationResults(restaurantId, 'new_items');
+      } catch (e) {
+        // No optimization results available, which is fine
+      }
+    }
+  }
+
+  /// Refresh optimization results for the current restaurant
+  Future<bool> refreshOptimizationResults(String restaurantId) async {
+    try {
+      // Try both types of optimization results
+      bool hasResults = false;
+
+      try {
+        await fetchOptimizationResults(restaurantId, 'existing_items');
+        hasResults = true;
+      } catch (e) {
+        // No existing items results
+      }
+
+      try {
+        await fetchOptimizationResults(restaurantId, 'new_items');
+        hasResults = true;
+      } catch (e) {
+        // No new items results
+      }
+
+      return hasResults;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    }
   }
 }

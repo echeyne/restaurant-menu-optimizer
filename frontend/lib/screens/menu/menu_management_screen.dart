@@ -6,6 +6,7 @@ import '../../providers/menu_provider.dart';
 import '../../providers/restaurant_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/menu_models.dart';
+import '../../utils/restaurant_loader_mixin.dart';
 import 'menu_item_detail_screen.dart';
 import 'menu_item_edit_screen.dart';
 
@@ -16,7 +17,8 @@ class MenuManagementScreen extends StatefulWidget {
   State<MenuManagementScreen> createState() => _MenuManagementScreenState();
 }
 
-class _MenuManagementScreenState extends State<MenuManagementScreen> {
+class _MenuManagementScreenState extends State<MenuManagementScreen>
+    with RestaurantLoaderMixin {
   bool _isGridView = false;
   String _selectedCategory = 'All';
   final TextEditingController _searchController = TextEditingController();
@@ -38,12 +40,10 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
   }
 
   Future<void> _loadRestaurantAndMenu() async {
-    final restaurantProvider =
-        Provider.of<RestaurantProvider>(context, listen: false);
-
-    // First try to fetch the restaurant profile if it's not already loaded
-    if (restaurantProvider.restaurant == null) {
-      await restaurantProvider.getCurrentRestaurant();
+    // Ensure restaurant is loaded first
+    final restaurantLoaded = await ensureRestaurantLoaded();
+    if (!restaurantLoaded) {
+      return;
     }
 
     // Then load menu items if we have a restaurant
@@ -57,6 +57,46 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
 
     if (restaurantProvider.restaurant?.restaurantId != null) {
       menuProvider.getMenuItems(restaurantProvider.restaurant!.restaurantId);
+    }
+  }
+
+  Future<void> _refreshMenuItemsAndOptimizations() async {
+    final restaurantProvider =
+        Provider.of<RestaurantProvider>(context, listen: false);
+    final menuProvider = Provider.of<MenuProvider>(context, listen: false);
+
+    if (restaurantProvider.restaurant?.restaurantId != null) {
+      final restaurantId = restaurantProvider.restaurant!.restaurantId;
+
+      // Load menu items and optimization results in parallel
+      await Future.wait([
+        menuProvider.getMenuItems(restaurantId),
+        menuProvider.refreshOptimizationResults(restaurantId),
+      ]);
+
+      // Show notification if optimization results were just loaded
+      if (menuProvider.optimizationResultsJustLoaded && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              menuProvider.hasPendingOptimizations
+                  ? 'Optimization is still in progress. Check back later for results.'
+                  : 'Optimization results are ready!',
+            ),
+            backgroundColor: menuProvider.hasPendingOptimizations
+                ? Colors.orange[600]
+                : Colors.green[600],
+            action: SnackBarAction(
+              label: 'View',
+              textColor: Colors.white,
+              onPressed: () => Navigator.of(context).pushNamed(
+                AppRoutes.optimizationReview,
+                arguments: menuProvider.optimizationType,
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -384,23 +424,46 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                     const Spacer(),
                     if (!_isParsingMenu) ...[
                       IconButton(
-                        onPressed: _refreshMenuItems,
+                        onPressed: _refreshMenuItemsAndOptimizations,
                         icon: const Icon(Icons.refresh),
-                        tooltip: 'Refresh Menu Items',
+                        tooltip: 'Refresh Menu Items & Optimization Results',
                       ),
                       const SizedBox(width: 8),
-                      menuProvider.menuItems.isNotEmpty
-                          ? ElevatedButton.icon(
-                              onPressed: () => Navigator.of(context)
-                                  .pushNamed(AppRoutes.optimizationOptions),
-                              icon: const Icon(Icons.auto_awesome),
-                              label: const Text('Optimize Menu'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.purple[600],
-                                foregroundColor: Colors.white,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
+                      // Show Optimization Results button if results are available
+                      if (menuProvider.hasOptimizationResults) ...[
+                        ElevatedButton.icon(
+                          onPressed: () => Navigator.of(context).pushNamed(
+                            AppRoutes.optimizationReview,
+                            arguments: menuProvider.optimizationType,
+                          ),
+                          icon: menuProvider.hasPendingOptimizations
+                              ? const Icon(Icons.hourglass_empty)
+                              : const Icon(Icons.assessment),
+                          label: Text(menuProvider.hasPendingOptimizations
+                              ? 'View Optimization Suggestions'
+                              : 'Optimization Results'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                menuProvider.hasPendingOptimizations
+                                    ? Colors.orange[600]
+                                    : Colors.green[600],
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      // Show Optimize Menu button if menu items exist
+                      if (menuProvider.menuItems.isNotEmpty)
+                        ElevatedButton.icon(
+                          onPressed: () => Navigator.of(context)
+                              .pushNamed(AppRoutes.optimizationOptions),
+                          icon: const Icon(Icons.auto_awesome),
+                          label: const Text('Optimize Menu'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple[600],
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                     ],
                   ],
                 ),
@@ -466,7 +529,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 ElevatedButton(
-                                  onPressed: _loadMenuItems,
+                                  onPressed: _refreshMenuItemsAndOptimizations,
                                   child: const Text('Retry'),
                                 ),
                               ],
@@ -603,7 +666,7 @@ class MenuItemCard extends StatelessWidget {
         //         child: const Icon(Icons.restaurant, color: Colors.grey),
         //       ),
         title: Text(
-          item.name,
+          item.enhancedName ?? item.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
@@ -611,7 +674,7 @@ class MenuItemCard extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             Text(
-              item.description,
+              item.enhancedDescription ?? item.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -723,14 +786,14 @@ class MenuItemGridCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.name,
+                      item.enhancedName ?? item.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.description,
+                      item.enhancedDescription ?? item.description,
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

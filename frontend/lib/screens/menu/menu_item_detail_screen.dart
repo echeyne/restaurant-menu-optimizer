@@ -76,7 +76,7 @@ class MenuItemDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.name),
+        title: Text(item.enhancedName ?? item.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -147,7 +147,7 @@ class MenuItemDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item.name,
+                                item.enhancedName ?? item.name,
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -194,9 +194,55 @@ class MenuItemDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      item.description,
+                      item.enhancedDescription ?? item.description,
                       style: const TextStyle(fontSize: 16, height: 1.5),
                     ),
+                    if ((item.enhancedName != null &&
+                            item.enhancedName != item.name) ||
+                        (item.enhancedDescription != null &&
+                            item.enhancedDescription != item.description)) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Original',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.enhancedName != null &&
+                                item.enhancedName != item.name) ...[
+                              Text(
+                                'Name: ${item.name}',
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                            ],
+                            if (item.enhancedDescription != null &&
+                                item.enhancedDescription !=
+                                    item.description) ...[
+                              Text(
+                                'Description: ${item.description}',
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.grey),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                     if (item.enhancedDescription != null &&
                         item.enhancedDescription!.isNotEmpty &&
                         item.enhancedDescription != item.description) ...[

@@ -236,6 +236,22 @@ export const handler = async (
             };
 
             await menuItemRepository.update(menuItem.itemId, updates);
+
+            // Also update the enhanced name and description status to approved
+            if (menuItem.enhancedName) {
+              await menuItemRepository.updateEnhancedNameStatus(
+                menuItem.itemId,
+                "approved"
+              );
+            }
+
+            if (menuItem.enhancedDescription) {
+              await menuItemRepository.updateEnhancedDescriptionStatus(
+                menuItem.itemId,
+                "approved"
+              );
+            }
+
             message = "Optimized menu item approved and applied to menu";
           } else {
             message =
@@ -268,6 +284,10 @@ export const handler = async (
             restaurantId: suggestionData.restaurantId,
             name: suggestionData.name,
             description: suggestionData.description,
+            enhancedName: suggestionData.name, // Store in enhancedName as well
+            enhancedDescription: suggestionData.description, // Store in enhancedDescription as well
+            enhancedNameStatus: "approved", // Mark as approved since it's AI-generated
+            enhancedDescriptionStatus: "approved", // Mark as approved since it's AI-generated
             price: suggestionData.estimatedPrice,
             category: suggestionData.category,
             ingredients: suggestionData.suggestedIngredients || [],

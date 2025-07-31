@@ -5,6 +5,7 @@ import '../../providers/restaurant_provider.dart';
 import '../../models/restaurant_models.dart';
 import '../../services/menu_service.dart';
 import '../../utils/app_routes.dart';
+import '../../utils/restaurant_loader_mixin.dart';
 
 class OptimizationOptionsScreen extends StatefulWidget {
   const OptimizationOptionsScreen({super.key});
@@ -14,12 +15,12 @@ class OptimizationOptionsScreen extends StatefulWidget {
       _OptimizationOptionsScreenState();
 }
 
-class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
+class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
+    with RestaurantLoaderMixin {
   final MenuService _menuService = MenuService();
 
   String? _selectedOption;
   bool _isLoading = false;
-  bool _isProcessing = false;
   String? _error;
 
   // Optimization data from backend
@@ -38,7 +39,9 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadOptimizationOptions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadOptimizationOptions();
+    });
   }
 
   @override
@@ -54,40 +57,50 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
                   .pushReplacementNamed(AppRoutes.menuManagement),
             ),
           ),
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-                  ? _buildErrorState()
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeaderSection(),
-                          const SizedBox(height: 32),
-                          _buildOptimizationOptions(),
-                          if (_selectedOption != null) ...[
-                            const SizedBox(height: 32),
-                            _buildDemographicInformation(),
-                            const SizedBox(height: 24),
-                            if (_selectedOption == 'optimize-existing')
-                              _buildDemographicSelection()
-                            else if (_selectedOption == 'suggest-new-items')
-                              _buildSpecialtyDishSelection(),
-                            const SizedBox(height: 24),
-                            _buildCuisineTypeSelection(),
-                            const SizedBox(height: 32),
-                          ],
-                          _buildActionButtons(),
-                        ],
-                      ),
-                    ),
+          body: withRestaurantLoading(() {
+            if (_isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (_error != null) {
+              return _buildErrorState();
+            } else {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeaderSection(),
+                    const SizedBox(height: 32),
+                    _buildOptimizationOptions(),
+                    if (_selectedOption != null) ...[
+                      const SizedBox(height: 32),
+                      _buildDemographicInformation(),
+                      const SizedBox(height: 24),
+                      if (_selectedOption == 'optimize-existing')
+                        _buildDemographicSelection()
+                      else if (_selectedOption == 'suggest-new-items')
+                        _buildSpecialtyDishSelection(),
+                      const SizedBox(height: 24),
+                      _buildCuisineTypeSelection(),
+                      const SizedBox(height: 32),
+                    ],
+                    _buildActionButtons(),
+                  ],
+                ),
+              );
+            }
+          }),
         );
       },
     );
   }
 
   Future<void> _loadOptimizationOptions() async {
+    // Ensure restaurant is loaded first
+    final restaurantLoaded = await ensureRestaurantLoaded();
+    if (!restaurantLoaded) {
+      return;
+    }
+
     final restaurantProvider =
         Provider.of<RestaurantProvider>(context, listen: false);
     final restaurantId = restaurantProvider.restaurant?.restaurantId;
@@ -940,12 +953,10 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: _isProcessing
-                ? null
-                : () {
-                    Navigator.of(context)
-                        .pushReplacementNamed(AppRoutes.menuManagement);
-                  },
+            onPressed: () {
+              Navigator.of(context)
+                  .pushReplacementNamed(AppRoutes.menuManagement);
+            },
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -956,26 +967,11 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
         Expanded(
           flex: 2,
           child: ElevatedButton(
-            onPressed: hasValidSelection && !_isProcessing
-                ? _processOptimization
-                : null,
+            onPressed: hasValidSelection ? _processOptimization : null,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: _isProcessing
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      SizedBox(width: 12),
-                      Text('Processing...'),
-                    ],
-                  )
-                : const Text('Start Optimization'),
+            child: const Text('Start Optimization'),
           ),
         ),
       ],
@@ -1000,8 +996,32 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
       return;
     }
 
-    setState(() => _isProcessing = true);
+    // Navigate immediately to optimization review screen with loading state
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed(
+        AppRoutes.optimizationReview,
+        arguments: {
+          'optimizationType': _selectedOption!,
+          'isLoading': true,
+          'optimizationData': {
+            'restaurantId': restaurantId,
+            'selectedDemographics': SelectedDemographics(
+              selectedAgeGroups: _selectedAgeGroups,
+              selectedGenderGroups: _selectedGenderGroups,
+              selectedInterests: _selectedInterests,
+            ),
+            'selectedSpecialtyDishes': _selectedSpecialtyDishes,
+            'cuisineType': _selectedCuisineType,
+          },
+        },
+      );
+    }
 
+    // Start optimization process in background
+    _startOptimizationInBackground(restaurantId);
+  }
+
+  Future<void> _startOptimizationInBackground(String restaurantId) async {
     try {
       final selectedDemographics = SelectedDemographics(
         selectedAgeGroups: _selectedAgeGroups,
@@ -1017,33 +1037,13 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen> {
         cuisineType: _selectedCuisineType,
       );
 
-      if (response.success && mounted) {
-        // Navigate to optimization review screen
-        Navigator.of(context).pushReplacementNamed(
-          AppRoutes.optimizationReview,
-          arguments: _selectedOption,
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Optimization failed: ${response.message}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (!response.success) {
+        // Handle error - could show a snackbar or navigate back
+        debugPrint('Optimization failed: ${response.message}');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error during optimization: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
+      // Handle error - could show a snackbar or navigate back
+      debugPrint('Error during optimization: $e');
     }
   }
 }

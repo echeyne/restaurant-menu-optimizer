@@ -367,7 +367,7 @@ function buildSelectedDemographicInsights(
 
     if (selectedAgeGroupData.length > 0) {
       const ageGroupNames = selectedAgeGroupData.map(
-        (ag) => `${ag.ageRange} (${ag.percentage}%)`
+        (ag) => `${ag.ageRange} (${(ag.percentage * 100).toFixed(1)}%)`
       );
       insights.push(`Target age groups: ${ageGroupNames.join(", ")}`);
 

@@ -220,6 +220,63 @@ export class MenuItemRepository extends AbstractRepository<MenuItem> {
   }
 
   /**
+   * Update menu item enhanced name
+   * @param itemId The ID of the menu item
+   * @param enhancedName The LLM-generated enhanced name
+   * @param options Additional options for the enhancement
+   * @returns The updated menu item
+   */
+  async updateEnhancedName(
+    itemId: string,
+    enhancedName: string,
+    options?: {
+      enhancementStyle?: string;
+      targetAudience?: string;
+      llmProvider?: string;
+    }
+  ): Promise<MenuItem> {
+    const now = new Date().toISOString();
+
+    // Get the current menu item to access its history
+    const currentItem = await this.getById(itemId);
+    if (!currentItem) {
+      throw new Error(`Menu item with ID ${itemId} not found`);
+    }
+
+    // Create a new version for the history
+    const newVersion = {
+      name: enhancedName,
+      createdAt: now,
+      enhancementStyle: options?.enhancementStyle,
+      targetAudience: options?.targetAudience,
+      llmProvider: options?.llmProvider,
+    };
+
+    // Initialize or update the history array
+    const history = currentItem.enhancedNameHistory || [];
+    history.push(newVersion);
+
+    const params = {
+      TableName: this.tableName,
+      Key: {
+        itemId,
+      },
+      UpdateExpression:
+        "SET enhancedName = :enhancedName, enhancedNameStatus = :status, enhancedNameHistory = :history, updatedAt = :updatedAt",
+      ExpressionAttributeValues: {
+        ":enhancedName": enhancedName,
+        ":status": "pending",
+        ":history": history,
+        ":updatedAt": now,
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await this.docClient.update(params).promise();
+    return result.Attributes as MenuItem;
+  }
+
+  /**
    * Update menu item enhanced description
    * @param itemId The ID of the menu item
    * @param enhancedDescription The LLM-generated enhanced description
@@ -267,6 +324,38 @@ export class MenuItemRepository extends AbstractRepository<MenuItem> {
         ":enhancedDescription": enhancedDescription,
         ":status": "pending",
         ":history": history,
+        ":updatedAt": now,
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await this.docClient.update(params).promise();
+    return result.Attributes as MenuItem;
+  }
+
+  /**
+   * Update the approval status of an enhanced name
+   * @param itemId The ID of the menu item
+   * @param status The approval status (approved or rejected)
+   * @param feedback Optional feedback about the decision
+   * @returns The updated menu item
+   */
+  async updateEnhancedNameStatus(
+    itemId: string,
+    status: "approved" | "rejected",
+    feedback?: string
+  ): Promise<MenuItem> {
+    const now = new Date().toISOString();
+
+    const params = {
+      TableName: this.tableName,
+      Key: {
+        itemId,
+      },
+      UpdateExpression:
+        "SET enhancedNameStatus = :status, updatedAt = :updatedAt",
+      ExpressionAttributeValues: {
+        ":status": status,
         ":updatedAt": now,
       },
       ReturnValues: "ALL_NEW",
