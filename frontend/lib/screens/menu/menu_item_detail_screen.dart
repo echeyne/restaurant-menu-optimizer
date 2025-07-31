@@ -76,32 +76,7 @@ class MenuItemDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.enhancedName ?? item.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _editMenuItem(context),
-          ),
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 'delete') {
-                _deleteMenuItem(context);
-              }
-            },
-          ),
-        ],
+        title: Text('View Menu Item'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
