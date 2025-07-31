@@ -383,12 +383,6 @@ ${existingDishNames.slice(0, 20).join(", ")}${
     existingDishNames.length > 20 ? "..." : ""
   }
 
-${
-  options.excludeCategories.length > 0
-    ? `CATEGORIES TO EXCLUDE: ${options.excludeCategories.join(", ")}`
-    : ""
-}
-
 ${specificDishRequestsContext}
 
 REQUIREMENTS:
@@ -433,7 +427,7 @@ function buildDemographicsContext(
   demographicsData: DemographicsData,
   selectedDemographics?: SelectedDemographics
 ): string {
-  let context = "CUSTOMER DEMOGRAPHICS:\n";
+  let context = "CUSTOMER AFFINITIES (0 = average alignment):\n";
 
   // Age groups context
   const ageGroupsToUse = selectedDemographics?.selectedAgeGroups?.length
@@ -445,7 +439,9 @@ function buildDemographicsContext(
   if (ageGroupsToUse.length > 0) {
     context += "Age Groups:\n";
     ageGroupsToUse.forEach((group) => {
-      context += `- ${group.ageRange}: ${group.percentage}% of customers\n`;
+      context += `- ${group.ageRange}: ${(group.percentage * 100).toFixed(
+        1
+      )}% of customers\n`;
       if (group.preferences.length > 0) {
         context += `  Preferences: ${group.preferences.join(", ")}\n`;
       }
@@ -463,7 +459,9 @@ function buildDemographicsContext(
   if (genderGroupsToUse.length > 0) {
     context += "Gender Distribution:\n";
     genderGroupsToUse.forEach((group) => {
-      context += `- ${group.gender}: ${group.percentage}% of customers\n`;
+      context += `- ${group.gender}: ${(group.percentage * 100).toFixed(
+        1
+      )}% of customers\n`;
       if (group.preferences.length > 0) {
         context += `  Preferences: ${group.preferences.join(", ")}\n`;
       }
@@ -502,7 +500,8 @@ function buildSpecialtyDishesContext(
   specialtyDishes: SpecialtyDish[],
   selectedSpecialtyDishes?: SelectedSpecialtyDish[]
 ): string {
-  let context = "POPULAR SPECIALTY DISHES FROM SIMILAR RESTAURANTS:\n";
+  let context =
+    "POPULAR SPECIALTY DISHES FROM SIMILAR RESTAURANTS THAT THE RESTAURANT WANTS TO TAKE IN TO CONSIDERATION WHEN CREATING MENU ITEMS:\n";
 
   if (selectedSpecialtyDishes && selectedSpecialtyDishes.length > 0) {
     // Use selected dishes with their ratings

@@ -290,16 +290,6 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.item != null ? 'Edit Menu Item' : 'Add Menu Item'),
-        actions: [
-          TextButton(
-            onPressed: _saveMenuItem,
-            child: const Text(
-              'Save',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
       ),
       body: Consumer<MenuProvider>(
         builder: (context, menuProvider, child) {
@@ -357,7 +347,7 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
                           TextFormField(
                             controller: _enhancedNameController,
                             decoration: InputDecoration(
-                              labelText: 'Enhanced Name',
+                              labelText: 'AI Name',
                               hintText: 'AI-enhanced name (optional)',
                               prefixIcon: const Icon(Icons.auto_awesome),
                               border: OutlineInputBorder(
@@ -370,7 +360,7 @@ class _MenuItemEditScreenState extends State<MenuItemEditScreen> {
                           TextFormField(
                             controller: _enhancedDescriptionController,
                             decoration: InputDecoration(
-                              labelText: 'Enhanced Description',
+                              labelText: 'AI Description',
                               hintText: 'AI-enhanced description (optional)',
                               prefixIcon: const Icon(Icons.auto_awesome),
                               border: OutlineInputBorder(

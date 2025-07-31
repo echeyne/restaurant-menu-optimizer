@@ -745,7 +745,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
           Text(
             'Weight is a measure of how much customers prefer this dish compared to other dishes at similar restaurants',
             style: TextStyle(
-              color: Colors.orange,
+              color: Colors.orange[800],
               fontSize: 12,
             ),
           ),
@@ -996,29 +996,19 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
       return;
     }
 
-    // Navigate immediately to optimization review screen with loading state
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed(
-        AppRoutes.optimizationReview,
-        arguments: {
-          'optimizationType': _selectedOption!,
-          'isLoading': true,
-          'optimizationData': {
-            'restaurantId': restaurantId,
-            'selectedDemographics': SelectedDemographics(
-              selectedAgeGroups: _selectedAgeGroups,
-              selectedGenderGroups: _selectedGenderGroups,
-              selectedInterests: _selectedInterests,
-            ),
-            'selectedSpecialtyDishes': _selectedSpecialtyDishes,
-            'cuisineType': _selectedCuisineType,
-          },
-        },
-      );
-    }
-
     // Start optimization process in background
     _startOptimizationInBackground(restaurantId);
+
+    // Navigate to the appropriate pending screen
+    if (mounted) {
+      if (_selectedOption == 'optimize-existing') {
+        Navigator.of(context)
+            .pushReplacementNamed(AppRoutes.pendingMenuOptimizations);
+      } else if (_selectedOption == 'suggest-new-items') {
+        Navigator.of(context)
+            .pushReplacementNamed(AppRoutes.pendingMenuSuggestions);
+      }
+    }
   }
 
   Future<void> _startOptimizationInBackground(String restaurantId) async {

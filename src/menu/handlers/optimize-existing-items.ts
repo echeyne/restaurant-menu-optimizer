@@ -86,45 +86,24 @@ export const handler = async (
 
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Request body is required",
-        }),
-      };
+      return createResponse(400, {
+        message: "Request body is required",
+      });
     }
 
     const request: OptimizeExistingItemsRequest = JSON.parse(event.body);
 
     // Validate required fields
     if (!request.restaurantId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required field: restaurantId",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required field: restaurantId",
+      });
     }
 
     if (!request.selectedDemographics) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "Missing required field: selectedDemographics",
-        }),
-      };
+      return createResponse(400, {
+        message: "Missing required field: selectedDemographics",
+      });
     }
 
     // Validate that at least one demographic group is selected
@@ -138,17 +117,10 @@ export const handler = async (
         request.selectedDemographics.selectedInterests.length > 0);
 
     if (!hasSelectedDemographics) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "At least one demographic group must be selected for optimization",
-        }),
-      };
+      return createResponse(400, {
+        message:
+          "At least one demographic group must be selected for optimization",
+      });
     }
 
     // Initialize repositories and services
@@ -162,17 +134,10 @@ export const handler = async (
       request.restaurantId
     );
     if (!demographicsData) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message:
-            "Demographics data not found. Please complete restaurant profile setup first.",
-        }),
-      };
+      return createResponse(400, {
+        message:
+          "Demographics data not found. Please complete restaurant profile setup first.",
+      });
     }
 
     // Get menu items to optimize
@@ -198,16 +163,9 @@ export const handler = async (
     }
 
     if (menuItems.length === 0) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "No active menu items found to optimize",
-        }),
-      };
+      return createResponse(400, {
+        message: "No active menu items found to optimize",
+      });
     }
 
     // Process optimization
@@ -222,7 +180,6 @@ export const handler = async (
           menuItem,
           demographicsData,
           request.selectedDemographics,
-          request.selectedSpecialtyDishes || [],
           llmService,
           request.optimizationStyle,
           request.targetAudience,
@@ -252,28 +209,14 @@ export const handler = async (
       errors: errors.length > 0 ? errors : undefined,
     };
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify(response),
-    };
+    return createResponse(200, response);
   } catch (error: any) {
     console.error("Error optimizing existing items:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        message: "Error optimizing existing items",
-        error: error.message || String(error),
-      }),
-    };
+    return createResponse(500, {
+      message: "Error optimizing existing items",
+      error: error.message || String(error),
+    });
   }
 };
 
@@ -292,7 +235,6 @@ async function optimizeMenuItem(
   menuItem: MenuItem,
   demographicsData: DemographicsData,
   selectedDemographics: SelectedDemographics,
-  selectedSpecialtyDishes: SelectedSpecialtyDish[],
   llmService: LLMService,
   optimizationStyle?: string,
   targetAudience?: string,
@@ -308,7 +250,6 @@ async function optimizeMenuItem(
   const prompt = createOptimizationPrompt(
     menuItem,
     demographicInsights,
-    selectedSpecialtyDishes,
     optimizationStyle,
     targetAudience,
     cuisineType
@@ -368,12 +309,7 @@ function buildSelectedDemographicInsights(
       ) || [];
 
     if (selectedAgeGroupData.length > 0) {
-      const ageGroupNames = selectedAgeGroupData.map(
-        (ag) =>
-          `${ag.ageRange} (current affinity ${(ag.percentage * 100).toFixed(
-            1
-          )}%)`
-      );
+      const ageGroupNames = selectedAgeGroupData.map((ag) => `${ag.ageRange}`);
       insights.push(`Target age groups: ${ageGroupNames.join(", ")}`);
 
       // Collect all preferences from selected age groups
@@ -398,9 +334,7 @@ function buildSelectedDemographicInsights(
       ) || [];
 
     if (selectedGenderData.length > 0) {
-      const genderNames = selectedGenderData.map(
-        (g) => `${g.gender} (${g.percentage}%)`
-      );
+      const genderNames = selectedGenderData.map((g) => `${g.gender}`);
       insights.push(`Target genders: ${genderNames.join(", ")}`);
 
       // Collect all preferences from selected genders
@@ -464,7 +398,6 @@ function buildSelectedDemographicInsights(
 function createOptimizationPrompt(
   menuItem: MenuItem,
   demographicInsights: string[],
-  selectedSpecialtyDishes: SelectedSpecialtyDish[],
   optimizationStyle?: string,
   targetAudience?: string,
   cuisineType?: string
@@ -473,19 +406,6 @@ function createOptimizationPrompt(
   const audience =
     targetAudience || "the restaurant's primary customer demographic";
   const cuisine = cuisineType || "the restaurant's cuisine style";
-
-  // Build specialty dishes context if available
-  let specialtyDishesContext = "";
-  if (selectedSpecialtyDishes && selectedSpecialtyDishes.length > 0) {
-    const dishDescriptions = selectedSpecialtyDishes.map(
-      (dish) =>
-        `- "${dish.dishName}" from ${dish.restaurantName} (Popularity: ${dish.popularity}, Weight: ${dish.weight}, Rating: ${dish.businessRating})`
-    );
-    specialtyDishesContext = `\n\nHIGHLY RATED SPECIALTY DISHES FROM SIMILAR RESTAURANTS:
-${dishDescriptions.join("\n")}
-
-Use these popular dishes as inspiration for naming and description techniques that resonate with customers in this market. The weight value indicates customer preference strength (1.0 = highest preference, 0.0 = lowest preference). Focus on dishes with higher weights as they represent stronger customer affinity. Consider what makes these dishes appealing and incorporate similar language patterns, descriptive techniques, or presentation styles that could enhance the menu item being optimized.`;
-  }
 
   return `You are a professional menu consultant helping to optimize menu item names and descriptions based on customer demographics and successful dishes from similar restaurants.
 
@@ -509,7 +429,7 @@ ${
 }
 
 CUSTOMER DEMOGRAPHICS:
-${demographicInsights.join("\n")}${specialtyDishesContext}
+${demographicInsights.join("\n")}
 
 OPTIMIZATION REQUIREMENTS:
 - Style: ${style}
@@ -520,7 +440,6 @@ OPTIMIZATION REQUIREMENTS:
 - Keep the description concise and to the point
 - Use language and terminology that resonates with the customer base
 - Highlight aspects that would appeal to their interests and preferences
-- Draw inspiration from successful dishes in similar restaurants for naming and description techniques
 - Maintain authenticity while enhancing appeal
 - Ensure the optimized content fits well within the ${cuisine} cuisine style
 

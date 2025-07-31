@@ -116,17 +116,8 @@ class _OptimizationReviewScreenState extends State<OptimizationReviewScreen>
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(context)
-                    .pushReplacementNamed(AppRoutes.optimizationOptions),
+                    .pushReplacementNamed(AppRoutes.menuManagement),
               ),
-              actions: [
-                TextButton.icon(
-                  onPressed: _isProcessingApprovals
-                      ? null
-                      : () => _processAllApprovals(context, menuProvider),
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Apply All'),
-                ),
-              ],
             ),
             body: Column(
               children: [
@@ -146,13 +137,6 @@ class _OptimizationReviewScreenState extends State<OptimizationReviewScreen>
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
-                          ),
-                          Text(
-                            '${_getApprovedCount()} approved',
-                            style: TextStyle(
-                              color: Colors.green[600],
-                              fontWeight: FontWeight.w500,
-                            ),
                           ),
                         ],
                       ),
@@ -344,28 +328,25 @@ class _OptimizationReviewScreenState extends State<OptimizationReviewScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: item.demographicInsights
-                    .map((insight) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.insights,
-                                size: 16,
-                                color: Colors.blue[700],
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  insight,
-                                  style: TextStyle(
-                                    color: Colors.blue[700],
-                                    fontSize: 14,
-                                  ),
+                    .map((insight) => Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.insights,
+                              size: 16,
+                              color: Colors.blue[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                insight,
+                                style: TextStyle(
+                                  color: Colors.blue[700],
+                                  fontSize: 14,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ))
                     .toList(),
               ),
@@ -481,8 +462,8 @@ class _OptimizationReviewScreenState extends State<OptimizationReviewScreen>
               children: suggestion.dietaryTags
                   .map((tag) => Chip(
                         label: Text(tag),
-                        backgroundColor: Colors.orange[100],
-                        labelStyle: TextStyle(color: Colors.orange[800]),
+                        // backgroundColor: Colors.orange[100],
+                        // labelStyle: TextStyle(color: Colors.orange[800]),
                       ))
                   .toList(),
             ),

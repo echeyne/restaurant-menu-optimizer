@@ -20,7 +20,8 @@ class MenuManagementScreen extends StatefulWidget {
 class _MenuManagementScreenState extends State<MenuManagementScreen>
     with RestaurantLoaderMixin {
   String _selectedCategory = 'All';
-  String _selectedStatus = 'Active'; // Add status filter
+  String? _selectedStatus = 'Active'; // Add status filter - Active by default
+  String? _selectedAiFilter; // Add AI filter
   final TextEditingController _searchController = TextEditingController();
   bool _isParsingMenu = false;
 
@@ -245,7 +246,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
     } else if (_selectedStatus == 'Inactive') {
       filtered = filtered.where((item) => !item.isActive).toList();
     }
-    // If _selectedStatus is 'All', no status filtering is applied
+    // If _selectedStatus is null, no status filtering is applied
 
     // Filter by category
     if (_selectedCategory != 'All') {
@@ -253,15 +254,32 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
           filtered.where((item) => item.category == _selectedCategory).toList();
     }
 
+    // Filter by AI Generated
+    if (_selectedAiFilter == 'AI Generated') {
+      filtered = filtered.where((item) => item.isAiGenerated).toList();
+    } else if (_selectedAiFilter == 'Not AI Generated') {
+      filtered = filtered.where((item) => !item.isAiGenerated).toList();
+    }
+    // If _selectedAiFilter is null, no AI filtering is applied
+
     // Filter by search term
     if (_searchController.text.isNotEmpty) {
       final searchTerm = _searchController.text.toLowerCase();
       filtered = filtered
           .where((item) =>
-              item.name.toLowerCase().contains(searchTerm) ||
-              item.description.toLowerCase().contains(searchTerm))
+              (item.enhancedName ?? item.name)
+                  .toLowerCase()
+                  .contains(searchTerm) ||
+              (item.enhancedDescription ?? item.description)
+                  .toLowerCase()
+                  .contains(searchTerm))
           .toList();
     }
+
+    // Sort by displayed name (enhancedName or name) alphabetically
+    filtered.sort((a, b) => (a.enhancedName ?? a.name)
+        .toLowerCase()
+        .compareTo((b.enhancedName ?? b.name).toLowerCase()));
 
     return filtered;
   }
@@ -272,7 +290,11 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
   }
 
   Set<String> _getStatusOptions() {
-    return {'All', 'Active', 'Inactive'};
+    return {'Active', 'Inactive'};
+  }
+
+  Set<String> _getAiFilterOptions() {
+    return {'AI Generated', 'Not AI Generated'};
   }
 
   @override
@@ -318,6 +340,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
         final filteredItems = _getFilteredItems(menuProvider.menuItems);
         final categories = _getCategories(menuProvider.menuItems);
         final statusOptions = _getStatusOptions();
+        final aiFilterOptions = _getAiFilterOptions();
 
         return Scaffold(
           appBar: AppBar(
@@ -406,40 +429,114 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                         tooltip: 'Refresh Menu Items & Optimization Results',
                       ),
                       const SizedBox(width: 8),
-                      // Show Optimization Results button if results are available
-                      if (menuProvider.hasOptimizationResults) ...[
-                        ElevatedButton.icon(
-                          onPressed: () => Navigator.of(context).pushNamed(
-                            AppRoutes.optimizationReview,
-                            arguments: menuProvider.optimizationType,
-                          ),
-                          icon: menuProvider.hasPendingOptimizations
-                              ? const Icon(Icons.hourglass_empty)
-                              : const Icon(Icons.assessment),
-                          label: Text(menuProvider.hasPendingOptimizations
-                              ? 'View Optimization Suggestions'
-                              : 'Optimization Results'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                menuProvider.hasPendingOptimizations
-                                    ? Colors.orange[600]
-                                    : Colors.green[600],
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      // Show Optimize Menu button if menu items exist
+                      // Show Optimize Menu dropdown if menu items exist
                       if (menuProvider.menuItems.isNotEmpty)
-                        ElevatedButton.icon(
-                          onPressed: () => Navigator.of(context)
-                              .pushNamed(AppRoutes.optimizationOptions),
-                          icon: const Icon(Icons.auto_awesome),
-                          label: const Text('Optimize Menu'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple[600],
-                            foregroundColor: Colors.white,
+                        PopupMenuButton<String>(
+                          color: Colors.white,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.purple[600],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.auto_awesome,
+                                    color: Colors.white, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Optimize Menu',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(Icons.arrow_drop_down,
+                                    color: Colors.white, size: 20),
+                              ],
+                            ),
                           ),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'optimize':
+                                Navigator.of(context)
+                                    .pushNamed(AppRoutes.optimizationOptions);
+                                break;
+                              case 'pending_optimizations':
+                                Navigator.of(context).pushNamed(
+                                    AppRoutes.pendingMenuOptimizations);
+                                break;
+                              case 'pending_suggestions':
+                                Navigator.of(context).pushNamed(
+                                    AppRoutes.pendingMenuSuggestions);
+                                break;
+                              case 'completed_optimizations':
+                                Navigator.of(context).pushNamed(
+                                    AppRoutes.completedMenuOptimizations);
+                                break;
+                              case 'completed_suggestions':
+                                Navigator.of(context).pushNamed(
+                                    AppRoutes.completedMenuSuggestions);
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'optimize',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.auto_awesome,
+                                      color: Colors.purple),
+                                  SizedBox(width: 8),
+                                  Text('Start New Optimization'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'pending_optimizations',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.hourglass_empty,
+                                      color: Colors.orange),
+                                  SizedBox(width: 8),
+                                  Text('Pending Optimizations'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'pending_suggestions',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.hourglass_empty,
+                                      color: Colors.orange),
+                                  SizedBox(width: 8),
+                                  Text('Pending Suggestions'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'completed_optimizations',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.assessment, color: Colors.grey),
+                                  SizedBox(width: 8),
+                                  Text('Completed Optimizations'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'completed_suggestions',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.assessment, color: Colors.grey),
+                                  SizedBox(width: 8),
+                                  Text('Completed Suggestions'),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                     ],
                   ],
@@ -461,53 +558,45 @@ class _MenuManagementScreenState extends State<MenuManagementScreen>
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 12),
-                    // Category filter
+                    // All filters in one horizontal scrollable row
                     SizedBox(
                       height: 40,
-                      child: ListView.builder(
+                      child: ListView(
                         scrollDirection: Axis.horizontal,
-                        itemCount: categories.length,
-                        itemBuilder: (context, index) {
-                          final category = categories.elementAt(index);
-                          final isSelected = category == _selectedCategory;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(category),
-                              selected: isSelected,
-                              onSelected: (_) {
-                                setState(() {
-                                  _selectedCategory = category;
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Status filter
-                    SizedBox(
-                      height: 40,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: statusOptions.length,
-                        itemBuilder: (context, index) {
-                          final status = statusOptions.elementAt(index);
-                          final isSelected = status == _selectedStatus;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(status),
-                              selected: isSelected,
-                              onSelected: (_) {
-                                setState(() {
-                                  _selectedStatus = status;
-                                });
-                              },
-                            ),
-                          );
-                        },
+                        children: [
+                          // Status filters
+                          ...statusOptions.map((status) {
+                            final isSelected = status == _selectedStatus;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(status),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedStatus = status;
+                                  });
+                                },
+                              ),
+                            );
+                          }),
+                          // AI filters
+                          ...aiFilterOptions.map((aiFilter) {
+                            final isSelected = aiFilter == _selectedAiFilter;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(aiFilter),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedAiFilter = aiFilter;
+                                  });
+                                },
+                              ),
+                            );
+                          }),
+                        ],
                       ),
                     ),
                   ],
@@ -705,7 +794,7 @@ class MenuItemCard extends StatelessWidget {
               ],
             ),
             if (item.isAiGenerated) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(

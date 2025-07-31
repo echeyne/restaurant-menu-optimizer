@@ -11,6 +11,10 @@ import 'screens/restaurant/restaurant_profile_setup_screen.dart';
 import 'screens/menu/menu_management_screen.dart';
 import 'screens/menu/optimization_options_screen.dart';
 import 'screens/menu/optimization_review_screen.dart';
+import 'screens/menu/pending_menu_optimizations_screen.dart';
+import 'screens/menu/pending_menu_suggestions_screen.dart';
+import 'screens/menu/completed_menu_optimizations_screen.dart';
+import 'screens/menu/completed_menu_suggestions_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_routes.dart';
@@ -89,6 +93,18 @@ class RestaurantMenuOptimizerApp extends StatelessWidget {
                 page = const OptimizationReviewScreen(
                     optimizationType: 'optimize-existing');
               }
+              break;
+            case AppRoutes.pendingMenuOptimizations:
+              page = const PendingMenuOptimizationsScreen();
+              break;
+            case AppRoutes.pendingMenuSuggestions:
+              page = const PendingMenuSuggestionsScreen();
+              break;
+            case AppRoutes.completedMenuOptimizations:
+              page = const CompletedMenuOptimizationsScreen();
+              break;
+            case AppRoutes.completedMenuSuggestions:
+              page = const CompletedMenuSuggestionsScreen();
               break;
             case AppRoutes.dashboard:
               page = const DashboardScreen();
