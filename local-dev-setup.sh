@@ -9,7 +9,7 @@ if [ ! -f .env ]; then
   echo "Creating .env file..."
   cat > .env << EOL
 LLM_PROVIDER=anthropic
-LLM_MODEL=claude-3-5-sonnet-20241022
+LLM_MODEL=claude-sonnet-4-20250514
 LLM_API_KEY=your-llm-api-key
 CLIENT_ID=local-client-id
 USER_POOL_ID=local-user-pool

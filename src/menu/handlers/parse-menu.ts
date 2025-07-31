@@ -206,7 +206,7 @@ async function parseMenuWithLLM(
     case "anthropic":
     default:
       provider = LLMProvider.ANTHROPIC;
-      model = process.env.LLM_MODEL || "claude-3-5-sonnet-20241022";
+      model = process.env.LLM_MODEL || "claude-sonnet-4-20250514";
       break;
   }
 

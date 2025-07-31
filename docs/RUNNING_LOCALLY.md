@@ -37,7 +37,7 @@ If you need to override environment variables (like LLM_PROVIDER, LLM_MODEL), yo
 
 ```sh
 export LLM_PROVIDER=anthropic
-export LLM_MODEL=claude-3-5-sonnet-20241022
+export LLM_MODEL=claude-sonnet-4-20250514
 npx serverless offline
 ```
 
@@ -66,7 +66,7 @@ You can create a `.env` file in the `restaurant-menu-optimizer` directory to set
 
 ```
 LLM_PROVIDER=anthropic
-LLM_MODEL=claude-3-5-sonnet-20241022
+LLM_MODEL=claude-sonnet-4-20250514
 LLM_API_KEY=your-llm-api-key
 QLOO_API_KEY=your-qloo-api-key
 ```

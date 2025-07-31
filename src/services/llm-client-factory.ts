@@ -127,7 +127,7 @@ export class LLMClientFactory {
       case LLMProvider.OPENAI:
         return "gpt-4-turbo";
       case LLMProvider.ANTHROPIC:
-        return "claude-3-5-sonnet-20241022";
+        return "claude-sonnet-4-20250514";
       case LLMProvider.GOOGLE:
         return "gemini-pro";
       default:

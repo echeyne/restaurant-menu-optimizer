@@ -92,7 +92,7 @@ describe("LLMService", () => {
     it("should call the specified provider client to complete a prompt", async () => {
       // Arrange
       const provider = LLMProvider.ANTHROPIC;
-      const model = "claude-3-5-sonnet-20241022";
+      const model = "claude-sonnet-4-20250514";
       const request: CompletionRequest = {
         prompt: "Test prompt",
         systemPrompt: "Test system prompt",
