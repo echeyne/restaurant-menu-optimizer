@@ -314,6 +314,8 @@ async function optimizeMenuItem(
     cuisineType
   );
 
+  console.log("prompt", prompt);
+
   // Call LLM for optimization
   const response = await llmService.complete({
     prompt,

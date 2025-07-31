@@ -255,6 +255,8 @@ async function generateMenuItemSuggestions(
     options
   );
 
+  console.log("prompt", prompt);
+
   // Call LLM for suggestions
   const response = await llmService.complete({
     prompt,

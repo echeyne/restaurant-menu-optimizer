@@ -203,6 +203,9 @@ async function processMenuItem(
     let enhancedDescription: string;
     let usedProvider = options.llmProvider;
 
+    console.log("prompt", prompt);
+    console.log("systemPrompt", systemPrompt);
+
     if (usedProvider) {
       const response = await llmService.completeWithProvider(usedProvider, {
         prompt,
