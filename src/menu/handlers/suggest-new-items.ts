@@ -29,7 +29,7 @@ import { getUserIdFromToken } from "../../utils/auth-utils";
  */
 interface SelectedDemographics {
   selectedAgeGroups: string[];
-  selectedGenderGroups: string[];
+  selectedGenderGroups?: string[]; // Frontend sends this
   selectedInterests: string[];
 }
 
@@ -503,9 +503,10 @@ function buildDemographicsContext(
   }
 
   // Gender groups context
-  const genderGroupsToUse = selectedDemographics?.selectedGenderGroups?.length
+  const selectedGenderGroups = selectedDemographics?.selectedGenderGroups || [];
+  const genderGroupsToUse = selectedGenderGroups.length
     ? demographicsData.genders.filter((group) =>
-        selectedDemographics.selectedGenderGroups.includes(group.gender)
+        selectedGenderGroups.includes(group.gender)
       )
     : demographicsData.genders;
 

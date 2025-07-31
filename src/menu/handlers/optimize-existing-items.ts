@@ -21,7 +21,7 @@ import { getUserIdFromToken } from "../../utils/auth-utils";
  */
 interface SelectedDemographics {
   selectedAgeGroups: string[];
-  selectedGenders: string[];
+  selectedGenderGroups?: string[]; // Frontend sends this
   selectedInterests: string[];
 }
 
@@ -128,11 +128,12 @@ export const handler = async (
     }
 
     // Validate that at least one demographic group is selected
+    const selectedGenders =
+      request.selectedDemographics.selectedGenderGroups || [];
     const hasSelectedDemographics =
       (request.selectedDemographics.selectedAgeGroups &&
         request.selectedDemographics.selectedAgeGroups.length > 0) ||
-      (request.selectedDemographics.selectedGenders &&
-        request.selectedDemographics.selectedGenders.length > 0) ||
+      (selectedGenders && selectedGenders.length > 0) ||
       (request.selectedDemographics.selectedInterests &&
         request.selectedDemographics.selectedInterests.length > 0);
 
@@ -384,13 +385,11 @@ function buildSelectedDemographicInsights(
   }
 
   // Selected gender insights
-  if (
-    selectedDemographics.selectedGenders &&
-    selectedDemographics.selectedGenders.length > 0
-  ) {
+  const selectedGenders = selectedDemographics.selectedGenderGroups || [];
+  if (selectedGenders && selectedGenders.length > 0) {
     const selectedGenderData =
       demographicsData.genders?.filter((gender) =>
-        selectedDemographics.selectedGenders.includes(gender.gender)
+        selectedGenders.includes(gender.gender)
       ) || [];
 
     if (selectedGenderData.length > 0) {

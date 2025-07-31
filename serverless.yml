@@ -255,7 +255,7 @@ custom:
     port: 4569
     directory: /tmp
     buckets:
-      - name: restaurantmenufiles${self:provider.stage}
+      - name: restaurantmenufiles-${self:provider.stage}
 
 functions:
   PreSignUp:
@@ -614,7 +614,7 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: true
     environment:
-      MENU_FILES_BUCKET: restaurantmenufiles${self:provider.stage}
+      MENU_FILES_BUCKET: restaurantmenufiles-${self:provider.stage}
       STAGE: ${self:provider.stage}
       LLM_PROVIDER: ${self:provider.environment.LLM_PROVIDER}
       LLM_MODEL: ${self:provider.environment.LLM_MODEL}

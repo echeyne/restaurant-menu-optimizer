@@ -364,33 +364,92 @@ class MenuService {
     String? cuisineType,
   }) async {
     try {
-      final requestBody = <String, dynamic>{
+      // Determine which endpoint to call based on the selected option
+      String endpoint;
+      Map<String, dynamic> requestBody = {
         'restaurantId': restaurantId,
-        'selectedOption': selectedOption,
       };
 
-      if (selectedDemographics != null) {
-        requestBody['selectedDemographics'] = selectedDemographics.toJson();
-      }
+      if (selectedOption == 'optimize-existing') {
+        endpoint = '/menu/optimize-existing-items';
 
-      if (selectedSpecialtyDishes != null) {
-        requestBody['selectedSpecialtyDishes'] =
-            selectedSpecialtyDishes.map((dish) => dish.toJson()).toList();
-      }
+        // Convert frontend parameter names to backend expected names
+        if (selectedDemographics != null) {
+          requestBody['selectedDemographics'] = {
+            'selectedAgeGroups': selectedDemographics.selectedAgeGroups,
+            'selectedGenderGroups': selectedDemographics.selectedGenderGroups,
+            'selectedInterests': selectedDemographics.selectedInterests,
+          };
+        }
 
-      if (cuisineType != null) {
-        requestBody['cuisineType'] = cuisineType;
-      }
+        if (cuisineType != null) {
+          requestBody['cuisineType'] = cuisineType;
+        }
 
-      final response =
-          await _httpClient.postJson('/menu/optimization-options', requestBody);
+        // Call optimize-existing-items endpoint
+        final response = await _httpClient.postJson(endpoint, requestBody);
 
-      if (response.statusCode == 200) {
-        return OptimizationSelectionResponse.fromJson(
-            jsonDecode(response.body));
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          return OptimizationSelectionResponse(
+            success: true,
+            restaurantId: restaurantId,
+            selectedOption: selectedOption,
+            nextEndpoint: '/menu/review-optimizations',
+            nextAction: 'review_optimizations',
+            requiredData: {
+              'type': 'existing_items',
+              'optimizedItems': responseData['optimizedItems'] ?? [],
+            },
+            message: 'Successfully optimized existing items',
+          );
+        } else {
+          throw Exception(
+              'Failed to optimize existing items: ${response.body}');
+        }
+      } else if (selectedOption == 'suggest-new-items') {
+        endpoint = '/menu/suggest-new-items';
+
+        // Convert frontend parameter names to backend expected names
+        if (selectedDemographics != null) {
+          requestBody['selectedDemographics'] = {
+            'selectedAgeGroups': selectedDemographics.selectedAgeGroups,
+            'selectedGenderGroups': selectedDemographics.selectedGenderGroups,
+            'selectedInterests': selectedDemographics.selectedInterests,
+          };
+        }
+
+        if (selectedSpecialtyDishes != null) {
+          requestBody['selectedSpecialtyDishes'] =
+              selectedSpecialtyDishes.map((dish) => dish.toJson()).toList();
+        }
+
+        if (cuisineType != null) {
+          requestBody['cuisineType'] = cuisineType;
+        }
+
+        // Call suggest-new-items endpoint
+        final response = await _httpClient.postJson(endpoint, requestBody);
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          return OptimizationSelectionResponse(
+            success: true,
+            restaurantId: restaurantId,
+            selectedOption: selectedOption,
+            nextEndpoint: '/menu/review-optimizations',
+            nextAction: 'review_optimizations',
+            requiredData: {
+              'type': 'new_items',
+              'suggestions': responseData['suggestions'] ?? [],
+            },
+            message: 'Successfully generated new item suggestions',
+          );
+        } else {
+          throw Exception('Failed to suggest new items: ${response.body}');
+        }
       } else {
-        throw Exception(
-            'Failed to submit optimization selection: ${response.body}');
+        throw Exception('Invalid optimization option: $selectedOption');
       }
     } catch (e) {
       throw Exception('Error submitting optimization selection: $e');

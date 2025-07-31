@@ -478,28 +478,12 @@ class _RestaurantProfileSetupScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Customer Demographics',
+            'Customer Demographics Overview',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           const Text(
             'We\'ll analyze demographic data for your restaurant to help you understand your customer base.',
-          ),
-          const SizedBox(height: 16),
-          const Row(
-            children: [
-              Icon(Icons.people, size: 24),
-              SizedBox(width: 8),
-              Text('Age groups and preferences'),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Row(
-            children: [
-              Icon(Icons.person, size: 24),
-              SizedBox(width: 8),
-              Text('Gender distribution'),
-            ],
           ),
           const SizedBox(height: 16),
           if (provider.isDemographicsLoading) ...[
@@ -575,7 +559,7 @@ class _RestaurantProfileSetupScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Primary Customer Profile',
+                  'Highest Demographic Affinity',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
@@ -583,7 +567,7 @@ class _RestaurantProfileSetupScreenState
                   children: [
                     const Icon(Icons.person, size: 20),
                     const SizedBox(width: 8),
-                    Text('Primary Gender: $mainGender'),
+                    Text('Gender: $mainGender'),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -591,7 +575,7 @@ class _RestaurantProfileSetupScreenState
                   children: [
                     const Icon(Icons.cake, size: 20),
                     const SizedBox(width: 8),
-                    Text('Primary Age Group: $mainAgeGroup'),
+                    Text('Age Group: $mainAgeGroup'),
                   ],
                 ),
               ],
@@ -673,8 +657,10 @@ class _RestaurantProfileSetupScreenState
                             Text(
                                 ' ${restaurant.businessRating.toStringAsFixed(1)}'),
                             const SizedBox(width: 16),
-                            const Icon(Icons.attach_money, size: 16),
-                            Text(' Level ${restaurant.priceLevel}'),
+                            ...List.generate(
+                                restaurant.priceLevel,
+                                (index) =>
+                                    const Icon(Icons.attach_money, size: 16)),
                           ],
                         ),
                         Text(
@@ -876,6 +862,10 @@ class _RestaurantProfileSetupScreenState
       _showErrorSnackBar(
           provider.error ?? 'Failed to complete setup. Please try again.');
     }
+  }
+
+  String _getPriceLevelString(int priceLevel) {
+    return '\$' * priceLevel;
   }
 
   void _showErrorSnackBar(String message) {

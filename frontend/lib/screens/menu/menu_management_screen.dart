@@ -382,24 +382,25 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                       label: Text(_isGridView ? 'List View' : 'Grid View'),
                     ),
                     const Spacer(),
-                    if (!_isParsingMenu &&
-                        menuProvider.menuItems.isNotEmpty) ...[
+                    if (!_isParsingMenu) ...[
                       IconButton(
                         onPressed: _refreshMenuItems,
                         icon: const Icon(Icons.refresh),
                         tooltip: 'Refresh Menu Items',
                       ),
                       const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () => Navigator.of(context)
-                            .pushNamed(AppRoutes.optimizationOptions),
-                        icon: const Icon(Icons.auto_awesome),
-                        label: const Text('Optimize Menu'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple[600],
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
+                      menuProvider.menuItems.isNotEmpty
+                          ? ElevatedButton.icon(
+                              onPressed: () => Navigator.of(context)
+                                  .pushNamed(AppRoutes.optimizationOptions),
+                              icon: const Icon(Icons.auto_awesome),
+                              label: const Text('Optimize Menu'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.purple[600],
+                                foregroundColor: Colors.white,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ],
                   ],
                 ),
