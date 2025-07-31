@@ -1126,9 +1126,36 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: true
           request:
-            parameters:
-              querystrings:
-                restaurantId: true
+            schemas:
+              application/json:
+                schema:
+                  type: object
+                  required:
+                    - restaurantId
+                    - selectedOption
+                  properties:
+                    restaurantId:
+                      type: string
+                    selectedOption:
+                      type: string
+                      enum: ["optimize-existing", "suggest-new-items"]
+                    selectedDemographics:
+                      type: object
+                      properties:
+                        selectedAgeGroups:
+                          type: array
+                          items:
+                            type: string
+                        selectedGenderGroups:
+                          type: array
+                          items:
+                            type: string
+                    selectedSpecialtyDishes:
+                      type: array
+                      items:
+                        type: string
+                    cuisineType:
+                      type: string
       - http:
           path: menu/optimization-options
           method: options
