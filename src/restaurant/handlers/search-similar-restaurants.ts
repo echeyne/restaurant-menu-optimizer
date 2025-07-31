@@ -103,7 +103,7 @@ export const handler = async (
       });
     }
 
-    console.log(`resturant ${restaurant}`);
+    console.log(`restaurant ${restaurant}`);
 
     // Get Qloo API key
     const apiKey = await getQlooApiKey();
