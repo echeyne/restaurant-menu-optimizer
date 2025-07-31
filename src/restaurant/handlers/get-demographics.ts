@@ -77,19 +77,10 @@ export const handler = async (
   try {
     // Parse request body
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Request body is required",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Request body is required",
+      });
     }
 
     const requestBody: GetDemographicsRequest = JSON.parse(event.body);
@@ -97,36 +88,18 @@ export const handler = async (
     // Get restaurantId from path parameters
     const restaurantId = event.pathParameters?.restaurantId;
     if (!restaurantId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant ID is required in path",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Restaurant ID is required in path",
+      });
     }
 
     // Validate required fields
     if (!requestBody.entityId) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Entity ID is required",
-        }),
-      };
+      return createResponse(400, {
+        success: false,
+        message: "Entity ID is required",
+      });
     }
 
     // Initialize repositories
@@ -136,19 +109,10 @@ export const handler = async (
     // Verify restaurant exists
     const restaurant = await restaurantRepository.getById(restaurantId);
     if (!restaurant) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-          "Access-Control-Allow-Methods": "POST,OPTIONS",
-        },
-        body: JSON.stringify({
-          success: false,
-          message: "Restaurant not found",
-        }),
-      };
+      return createResponse(404, {
+        success: false,
+        message: "Restaurant not found",
+      });
     }
 
     // Get Qloo API key
@@ -180,16 +144,7 @@ export const handler = async (
       message: `Demographics data retrieved and stored successfully`,
     };
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-      },
-      body: JSON.stringify(response),
-    };
+    return createResponse(200, response);
   } catch (error: any) {
     console.error("Error getting demographics data:", error);
 
@@ -214,20 +169,11 @@ export const handler = async (
       message = "Failed to authenticate with Qloo API";
     }
 
-    return {
-      statusCode,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-      },
-      body: JSON.stringify({
-        success: false,
-        message,
-        error: error.message,
-      }),
-    };
+    return createResponse(statusCode, {
+      success: false,
+      message,
+      error: error.message,
+    });
   }
 };
 
