@@ -1749,9 +1749,7 @@ resources:
                 - HEAD
               AllowedOrigins:
                 - "http://localhost:*"
-                - "https://*.amazonaws.com"
-                - "http://restaurantmenuoptimizerfrontenddev.s3-website-us-east-1.amazonaws.com"
-                - "https://restaurantmenuoptimizerfrontenddev.s3-website-us-east-1.amazonaws.com"
+                - "https://mymenuoptimizer.com"
               ExposedHeaders:
                 - ETag
                 - "Content-Length"
