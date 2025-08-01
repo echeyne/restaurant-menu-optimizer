@@ -23,6 +23,9 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
   bool _isLoading = false;
   String? _error;
 
+  // Add persistent TextEditingController for cuisine input
+  late TextEditingController _cuisineController;
+
   // Optimization data from backend
   List<OptimizationOption> _optimizationOptions = [];
   DemographicDisplay? _demographicInfo;
@@ -39,6 +42,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
   @override
   void initState() {
     super.initState();
+    _cuisineController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOptimizationOptions();
     });
@@ -126,6 +130,10 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
         _specialtyDishes = response.specialtyDishes;
         _readiness = response.readiness;
         _selectedCuisineType = response.cuisine;
+        // Update the controller text when data is loaded
+        if (response.cuisine != null) {
+          _cuisineController.text = response.cuisine!;
+        }
       });
     } catch (e) {
       setState(() {
@@ -925,7 +933,7 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: TextEditingController(text: _selectedCuisineType),
+            controller: _cuisineController,
             decoration: InputDecoration(
               hintText: 'e.g., Italian, Asian Fusion, Modern American',
               border: const OutlineInputBorder(),
@@ -1035,5 +1043,11 @@ class _OptimizationOptionsScreenState extends State<OptimizationOptionsScreen>
       // Handle error - could show a snackbar or navigate back
       debugPrint('Error during optimization: $e');
     }
+  }
+
+  @override
+  void dispose() {
+    _cuisineController.dispose();
+    super.dispose();
   }
 }
