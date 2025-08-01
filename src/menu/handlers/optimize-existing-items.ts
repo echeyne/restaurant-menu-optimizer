@@ -260,7 +260,7 @@ async function optimizeMenuItem(
   // Call LLM for optimization
   const response = await llmService.complete({
     prompt,
-    maxTokens: 500,
+    maxTokens: 5000,
     temperature: 0.7,
   });
 

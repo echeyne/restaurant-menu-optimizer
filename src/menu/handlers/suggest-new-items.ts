@@ -260,7 +260,7 @@ async function generateMenuItemSuggestions(
   // Call LLM for suggestions
   const response = await llmService.complete({
     prompt,
-    maxTokens: 2000,
+    maxTokens: 5000,
     temperature: 0.8, // Higher temperature for more creative suggestions
   });
 

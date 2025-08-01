@@ -272,7 +272,7 @@ ${extractedText}
     systemPrompt,
     prompt,
     temperature: 0.1, // Lower temperature for more deterministic results
-    maxTokens: 4000,
+    maxTokens: 5000,
   });
 
   // Parse the LLM response into menu items
