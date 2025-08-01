@@ -4,12 +4,12 @@
 
 ## 🚀 Overview
 
-The Restaurant Menu Optimizer is a full-stack web application that helps restaurant owners optimize their menus using artificial intelligence. The system leverages advanced LLMs (Claude, GPT-4, or Gemini) for menu parsing and analysis, combined with Qloo's Taste AI™ for demographic insights and trend analysis.
+The Restaurant Menu Optimizer is a full-stack web application that helps restaurant owners optimize their menus using artificial intelligence. The system leverages advanced LLMs (Claude, GPT-4, or Gemini) for menu parsing and analysis, combined Qloo for restaurant and demographic insights.
 
 ### Key Features
 
 - **📄 Smart Menu Parsing**: Upload any menu format and get structured, analyzable data
-- **🎯 Demographic Analysis**: Understand your customer base with Qloo's Taste AI™
+- **🎯 Market Analysis**: Understand your customer base and competitive landscape with Qloo
 - **💡 AI-Powered Optimization**: Get personalized recommendations for menu improvements
 - **📱 Responsive Design**: Works seamlessly on desktop and mobile devices
 
