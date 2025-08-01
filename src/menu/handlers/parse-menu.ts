@@ -176,6 +176,185 @@ async function getLlmApiKey(): Promise<string> {
 }
 
 /**
+ * Check if the LLM response appears to be truncated
+ * @param responseText The response text from the LLM
+ * @returns True if the response appears to be truncated
+ */
+function checkForTruncatedResponse(responseText: string): boolean {
+  // Check for incomplete JSON structure
+  const openBraces = (responseText.match(/\{/g) || []).length;
+  const closeBraces = (responseText.match(/\}/g) || []).length;
+  const openBrackets = (responseText.match(/\[/g) || []).length;
+  const closeBrackets = (responseText.match(/\]/g) || []).length;
+
+  // Check if brackets/braces are unbalanced
+  if (openBraces !== closeBraces || openBrackets !== closeBrackets) {
+    return true;
+  }
+
+  // Check if the response ends with an incomplete object
+  const trimmed = responseText.trim();
+  if (trimmed.endsWith(",") || trimmed.endsWith("{") || trimmed.endsWith('"')) {
+    return true;
+  }
+
+  // Check if the response doesn't end with a closing bracket
+  if (!trimmed.endsWith("]")) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Attempt to fix a truncated JSON response
+ * @param responseText The truncated response text
+ * @returns The fixed response text
+ */
+function fixTruncatedResponse(responseText: string): string {
+  let fixed = responseText.trim();
+
+  // Remove trailing comma if present
+  if (fixed.endsWith(",")) {
+    fixed = fixed.slice(0, -1);
+  }
+
+  // If it ends with an incomplete object, try to close it
+  if (fixed.endsWith('"')) {
+    // Find the last complete object
+    const lastCompleteObject = fixed.lastIndexOf("},");
+    if (lastCompleteObject !== -1) {
+      fixed = fixed.substring(0, lastCompleteObject + 1);
+    }
+  }
+
+  // If it ends with an incomplete object, try to close it
+  if (fixed.endsWith("{")) {
+    // Find the last complete object
+    const lastCompleteObject = fixed.lastIndexOf("},");
+    if (lastCompleteObject !== -1) {
+      fixed = fixed.substring(0, lastCompleteObject + 1);
+    }
+  }
+
+  // Ensure the response ends with a closing bracket
+  if (!fixed.endsWith("]")) {
+    // Count open brackets and add closing brackets as needed
+    const openBrackets = (fixed.match(/\[/g) || []).length;
+    const closeBrackets = (fixed.match(/\]/g) || []).length;
+    const openBraces = (fixed.match(/\{/g) || []).length;
+    const closeBraces = (fixed.match(/\}/g) || []).length;
+
+    // Add missing closing braces first
+    for (let i = 0; i < openBraces - closeBraces; i++) {
+      fixed += "}";
+    }
+
+    // Then add missing closing brackets
+    for (let i = 0; i < openBrackets - closeBrackets; i++) {
+      fixed += "]";
+    }
+  }
+
+  return fixed;
+}
+
+/**
+ * Parse a large menu by breaking it into chunks and processing each chunk
+ * @param extractedText The full extracted text
+ * @param restaurantId Restaurant ID
+ * @param llmClient The LLM client instance
+ * @returns Combined menu items from all chunks
+ */
+async function parseLargeMenuInChunks(
+  extractedText: string,
+  restaurantId: string,
+  llmClient: LLMClient
+): Promise<Omit<MenuItem, "itemId" | "createdAt" | "updatedAt">[]> {
+  const chunkSize = 8000; // Characters per chunk
+  const chunks: string[] = [];
+
+  // Split text into chunks
+  for (let i = 0; i < extractedText.length; i += chunkSize) {
+    chunks.push(extractedText.substring(i, i + chunkSize));
+  }
+
+  console.log(`Processing large menu in ${chunks.length} chunks`);
+
+  const allMenuItems: Omit<MenuItem, "itemId" | "createdAt" | "updatedAt">[] =
+    [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    console.log(
+      `Processing chunk ${i + 1}/${chunks.length} (${chunk.length} characters)`
+    );
+
+    const chunkPrompt = `Parse this portion of a restaurant menu into JSON format. Return ONLY a JSON array of objects with these fields: name, description, price (as number), category, ingredients (array), dietaryTags (array).
+
+This is chunk ${i + 1} of ${chunks.length} from a larger menu.
+
+Menu text:
+${chunk}`;
+
+    try {
+      const response = await llmClient.complete({
+        systemPrompt: "You are a JSON parser. Return only valid JSON arrays.",
+        prompt: chunkPrompt,
+        temperature: 0.1,
+        maxTokens: 8000,
+      });
+
+      // Parse the chunk response
+      const chunkResponse = response.text.trim();
+      const isTruncated = checkForTruncatedResponse(chunkResponse);
+      const fixedResponse = isTruncated
+        ? fixTruncatedResponse(chunkResponse)
+        : chunkResponse;
+
+      const jsonMatch = fixedResponse.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const chunkItems = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(chunkItems)) {
+          // Convert chunk items to the required format
+          const validChunkItems = chunkItems.map((item) => ({
+            name: item.name || "",
+            description: item.description || "",
+            price:
+              typeof item.price === "string"
+                ? parseFloat(item.price.replace(/[^\d.]/g, ""))
+                : item.price || 0,
+            category: item.category || "Unknown",
+            ingredients: Array.isArray(item.ingredients)
+              ? item.ingredients
+              : [],
+            dietaryTags: Array.isArray(item.dietaryTags)
+              ? item.dietaryTags
+              : [],
+            restaurantId,
+            isActive: true,
+            isAiGenerated: false,
+          }));
+
+          allMenuItems.push(...validChunkItems);
+          console.log(
+            `Successfully parsed ${validChunkItems.length} items from chunk ${
+              i + 1
+            }`
+          );
+        }
+      }
+    } catch (error) {
+      console.error(`Error processing chunk ${i + 1}:`, error);
+      // Continue with other chunks even if one fails
+    }
+  }
+
+  console.log(`Total items parsed from all chunks: ${allMenuItems.length}`);
+  return allMenuItems;
+}
+
+/**
  * Parse extracted text into menu items using LLM
  * @param extractedText Extracted text from menu file
  * @param restaurantId Restaurant ID
@@ -240,7 +419,9 @@ For dietary tags, look for symbols or explicit mentions of:
 - Contains Nuts (N)
 - Spicy (often indicated by chili symbols)
 
-CRITICAL: You must respond with ONLY valid JSON. Do not include any explanatory text, markdown formatting, or other content outside the JSON array. The response must be parseable by JSON.parse().`;
+CRITICAL: You must respond with ONLY valid JSON. Do not include any explanatory text, markdown formatting, or other content outside the JSON array. The response must be parseable by JSON.parse().
+
+IMPORTANT: If you reach the token limit, ensure you complete the current menu item and close the JSON array properly. Do not leave incomplete objects or unclosed brackets.`;
 
   // Create user prompt with the extracted text and enhanced instructions
   const prompt = `
@@ -267,9 +448,22 @@ Important guidelines:
 
 RESPONSE FORMAT: Return ONLY a valid JSON array. Do not include any text before or after the JSON array. The response must start with '[' and end with ']'.
 
+TOKEN LIMIT HANDLING: If you approach the token limit, complete the current menu item and properly close the JSON array with ']'. Do not leave incomplete objects or unclosed brackets.
+
 Here's the extracted text:
 ${extractedText}
 `;
+
+  // Calculate appropriate token limits based on text length
+  const textLength = extractedText.length;
+  const estimatedTokens = Math.ceil(textLength / 4); // Rough estimate: 1 token ≈ 4 characters
+
+  // Use higher token limits for larger menus, but cap at reasonable limits
+  const maxTokens = Math.min(Math.max(estimatedTokens * 2, 8000), 15000);
+
+  console.log(
+    `Text length: ${textLength}, Estimated tokens: ${estimatedTokens}, Max tokens: ${maxTokens}`
+  );
 
   // Call the LLM API
   console.log("Calling LLM API to parse menu text");
@@ -282,7 +476,7 @@ ${extractedText}
       systemPrompt,
       prompt,
       temperature: 0.1, // Lower temperature for more deterministic results
-      maxTokens: 5000,
+      maxTokens,
     });
   } catch (error) {
     console.error("First LLM call failed, trying with simplified prompt");
@@ -297,13 +491,20 @@ ${extractedText}`;
       systemPrompt: "You are a JSON parser. Return only valid JSON arrays.",
       prompt: fallbackPrompt,
       temperature: 0.1,
-      maxTokens: 5000,
+      maxTokens,
     });
   }
 
   // Parse the LLM response into menu items
   try {
     console.log("Raw LLM response:", response.text);
+
+    // Check for truncated response
+    const isTruncated = checkForTruncatedResponse(response.text);
+    if (isTruncated) {
+      console.log("Detected truncated response, attempting to fix...");
+      response.text = fixTruncatedResponse(response.text);
+    }
 
     // Try multiple strategies to extract valid JSON
     let menuItems: any[] = [];
@@ -396,7 +597,20 @@ ${extractedText}`;
     }
 
     if (!parseSuccess || !Array.isArray(menuItems)) {
-      throw new Error("Could not parse valid JSON array from LLM response");
+      // If parsing failed and the text is very long, try chunking
+      if (extractedText.length > 10000) {
+        console.log(
+          "Parsing failed for large menu, attempting chunked processing..."
+        );
+        menuItems = await parseLargeMenuInChunks(
+          extractedText,
+          restaurantId,
+          llmClient
+        );
+        parseSuccess = true;
+      } else {
+        throw new Error("Could not parse valid JSON array from LLM response");
+      }
     }
 
     console.log(
