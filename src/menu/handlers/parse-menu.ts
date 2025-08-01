@@ -238,7 +238,9 @@ For dietary tags, look for symbols or explicit mentions of:
 - Gluten-Free (GF)
 - Dairy-Free (DF)
 - Contains Nuts (N)
-- Spicy (often indicated by chili symbols)`;
+- Spicy (often indicated by chili symbols)
+
+CRITICAL: You must respond with ONLY valid JSON. Do not include any explanatory text, markdown formatting, or other content outside the JSON array. The response must be parseable by JSON.parse().`;
 
   // Create user prompt with the extracted text and enhanced instructions
   const prompt = `
@@ -259,8 +261,11 @@ Important guidelines:
 4. Extract ingredients from the description when possible
 5. Look for dietary indicators like (V), (GF), etc. and convert to full words
 6. If you're uncertain about any field, use your best judgment based on context
+7. Ensure all strings are properly quoted and escaped
+8. Do not include trailing commas in objects or arrays
+9. Use only standard JSON syntax - no comments or extra formatting
 
-Return the result as a valid JSON array of menu items. Ensure the JSON is properly formatted and can be parsed.
+RESPONSE FORMAT: Return ONLY a valid JSON array. Do not include any text before or after the JSON array. The response must start with '[' and end with ']'.
 
 Here's the extracted text:
 ${extractedText}
@@ -270,22 +275,142 @@ ${extractedText}
   console.log("Calling LLM API to parse menu text");
   console.log("system prompt", systemPrompt);
   console.log("prompt", prompt);
-  const response = await llmClient.complete({
-    systemPrompt,
-    prompt,
-    temperature: 0.1, // Lower temperature for more deterministic results
-    maxTokens: 5000,
-  });
+
+  let response;
+  try {
+    response = await llmClient.complete({
+      systemPrompt,
+      prompt,
+      temperature: 0.1, // Lower temperature for more deterministic results
+      maxTokens: 5000,
+    });
+  } catch (error) {
+    console.error("First LLM call failed, trying with simplified prompt");
+
+    // Fallback with a simpler, more direct prompt
+    const fallbackPrompt = `Parse this menu text into JSON format. Return ONLY a JSON array of objects with these fields: name, description, price (as number), category, ingredients (array), dietaryTags (array).
+
+Menu text:
+${extractedText}`;
+
+    response = await llmClient.complete({
+      systemPrompt: "You are a JSON parser. Return only valid JSON arrays.",
+      prompt: fallbackPrompt,
+      temperature: 0.1,
+      maxTokens: 5000,
+    });
+  }
 
   // Parse the LLM response into menu items
   try {
-    // Extract JSON from the response
+    console.log("Raw LLM response:", response.text);
+
+    // Try multiple strategies to extract valid JSON
+    let menuItems: any[] = [];
+    let parseSuccess = false;
+
+    // Strategy 1: Try to find JSON array with regex and parse directly
     const jsonMatch = response.text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error("No JSON array found in LLM response");
+    if (jsonMatch) {
+      try {
+        menuItems = JSON.parse(jsonMatch[0]);
+        parseSuccess = true;
+        console.log("Successfully parsed JSON using regex strategy");
+      } catch (e) {
+        console.log("Regex strategy failed, trying alternative approaches");
+      }
     }
 
-    let menuItems = JSON.parse(jsonMatch[0]);
+    // Strategy 2: Try to clean up common JSON issues and parse
+    if (!parseSuccess) {
+      try {
+        // Remove any text before the first '[' and after the last ']'
+        let cleanedText = response.text;
+        const firstBracket = cleanedText.indexOf("[");
+        const lastBracket = cleanedText.lastIndexOf("]");
+
+        if (
+          firstBracket !== -1 &&
+          lastBracket !== -1 &&
+          lastBracket > firstBracket
+        ) {
+          cleanedText = cleanedText.substring(firstBracket, lastBracket + 1);
+
+          // Fix common JSON issues
+          cleanedText = cleanedText
+            .replace(/,\s*}/g, "}") // Remove trailing commas in objects
+            .replace(/,\s*]/g, "]") // Remove trailing commas in arrays
+            .replace(/([^\\])"/g, '$1"') // Ensure proper quote escaping
+            .replace(/\n/g, "\\n") // Escape newlines in strings
+            .replace(/\r/g, "\\r") // Escape carriage returns in strings
+            .replace(/\t/g, "\\t"); // Escape tabs in strings
+
+          menuItems = JSON.parse(cleanedText);
+          parseSuccess = true;
+          console.log("Successfully parsed JSON using cleanup strategy");
+        }
+      } catch (e) {
+        console.log("Cleanup strategy failed, trying manual parsing");
+      }
+    }
+
+    // Strategy 3: Manual parsing as last resort
+    if (!parseSuccess) {
+      try {
+        // Extract menu items manually by looking for patterns
+        const lines = response.text.split("\n");
+        const extractedItems: any[] = [];
+
+        for (const line of lines) {
+          // Look for lines that might contain menu item information
+          if (
+            line.includes('"name"') ||
+            line.includes('"price"') ||
+            line.includes('"category"')
+          ) {
+            // Try to extract individual items
+            const itemMatch = line.match(/\{[^}]*\}/);
+            if (itemMatch) {
+              try {
+                const item = JSON.parse(itemMatch[0]);
+                if (item.name && item.price !== undefined) {
+                  extractedItems.push(item);
+                }
+              } catch (e) {
+                // Skip this item if it can't be parsed
+              }
+            }
+          }
+        }
+
+        if (extractedItems.length > 0) {
+          menuItems = extractedItems;
+          parseSuccess = true;
+          console.log(
+            `Successfully extracted ${extractedItems.length} items manually`
+          );
+        }
+      } catch (e) {
+        console.log("Manual parsing strategy failed");
+      }
+    }
+
+    if (!parseSuccess || !Array.isArray(menuItems)) {
+      throw new Error("Could not parse valid JSON array from LLM response");
+    }
+
+    console.log(
+      `Successfully parsed ${menuItems.length} menu items from LLM response`
+    );
+
+    // Validate that each item has the required structure
+    menuItems = menuItems.filter((item) => {
+      if (!item || typeof item !== "object") {
+        console.log("Filtering out invalid item:", item);
+        return false;
+      }
+      return true;
+    });
 
     // Validate and clean up the parsed menu items
     menuItems = menuItems.map((item) => {
@@ -357,6 +482,7 @@ ${extractedText}
     return validMenuItems;
   } catch (error: any) {
     console.error("Error parsing LLM response:", error);
+    console.error("LLM response that failed to parse:", response.text);
     throw new Error(
       `Failed to parse menu structure from LLM response: ${error.message}`
     );
