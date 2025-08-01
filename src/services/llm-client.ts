@@ -65,8 +65,8 @@ export class LLMClient {
   constructor(config: LLMClientConfig) {
     // Set default configuration values
     this.config = {
-      maxRetries: 3,
-      timeout: 30000, // 30 seconds
+      maxRetries: 2,
+      timeout: 120000, // 2 minutes
       ...config,
     };
 

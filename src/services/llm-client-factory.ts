@@ -36,8 +36,8 @@ export class LLMClientFactory {
         (process.env.LLM_PROVIDER as LLMProvider) || LLMProvider.ANTHROPIC,
       model: process.env.LLM_MODEL,
       stage: process.env.STAGE || "dev",
-      maxRetries: 3,
-      timeout: 30000, // 30 seconds
+      maxRetries: 2,
+      timeout: 120000, // 2 minutes
       ...config,
     };
   }
