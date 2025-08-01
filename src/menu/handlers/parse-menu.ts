@@ -268,6 +268,8 @@ ${extractedText}
 
   // Call the LLM API
   console.log("Calling LLM API to parse menu text");
+  console.log("system prompt", systemPrompt);
+  console.log("prompt", prompt);
   const response = await llmClient.complete({
     systemPrompt,
     prompt,
